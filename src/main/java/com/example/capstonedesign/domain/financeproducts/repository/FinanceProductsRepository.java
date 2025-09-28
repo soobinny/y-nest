@@ -1,4 +1,4 @@
 package com.example.capstonedesign.domain.financeproducts.repository;
 
-public class FinanceproductsRepository {
+public class FinanceProductsRepository {
 }

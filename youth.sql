@@ -5,7 +5,7 @@ USE youth;
 
 CREATE TABLE users
 (
-    role ENUM('USER','OWNER') NOT NULL DEFAULT 'USER',
+    role ENUM('USER','ADMIN') NOT NULL DEFAULT 'USER',
     id          INT AUTO_INCREMENT PRIMARY KEY,
     email       VARCHAR(255) NOT NULL UNIQUE,
     password    VARCHAR(255) NOT NULL,
