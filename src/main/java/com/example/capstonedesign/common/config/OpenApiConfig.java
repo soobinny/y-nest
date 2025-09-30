@@ -12,17 +12,17 @@ import org.springframework.context.annotation.Configuration;
 @Configuration
 @OpenAPIDefinition(
         info = @Info(title = "Capstone API", version = "v1"),
-        security = { @SecurityRequirement(name = "BearerAuth") }
+        security = { @SecurityRequirement(name = "bearerAuth") }
 )
 @SecurityScheme(
-        name = "BearerAuth",
+        name = "bearerAuth",
         type = SecuritySchemeType.HTTP,
         scheme = "bearer",
         bearerFormat = "JWT"
 )
 public class OpenApiConfig {
 
-    private static final String SECURITY_SCHEME_NAME = "BearerAuth";
+    private static final String SECURITY_SCHEME_NAME = "bearerAuth";
 
     @Bean
     public OpenAPI openAPI() {
