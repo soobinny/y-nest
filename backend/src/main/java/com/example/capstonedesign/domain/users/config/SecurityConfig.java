@@ -2,6 +2,7 @@ package com.example.capstonedesign.domain.users.config;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.web.SecurityFilterChain;
@@ -37,6 +38,9 @@ public class SecurityConfig {
         http
                 // JWT 기반이므로 CSRF 토큰 사용 불필요, 비활성화
                 .csrf(AbstractHttpConfigurer::disable)
+
+                // ✅ CORS 설정 추가
+                .cors(Customizer.withDefaults())
 
                 // 요청 경로별 권한 설정
                 .authorizeHttpRequests(auth -> auth
