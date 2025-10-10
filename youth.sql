@@ -5,18 +5,19 @@ USE youth;
 
 CREATE TABLE users
 (
-    role ENUM('USER','ADMIN') NOT NULL DEFAULT 'USER',
+    role        ENUM ('USER','ADMIN') NOT NULL DEFAULT 'USER',
     id          INT AUTO_INCREMENT PRIMARY KEY,
-    email       VARCHAR(255) NOT NULL UNIQUE,
-    password    VARCHAR(255) NOT NULL,
+    email       VARCHAR(255)          NOT NULL UNIQUE,
+    password    VARCHAR(255)          NOT NULL,
+    name        VARCHAR(255)          NOT NULL,
     age         INT,
     income_band VARCHAR(50),
     region      VARCHAR(50),
-    is_homeless BOOLEAN DEFAULT FALSE,
-    deleted BOOLEAN NOT NULL DEFAULT FALSE,
-    deleted_at TIMESTAMP NULL DEFAULT NULL,
-    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+    is_homeless BOOLEAN                        DEFAULT FALSE,
+    deleted     BOOLEAN               NOT NULL DEFAULT FALSE,
+    deleted_at  TIMESTAMP             NULL     DEFAULT NULL,
+    created_at  TIMESTAMP             NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at  TIMESTAMP             NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 );
 
 CREATE TABLE products

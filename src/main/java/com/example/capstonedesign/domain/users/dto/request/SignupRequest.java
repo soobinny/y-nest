@@ -9,7 +9,7 @@ import jakarta.validation.constraints.Pattern;
 /**
  * SignupRequest
  * -------------------------------------------------
- * - 회원가입 요청 시 클라이언트에서 전달되는 DTO
+ * - 회원 가입 요청 시 클라이언트에서 전달되는 DTO
  * - 이메일, 비밀번호, 나이, 소득 구간, 거주 지역, 무주택 여부, 사용자 역할 등 정보를 포함
  * - Bean Validation 으로 필드 유효성 검증 수행
  */
@@ -34,6 +34,9 @@ public record SignupRequest(
                 message = "비밀번호는 8자 이상, 대소문자/숫자/특수문자를 각각 1자 이상 포함해야 합니다."
         )
         String password,
+
+        // 이름 (nullable)
+        String name,
 
         // 나이 (nullable)
         Integer age,

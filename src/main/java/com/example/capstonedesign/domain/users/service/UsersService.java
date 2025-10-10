@@ -30,7 +30,7 @@ public class UsersService {
     private final PasswordEncoder passwordEncoder;
 
     /**
-     * 회원가입
+     * 회원 가입
      * - 이메일 중복 체크 → 409 CONFLICT 예외 발생
      * - 비밀번호는 BCrypt로 암호화
      * - role null 대비 기본값 USER 적용
@@ -47,6 +47,7 @@ public class UsersService {
         Users u = new Users();
         u.setEmail(req.email());
         u.setPassword(passwordEncoder.encode(req.password()));
+        u.setName(req.name());
         u.setAge(req.age());
         u.setIncome_band(req.income_band());
         u.setRegion(req.region());
@@ -64,6 +65,7 @@ public class UsersService {
         return new UsersResponse(
                 u.getId(),
                 u.getEmail(),
+                u.getName(),
                 u.getAge(),
                 u.getIncome_band(),
                 u.getRegion(),

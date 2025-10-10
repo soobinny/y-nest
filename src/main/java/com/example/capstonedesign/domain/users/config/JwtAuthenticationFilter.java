@@ -8,6 +8,8 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
@@ -38,34 +40,31 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                                     HttpServletResponse response,
                                     FilterChain filterChain) throws ServletException, IOException {
 
-        // 요청 헤더에서 Authorization 확인
         String header = request.getHeader("Authorization");
 
-        // Bearer 토큰 존재 시
         if (header != null && header.startsWith("Bearer ")) {
-            String token = header.substring(7); // "Bearer " 제거 후 순수 토큰
-
+            String token = header.substring(7);
             try {
-                // JWT 파싱 및 검증
                 Jws<Claims> claims = jwtTokenProvider.parse(token);
-                String email = claims.getBody().getSubject(); // 토큰 subject(email) 추출
 
-                // 인증 객체 생성
-                // 권한(role)은 필요 시 claims 에서 추출해 추가 가능
+                String email = claims.getBody().getSubject();                 // 예: user@example.com
+                String role  = claims.getBody().get("role", String.class); // 예: "USER", "ADMIN"
+
+                // 스프링의 hasRole("USER") 규칙과 맞추려면 ROLE_ 접두어 필수
+                List<GrantedAuthority> authorities =
+                        List.of(new SimpleGrantedAuthority("ROLE_" + role));
+
                 UsernamePasswordAuthenticationToken auth =
-                        new UsernamePasswordAuthenticationToken(email, null, List.of());
+                        new UsernamePasswordAuthenticationToken(email, null, authorities);
 
-                // SecurityContext에 인증 정보 저장
                 SecurityContextHolder.getContext().setAuthentication(auth);
 
             } catch (JwtException e) {
-                // 토큰 유효하지 않거나 만료 시 401 Unauthorized 반환
                 response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "유효하지 않거나 만료된 JWT입니다.");
                 return;
             }
         }
 
-        // 필터 체인 다음 필터로 요청 전달
         filterChain.doFilter(request, response);
     }
 }
