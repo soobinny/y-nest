@@ -113,7 +113,7 @@ const styles = {
   },
 
   button: {
-    backgroundColor: "#9ed8b5",
+    backgroundColor: "#6ecd94ff",
     border: "none",
     color: "white",
     fontWeight: "bold",

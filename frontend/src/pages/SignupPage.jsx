@@ -238,7 +238,7 @@ const styles = {
   marginBottom: "-4px",
 },
   button: {
-    backgroundColor: "#9ed8b5",
+    backgroundColor: "#6ecd94ff",
     color: "white",
     border: "none",
     borderRadius: 8,
