@@ -114,7 +114,7 @@ public class FavoritesService {
                 .productId(Long.valueOf(f.getProduct().getId()))
                 .productName(f.getProduct().getName())
                 .provider(f.getProduct().getProvider())
-                .detailUrl(f.getProduct().getDetail_url())
+                .detailUrl(f.getProduct().getDetailUrl())
                 .createdAt(f.getCreatedAt())
                 .build());
     }

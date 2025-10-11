@@ -38,6 +38,6 @@ public class Products {
     private String provider;
 
     /** 상세 페이지 URL (최대 500자) */
-    @Column(length = 500)
-    private String detail_url;
+    @Column(name = "detail_url", length = 500)
+    private String detailUrl;
 }
