@@ -28,7 +28,7 @@ export default function MyPage() {
   };
 
   const handleDeleteAccount = async () => {
-    const confirmDelete = window.confirm("정말 탈퇴하시겠습니까?");
+    const confirmDelete = window.confirm("회원 탈퇴하시겠습니까?");
     if (!confirmDelete) return;
     const password = prompt("비밀번호를 입력해주세요:");
     if (!password) return;
@@ -45,7 +45,7 @@ export default function MyPage() {
     }
   };
 
-  if (!user) return <p style={styles.loading}>로딩 중...</p>;
+  if (!user) return <p style={styles.loading}>로그인 완료 후 접속해주세요.</p>;
 
   return (
     <AppLayout>
@@ -59,13 +59,39 @@ export default function MyPage() {
         }
       >
         <h2 style={styles.title}>내 정보</h2>
-        <div style={styles.infoBox}>
-          <p><b>이메일:</b> {user.email}</p>
-          <p><b>나이:</b> {user.age ?? "미입력"}</p>
-          <p><b>소득 구간:</b> {user.income_band ?? "미입력"}</p>
-          <p><b>거주 지역:</b> {user.region ?? "미입력"}</p>
-          <p><b>주택 상태:</b> {user.is_homeless ? "무주택" : "주택 보유"}</p>
+
+        {/* 기본 정보 */}
+        <div style={styles.section}>
+          <h3 style={styles.sectionTitle}>📦 기본 정보</h3>
+          <div style={styles.row}>
+            <span style={styles.label}>이메일</span>
+            <span style={styles.value}>{user.email}</span>
+          </div>
+          <div style={styles.row}>
+            <span style={styles.label}>나이</span>
+            <span style={styles.value}>{user.age ?? "미입력"}</span>
+          </div>
         </div>
+
+        {/* 주거 정보 */}
+        <div style={styles.section}>
+          <h3 style={styles.sectionTitle}>🏠 주거 정보</h3>
+          <div style={styles.row}>
+            <span style={styles.label}>소득 구간</span>
+            <span style={styles.value}>{user.income_band ?? "미입력"}</span>
+          </div>
+          <div style={styles.row}>
+            <span style={styles.label}>거주 지역</span>
+            <span style={styles.value}>{user.region ?? "미입력"}</span>
+          </div>
+          <div style={styles.row}>
+            <span style={styles.label}>주택 상태</span>
+            <span style={styles.value}>
+              {user.is_homeless ? "무주택" : "주택 보유"}
+            </span>
+          </div>
+        </div>
+
         <div style={styles.btnRow}>
           <button
             style={styles.logoutBtn}
@@ -77,17 +103,25 @@ export default function MyPage() {
           >
             로그아웃
           </button>
+
+          {/* 버튼 */}
           <button
-            style={styles.deleteBtn}
-            onClick={handleDeleteAccount}
-            onMouseEnter={(e) => (e.target.style.transform = "scale(1.01)")}
+            style={styles.editBtn}
+            onClick={() => alert("내 정보 수정 페이지로 이동 예정")}
+            onMouseEnter={(e) => (e.target.style.transform = "scale(1.03)")}
             onMouseLeave={(e) => (e.target.style.transform = "scale(1)")}
-            onMouseDown={(e) => (e.target.style.transform = "scale(0.99)")}
-            onMouseUp={(e) => (e.target.style.transform = "scale(1.01)")}
+            onMouseDown={(e) => (e.target.style.transform = "scale(0.96)")}
+            onMouseUp={(e) => (e.target.style.transform = "scale(1.03)")}
           >
-            회원 탈퇴
+            내 정보 수정
           </button>
         </div>
+
+        {/* 회원 탈퇴 링크 */}
+        <p style={styles.deleteLink} onClick={handleDeleteAccount}>
+          회원 탈퇴
+        </p>
+
         {message && <p style={styles.message}>{message}</p>}
       </div>
     </AppLayout>
@@ -101,9 +135,26 @@ const styles = {
     padding: "40px 30px",
     boxShadow: "0 4px 14px rgba(0,0,0,0.08)",
     transition: "all 0.25s ease",
+    minWidth: "350px",
   },
-  title: { textAlign: "center", marginBottom: 25, color: "#444" },
-  infoBox: { lineHeight: 1.8, marginBottom: 25 },
+  title: { textAlign: "center", marginBottom: 30, color: "#444" },
+  section: { marginBottom: 25 },
+  sectionTitle: {
+    fontSize: "15px",
+    fontWeight: "bold",
+    color: "#444",
+    marginBottom: 10,
+    borderLeft: "4px solid #9ed8b5",
+    paddingLeft: 8,
+  },
+  row: {
+    display: "flex",
+    justifyContent: "space-between",
+    padding: "6px 0",
+    borderBottom: "1px solid #f1f1f1",
+  },
+  label: { color: "#666", fontWeight: 500 },
+  value: { color: "#222" },
   btnRow: { display: "flex", gap: 10 },
   logoutBtn: {
     flex: 1,
@@ -116,16 +167,24 @@ const styles = {
     cursor: "pointer",
     transition: "all 0.2s ease",
   },
-  deleteBtn: {
+  editBtn: {
     flex: 1,
     padding: "12px",
     border: "none",
     borderRadius: 8,
-    backgroundColor: "#d6d6d6",
-    color: "#333",
+    backgroundColor: "#6ecd94",
+    color: "white",
     fontWeight: "bold",
     cursor: "pointer",
-    transition: "all 0.1s ease",
+    transition: "all 0.2s ease",
+  },
+  deleteLink: {
+    marginTop: 20,
+    textAlign: "center",
+    fontSize: "13px",
+    color: "#999",
+    cursor: "pointer",
+    textDecoration: "underline",
   },
   message: { marginTop: 10, textAlign: "center", color: "#888" },
   loading: { textAlign: "center", marginTop: 80 },
