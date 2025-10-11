@@ -5,6 +5,7 @@ import AppLayout from "../components/AppLayout";
 export default function LoginPage() {
   const [form, setForm] = useState({ email: "", password: "" });
   const [message, setMessage] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
 
   const handleChange = (e) =>
     setForm({ ...form, [e.target.name]: e.target.value });
@@ -43,15 +44,24 @@ export default function LoginPage() {
             style={styles.input}
             required
           />
-          <input
-            type="password"
-            name="password"
-            placeholder="비밀번호"
-            value={form.password}
-            onChange={handleChange}
-            style={styles.input}
-            required
-          />
+
+          <div style={styles.passwordContainer}>
+            <input
+              type={showPassword ? "text" : "password"}
+              name="password"
+              placeholder="비밀번호"
+              onChange={handleChange}
+              style={styles.input}
+              required
+            />
+            <img
+              src={showPassword ? "/eye-off.png" : "/eye-on.png"}
+              alt="비밀번호 보기"
+              onClick={() => setShowPassword(!showPassword)}
+              style={styles.eyeIcon}
+            />
+          </div>
+
           <button
             type="submit"
             style={styles.button}
@@ -76,6 +86,7 @@ const styles = {
     boxShadow: "0 4px 14px rgba(0,0,0,0.08)",
     padding: "40px 30px",
     transition: "all 0.25s ease",
+    minWidth: "350px",
   },
   title: { textAlign: "center", marginBottom: 25, color: "#444" },
   form: { display: "flex", flexDirection: "column", gap: 14 },
@@ -84,7 +95,23 @@ const styles = {
     border: "1px solid #ddd",
     borderRadius: 8,
     fontSize: "14px",
+    width: "100%",
+    paddingRight: "40px",
+    boxSizing: "border-box",
   },
+  passwordContainer: {
+    position: "relative",
+    display: "flex",
+    alignItems: "center",
+  },
+  eyeIcon: {
+    position: "absolute",
+    right: "15px",
+    cursor: "pointer",
+    userSelect: "none",
+    opacity: 0.6,
+  },
+
   button: {
     backgroundColor: "#9ed8b5",
     border: "none",
