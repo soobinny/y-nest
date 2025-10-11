@@ -32,6 +32,9 @@ public class Users {
     @Column(nullable = false)
     private String password;
 
+    /** 사용자 이름 (nullable) */
+    private String name;
+
     /** 사용자 나이 (nullable) */
     private Integer age;
 

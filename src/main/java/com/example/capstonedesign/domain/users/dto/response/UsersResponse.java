@@ -17,6 +17,9 @@ public record UsersResponse(
         // 사용자 이메일
         String email,
 
+        // 사용자 이름
+        String name,
+
         // 나이 (nullable)
         Integer age,
 

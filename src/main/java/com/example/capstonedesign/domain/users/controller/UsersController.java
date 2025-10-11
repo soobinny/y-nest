@@ -109,10 +109,9 @@ public class UsersController {
             }
     )
     @GetMapping("/me")
-    public ResponseEntity<UsersResponse> me() {
-        // SecurityContext 에서 인증 정보 가져오기
-        String email = (String) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
-        Users me = usersService.requireActiveByEmail(email);
+    public ResponseEntity<UsersResponse> me(@org.springframework.security.core.annotation.AuthenticationPrincipal Object principal) {
+        String email = (String) principal;
+        var me = usersService.requireActiveByEmail(email);
         return ResponseEntity.ok(usersService.toResponse(me));
     }
 
