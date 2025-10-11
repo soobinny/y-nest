@@ -55,10 +55,10 @@ export default function LoginPage() {
           <button
             type="submit"
             style={styles.button}
-            onMouseEnter={(e) => (e.target.style.transform = "scale(1.03)")}
+            onMouseEnter={(e) => (e.target.style.transform = "scale(1.01)")}
             onMouseLeave={(e) => (e.target.style.transform = "scale(1)")}
-            onMouseDown={(e) => (e.target.style.transform = "scale(0.96)")}
-            onMouseUp={(e) => (e.target.style.transform = "scale(1.03)")}
+            onMouseDown={(e) => (e.target.style.transform = "scale(0.99)")}
+            onMouseUp={(e) => (e.target.style.transform = "scale(1.01)")}
           >
             로그인
           </button>
@@ -93,7 +93,7 @@ const styles = {
     padding: "12px",
     borderRadius: 8,
     cursor: "pointer",
-    transition: "all 0.2s ease",
+    transition: "all 0.1s ease",
     transform: "scale(1)",
   },
   message: {

@@ -80,10 +80,10 @@ export default function MyPage() {
           <button
             style={styles.deleteBtn}
             onClick={handleDeleteAccount}
-            onMouseEnter={(e) => (e.target.style.transform = "scale(1.03)")}
+            onMouseEnter={(e) => (e.target.style.transform = "scale(1.01)")}
             onMouseLeave={(e) => (e.target.style.transform = "scale(1)")}
-            onMouseDown={(e) => (e.target.style.transform = "scale(0.96)")}
-            onMouseUp={(e) => (e.target.style.transform = "scale(1.03)")}
+            onMouseDown={(e) => (e.target.style.transform = "scale(0.99)")}
+            onMouseUp={(e) => (e.target.style.transform = "scale(1.01)")}
           >
             회원 탈퇴
           </button>
@@ -125,7 +125,7 @@ const styles = {
     color: "#333",
     fontWeight: "bold",
     cursor: "pointer",
-    transition: "all 0.2s ease",
+    transition: "all 0.1s ease",
   },
   message: { marginTop: 10, textAlign: "center", color: "#888" },
   loading: { textAlign: "center", marginTop: 80 },

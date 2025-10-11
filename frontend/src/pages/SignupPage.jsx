@@ -91,17 +91,18 @@ export default function SignupPage() {
           />
 
           <label style={styles.checkboxLabel}>
-            <input type="checkbox" name="is_homeless" checked={form.is_homeless} onChange={handleChange} />
+            <input type="checkbox" name="is_homeless" checked={form.is_homeless} onChange={handleChange} style={styles.checkboxInput}
+             />
             무주택자입니다
           </label>
 
           <button
             type="submit"
             style={styles.button}
-            onMouseEnter={(e) => (e.target.style.transform = "scale(1.03)")}
+            onMouseEnter={(e) => (e.target.style.transform = "scale(1.01)")}
             onMouseLeave={(e) => (e.target.style.transform = "scale(1)")}
-            onMouseDown={(e) => (e.target.style.transform = "scale(0.96)")}
-            onMouseUp={(e) => (e.target.style.transform = "scale(1.03)")}
+            onMouseDown={(e) => (e.target.style.transform = "scale(0.99)")}
+            onMouseUp={(e) => (e.target.style.transform = "scale(1.01)")}
           >
             회원가입
           </button>
@@ -131,9 +132,13 @@ const styles = {
   checkboxLabel: {
     display: "flex",
     alignItems: "center",
-    gap: 8,
+    gap: 5,
     fontSize: 14,
   },
+  checkboxInput: {
+  position: "relative",
+  top: "1px",
+},
   button: {
     backgroundColor: "#9ed8b5",
     color: "white",
@@ -142,7 +147,7 @@ const styles = {
     padding: "12px",
     fontWeight: "bold",
     cursor: "pointer",
-    transition: "all 0.2s ease",
+    transition: "all 0.1s ease",
     transform: "scale(1)",
   },
   message: { marginTop: 10, textAlign: "center", color: "#888" },
