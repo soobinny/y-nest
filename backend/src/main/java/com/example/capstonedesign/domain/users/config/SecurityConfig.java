@@ -1,64 +1,52 @@
 package com.example.capstonedesign.domain.users.config;
 
+import jakarta.servlet.http.HttpServletResponse;
+import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
+import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
-/**
- * SecurityConfig
- * -------------------------------------------------
- * - Spring Security 전역 보안 설정 클래스
- * - JWT 기반 인증을 사용하며 CSRF를 비활성화
- * - 경로별 접근 제어(permitAll / authenticated) 정의
- * - JwtAuthenticationFilter를 등록하여 모든 요청에서 JWT 검증
- */
 @Configuration
+@RequiredArgsConstructor
 public class SecurityConfig {
 
-    /** JWT 인증 필터 */
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
 
-    public SecurityConfig(JwtAuthenticationFilter jwtAuthenticationFilter) {
-        this.jwtAuthenticationFilter = jwtAuthenticationFilter;
-    }
-
-    /**
-     * SecurityFilterChain 설정
-     *
-     * @param http HttpSecurity 객체
-     * @return SecurityFilterChain
-     * @throws Exception Spring Security 설정 예외
-     */
     @Bean
-    public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
+    SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
-                // JWT 기반이므로 CSRF 토큰 사용 불필요, 비활성화
                 .csrf(AbstractHttpConfigurer::disable)
 
                 // ✅ CORS 설정 추가
                 .cors(Customizer.withDefaults())
 
                 // 요청 경로별 권한 설정
+                .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
-                        // 인증 없이 접근 가능한 경로
                         .requestMatchers(
-                                "/users/signup",            // 회원가입
-                                "/users/login",             // 로그인
-                                "/v3/api-docs/**",          // Swagger API 문서
-                                "/swagger-ui/**",           // Swagger UI
-                                "/swagger-ui.html"          // Swagger UI html
+                                "/users/signup",
+                                "/users/login",
+                                "/v3/api-docs/**",
+                                "/swagger-ui.html", "/swagger-ui/**",
+                                "/error" // 에러 페이지 접근 허용(로그에 뜨던 /error 403 방지용)
                         ).permitAll()
-                        // 그 외 모든 요청은 인증 필요
                         .anyRequest().authenticated()
-                );
-
-        // JWT 인증 필터 등록
-        // UsernamePasswordAuthenticationFilter 실행 전에 JWT 토큰 검증
-        http.addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
+                )
+                .exceptionHandling(ex -> ex
+                        // 인증 자체가 없을 때 → 401
+                        .authenticationEntryPoint((req, res, e) ->
+                                res.sendError(HttpServletResponse.SC_UNAUTHORIZED, "인증이 필요합니다."))
+                        // 인증은 되었는데 권한이 없을 때 → 403
+                        .accessDeniedHandler((req, res, e) ->
+                                res.sendError(HttpServletResponse.SC_FORBIDDEN, "접근 권한이 없습니다."))
+                )
+                // 커스텀 JWT 필터를 UsernamePasswordAuthenticationFilter 앞에 등록
+                .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
     }
