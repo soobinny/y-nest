@@ -13,10 +13,12 @@ import com.example.capstonedesign.infra.finlife.dto.FinlifeCompanySearchResponse
 import com.example.capstonedesign.infra.finlife.dto.FinlifeProductResponse;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class FinlifeIngestService {
@@ -44,7 +46,7 @@ public class FinlifeIngestService {
                     entity.setName(c.getName());
                     entity.setHomepage(c.getHomepage());
                     entity.setContact(c.getContact());
-                    companiesRepository.save(entity);   // ✅ 실제 저장
+                    companiesRepository.save(entity);   // 실제 저장
                     saved++;
                 }
             }
@@ -69,7 +71,10 @@ public class FinlifeIngestService {
                         : client.getSavingProducts(grp, page);
 
                 var bases = (res == null || res.getResult() == null) ? null : res.getResult().getBaseList();
-                if (bases == null || bases.isEmpty()) break;
+                if (bases == null || bases.isEmpty()) {
+                    log.info("[INGEST] baseList empty: type={}, grp={}, page={}", type, grp, page);
+                    break;
+                }
 
                 for (var base : bases) {
                     // 1) 상위 Products upsert
@@ -80,8 +85,22 @@ public class FinlifeIngestService {
                                     .name(base.getFinPrdtNm())
                                     .provider(base.getCompanyName())
                                     .build());
-                    prod.setDetail_url(base.getDetailUrl());
-                    prod = productsRepository.save(prod);   // ✅ 저장
+
+                    // 상세 URL 널-세이프 + 대체(회사 홈페이지) 로직
+                    String url = base.getDetailUrl(); // 현재 API 에선 거의/항상 null
+                    if (url == null || url.isBlank()) {
+                        url = companiesRepository.findByFinCoNo(base.getFinCoNo())
+                                .map(FinanceCompanies::getHomepage)
+                                .orElse(null);
+                    }
+
+                    prod.setDetailUrl(url);
+
+                    // 보이는 로그 (INFO)
+                    log.info("[INGEST] prdt='{}', co='{}', finCoNo={}, detailUrl={}",
+                            base.getFinPrdtNm(), base.getCompanyName(), base.getFinCoNo(), url);
+
+                    productsRepository.save(prod);   // 저장
 
                     // 2) 하위 FinanceProducts upsert
                     FinanceProducts fp = financeProductsRepository.findByProductAndFinCoNo(prod, base.getFinCoNo())
@@ -91,7 +110,6 @@ public class FinlifeIngestService {
                                     .productType(type)
                                     .build());
 
-                    // 가입 조건 텍스트 결합
                     String joinCond = String.join("\n",
                             safeLine("가입 방법: ", base.getJoinWay()),
                             safeLine("가입 대상: ", base.getJoinMember()),
@@ -99,18 +117,16 @@ public class FinlifeIngestService {
                     ).trim();
                     fp.setJoin_condition(joinCond.isBlank() ? null : joinCond);
 
-                    // 대표 금리(옵션에서 최고 우대금리 → 없으면 기본금리)
                     BigDecimal rate = extractRepresentativeRate(res, base.getFinPrdtCd(), base.getFinCoNo());
                     fp.setInterest_rate(rate);
-
-                    // 최소 예치금은 스펙 없으면 null 유지
                     fp.setMin_deposit(null);
 
-                    financeProductsRepository.save(fp);     // ✅ 저장
+                    financeProductsRepository.save(fp);
                     saved++;
                 }
             }
         }
+        log.info("[INGEST] saved count type={} -> {}", type, saved);
         return saved;
     }
 

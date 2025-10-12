@@ -84,6 +84,14 @@ public class UsersService {
                 .orElseThrow(() -> new ApiException(ErrorCode.UNAUTHORIZED, "이메일 또는 비밀번호가 올바르지 않습니다."));
     }
 
+    @Transactional
+    public Users requireActiveById(Integer id) {
+        Users u = usersRepository.findById(id)
+                .orElseThrow(() -> new ApiException(ErrorCode.NOT_FOUND, "User not found"));
+        if (u.getDeleted()) throw new ApiException(ErrorCode.UNAUTHORIZED, "Inactive user");
+        return u;
+    }
+
     /**
      * 프로필 수정
      * - 전달된 필드가 null이 아닌 경우만 업데이트

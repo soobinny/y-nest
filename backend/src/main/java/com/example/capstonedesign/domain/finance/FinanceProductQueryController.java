@@ -169,7 +169,7 @@ public class FinanceProductQueryController {
                 .productId(p != null ? p.getId() : null)
                 .productName(p != null ? p.getName() : null)
                 .provider(p != null ? p.getProvider() : null)
-                .detailUrl(p != null ? p.getDetail_url() : null)
+                .detailUrl(p != null ? p.getDetailUrl() : null)
                 .finCoNo(fp.getFinCoNo())
                 .productType(fp.getProductType())
                 .interestRate(fp.getInterest_rate())   // 엔티티가 snake_case 필드/게터를 쓰는 경우
