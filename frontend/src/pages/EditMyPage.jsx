@@ -6,6 +6,7 @@ import RegionSelect from "../components/RegionSelect";
 export default function EditMyPage() {
   const [form, setForm] = useState({
     name: "",
+    email: "",
     age: "",
     income_band: "",
     region: "",
@@ -29,6 +30,7 @@ export default function EditMyPage() {
 
         setForm({
           name: res.data.name ?? "",
+          email: res.data.email ?? "",
           age: res.data.age ?? "",
           income_band: res.data.income_band ?? "",
           region: res.data.region ?? "",
@@ -109,7 +111,17 @@ export default function EditMyPage() {
             style={{
               ...styles.input,
               backgroundColor: "#f4f4f4",
-              color: "#777",
+            }}
+          />
+          {/* 이메일 */}
+          <input
+            type="text"
+            name="email"
+            value={form.email || ""}
+            readOnly
+            style={{
+              ...styles.input,
+              backgroundColor: "#f4f4f4",
             }}
           />
 
@@ -127,7 +139,7 @@ export default function EditMyPage() {
             type="text"
             name="age"
             placeholder="생년월일을 선택해주세요"
-            value={form.age}
+            value={form.age ? `나이: ${form.age}` : ""}
             onChange={handleChange}
             readOnly
             style={{ ...styles.input, backgroundColor: "#f4f4f4" }}
