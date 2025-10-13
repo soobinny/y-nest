@@ -51,6 +51,7 @@ export default function SignupPage() {
       const payload = {
         email: form.email,
         password: form.password,
+        name: form.name,
         age: form.age ? Number(form.age) : null,
         income_band: form.income_band || null,
         region: `${form.province} ${form.city}` || null,

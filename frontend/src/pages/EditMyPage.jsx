@@ -5,6 +5,7 @@ import RegionSelect from "../components/RegionSelect";
 
 export default function EditMyPage() {
   const [form, setForm] = useState({
+    name: "",
     age: "",
     income_band: "",
     region: "",
@@ -27,12 +28,12 @@ export default function EditMyPage() {
         const calculatedAge = birthYear ? currentYear - birthYear : "";
 
         setForm({
+          name: res.data.name ?? "",
           age: res.data.age ?? "",
           income_band: res.data.income_band ?? "",
           region: res.data.region ?? "",
           is_homeless: res.data.is_homeless ?? false,
-          birthdate: res.data.birthdate ? res.data.birthdate.split("T")[0]
-    : "",
+          birthdate: res.data.birthdate ? res.data.birthdate.split("T")[0] : "",
         });
       } catch {
         setMessage("로그인 후 이용해주세요.");
@@ -47,7 +48,7 @@ export default function EditMyPage() {
     setForm({ ...form, [name]: type === "checkbox" ? checked : value });
   };
 
-    // 🔹 생년월일 변경 시 자동으로 나이 계산
+  // 🔹 생년월일 변경 시 자동으로 나이 계산
   const handleBirthChange = (e) => {
     const birth = e.target.value;
     const birthYear = new Date(birth).getFullYear();
@@ -83,7 +84,7 @@ export default function EditMyPage() {
     }
   };
 
-  if (!form) return <p style={styles.loading}>로딩 중...</p>;
+  if (!form) return <p style={styles.loading}>로그인 완료 후 접속해주세요.</p>;
 
   return (
     <AppLayout>
@@ -99,6 +100,19 @@ export default function EditMyPage() {
         <h2 style={styles.title}>내 정보 수정</h2>
 
         <form onSubmit={handleSubmit} style={styles.form}>
+          {/* 이름 */}
+          <input
+            type="text"
+            name="name"
+            value={form.name || ""}
+            readOnly
+            style={{
+              ...styles.input,
+              backgroundColor: "#f4f4f4",
+              color: "#777",
+            }}
+          />
+
           {/* 생년월일 */}
           <input
             type="date"
@@ -118,7 +132,6 @@ export default function EditMyPage() {
             readOnly
             style={{ ...styles.input, backgroundColor: "#f4f4f4" }}
           />
-
 
           {/* 소득 구간 */}
           <select

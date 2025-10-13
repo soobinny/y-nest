@@ -64,13 +64,17 @@ export default function MyPage() {
         <div style={styles.section}>
           <h3 style={styles.sectionTitle}>📦 기본 정보</h3>
           <div style={styles.row}>
+            <span style={styles.label}>이름</span>
+            <span style={styles.value}>{user.name}</span>
+          </div>
+          <div style={styles.row}>
             <span style={styles.label}>이메일</span>
             <span style={styles.value}>{user.email}</span>
           </div>
           <div style={styles.row}>
             <span style={styles.label}>생년월일</span>
             <span style={styles.value}>
-               {user.birthdate ? user.birthdate.split("T")[0] : "미입력"}
+              {user.birthdate ? user.birthdate.split("T")[0] : "미입력"}
             </span>
           </div>
           <div style={styles.row}>
