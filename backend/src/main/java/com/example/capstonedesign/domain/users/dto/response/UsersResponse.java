@@ -1,5 +1,7 @@
 package com.example.capstonedesign.domain.users.dto.response;
 
+import java.time.LocalDate;
+
 import com.example.capstonedesign.domain.users.entity.UserRole;
 
 /**
@@ -31,6 +33,9 @@ public record UsersResponse(
 
         // 무주택 여부
         Boolean is_homeless,
+
+        //생년월일
+        LocalDate birthdate,
 
         // 사용자 역할 (USER 또는 ADMIN)
         UserRole role

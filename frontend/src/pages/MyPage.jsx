@@ -68,6 +68,12 @@ export default function MyPage() {
             <span style={styles.value}>{user.email}</span>
           </div>
           <div style={styles.row}>
+            <span style={styles.label}>생년월일</span>
+            <span style={styles.value}>
+               {user.birthdate ? user.birthdate.split("T")[0] : "미입력"}
+            </span>
+          </div>
+          <div style={styles.row}>
             <span style={styles.label}>나이</span>
             <span style={styles.value}>{user.age ?? "미입력"}</span>
           </div>

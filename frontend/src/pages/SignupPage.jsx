@@ -56,6 +56,7 @@ export default function SignupPage() {
         region: `${form.province} ${form.city}` || null,
         is_homeless: form.is_homeless,
         role: "USER",
+        birthdate: form.birthdate,
       };
       await api.post("/users/signup", payload);
       alert("회원가입이 완료되었습니다!");

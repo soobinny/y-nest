@@ -1,6 +1,10 @@
 package com.example.capstonedesign.domain.users.dto.request;
 
+import java.time.LocalDate;
+
 import com.example.capstonedesign.domain.users.entity.UserRole;
+import com.fasterxml.jackson.annotation.JsonFormat;
+
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -52,5 +56,9 @@ public record SignupRequest(
 
         //  사용자 역할 (USER 또는 ADMIN, null 허용 안됨)
         @NotNull
-        UserRole role
+        UserRole role,
+
+        // 생년월일 (nullable)
+        @JsonFormat(pattern = "yyyy-MM-dd")
+        LocalDate birthdate
 ) {}

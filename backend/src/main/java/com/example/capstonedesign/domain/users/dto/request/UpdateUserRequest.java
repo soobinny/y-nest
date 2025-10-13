@@ -1,5 +1,7 @@
 package com.example.capstonedesign.domain.users.dto.request;
 
+import java.time.LocalDate;
+
 /**
  * UpdateUserRequest
  * -------------------------------------------------
@@ -19,5 +21,8 @@ public record UpdateUserRequest(
         String region,
 
         // 무주택 여부 (nullable, 변경하지 않으면 null)
-        Boolean is_homeless
+        Boolean is_homeless,
+
+        // 생년월일 (nullable)
+        LocalDate birthdate
 ) {}

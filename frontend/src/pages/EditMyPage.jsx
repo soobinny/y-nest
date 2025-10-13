@@ -9,6 +9,7 @@ export default function EditMyPage() {
     income_band: "",
     region: "",
     is_homeless: false,
+    birthdate: "",
   });
   const [message, setMessage] = useState("");
 
@@ -19,11 +20,19 @@ export default function EditMyPage() {
         const res = await api.get("/users/me", {
           headers: { Authorization: localStorage.getItem("accessToken") },
         });
+        //birth 나이계산
+        const birth = res.data.birthdate;
+        const birthYear = birth ? new Date(birth).getFullYear() : null;
+        const currentYear = new Date().getFullYear();
+        const calculatedAge = birthYear ? currentYear - birthYear : "";
+
         setForm({
           age: res.data.age ?? "",
           income_band: res.data.income_band ?? "",
           region: res.data.region ?? "",
           is_homeless: res.data.is_homeless ?? false,
+          birthdate: res.data.birthdate ? res.data.birthdate.split("T")[0]
+    : "",
         });
       } catch {
         setMessage("로그인 후 이용해주세요.");
@@ -38,6 +47,18 @@ export default function EditMyPage() {
     setForm({ ...form, [name]: type === "checkbox" ? checked : value });
   };
 
+    // 🔹 생년월일 변경 시 자동으로 나이 계산
+  const handleBirthChange = (e) => {
+    const birth = e.target.value;
+    const birthYear = new Date(birth).getFullYear();
+    const currentYear = new Date().getFullYear();
+    setForm({
+      ...form,
+      birthdate: birth,
+      age: currentYear - birthYear,
+    });
+  };
+
   // 🔹 정보 수정 요청
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -49,6 +70,7 @@ export default function EditMyPage() {
           income_band: form.income_band || null,
           region: form.region || null,
           is_homeless: form.is_homeless,
+          birthdate: form.birthdate || null,
         },
         {
           headers: { Authorization: localStorage.getItem("accessToken") },
@@ -77,15 +99,26 @@ export default function EditMyPage() {
         <h2 style={styles.title}>내 정보 수정</h2>
 
         <form onSubmit={handleSubmit} style={styles.form}>
-          {/* 나이 */}
+          {/* 생년월일 */}
           <input
-            type="number"
-            name="age"
-            placeholder="나이"
-            value={form.age}
-            onChange={handleChange}
+            type="date"
+            name="birthdate"
+            value={form.birthdate || ""}
+            onChange={handleBirthChange}
             style={styles.input}
           />
+
+          {/* 나이 */}
+          <input
+            type="text"
+            name="age"
+            placeholder="생년월일을 선택해주세요"
+            value={form.age}
+            onChange={handleChange}
+            readOnly
+            style={{ ...styles.input, backgroundColor: "#f4f4f4" }}
+          />
+
 
           {/* 소득 구간 */}
           <select
