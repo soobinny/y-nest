@@ -5,6 +5,7 @@ import com.example.capstonedesign.common.exception.ErrorCode;
 import com.example.capstonedesign.domain.users.config.JwtTokenProvider;
 import com.example.capstonedesign.domain.users.config.PasswordEncoder;
 import com.example.capstonedesign.domain.users.dto.request.*;
+import com.example.capstonedesign.domain.users.dto.response.FindIdResponse;
 import com.example.capstonedesign.domain.users.dto.response.TokenResponse;
 import com.example.capstonedesign.domain.users.dto.response.UsersResponse;
 import com.example.capstonedesign.domain.users.entity.Users;
@@ -13,6 +14,7 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -161,6 +163,55 @@ public class UsersController {
         Users me = resolveUserFromPrincipal(principal);
         String msg = usersService.changePassword(me.getEmail(), req.currentPassword(), req.newPassword());
         return ResponseEntity.ok(msg);
+    }
+
+    /**
+     * 아이디(이메일) 찾기
+     * - 이름/지역으로 활성 계정의 마스킹된 이메일 반환
+     */
+    @Operation(
+            summary = "아이디(이메일) 찾기",
+            description = "이름과 지역으로 활성 계정의 마스킹된 이메일을 반환합니다."
+    )
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "조회 성공",
+                    content = @Content(schema = @Schema(implementation = FindIdResponse.class))),
+            @ApiResponse(responseCode = "404", description = "일치 사용자 없음",
+                    content = @Content(schema = @Schema(implementation = UsersController.ApiError.class))) // ⬅️ 추가
+    })
+    @PostMapping("/find-id")
+    public ResponseEntity<FindIdResponse> findId(@Valid @RequestBody FindIdRequest req) {
+        return ResponseEntity.ok(usersService.findIdsByNameAndRegion(req.name(), req.region()));
+    }
+
+    /**
+     * 비밀번호 재설정 요청
+     * - 사용자의 이메일로 비밀번호 재설정 토큰을 발송
+     * - 보안상 계정 존재 여부와 무관하게 항상 동일한 200 응답 반환
+     *
+     * @param req 비밀번호 재설정 요청 DTO (이메일 포함)
+     * @return 안내 메일 발송 안내 메시지
+     */
+    @Operation(summary = "비밀번호 재설정 요청", description = "이메일로 재설정 토큰을 전송합니다. (항상 200 응답)")
+    @PostMapping("/password-reset/request")
+    public ResponseEntity<String> requestPasswordReset(@Valid @RequestBody PasswordResetRequest req) {
+        usersService.requestPasswordReset(req.email());
+        // 존재 여부와 무관하게 동일 응답 → 계정 열거 방지
+        return ResponseEntity.ok("비밀번호 재설정 안내 메일을 확인해 주세요.");
+    }
+
+    /**
+     * 비밀번호 재설정 확정
+     * - 사용자가 이메일로 받은 토큰을 검증한 뒤 새 비밀번호로 교체
+     *
+     * @param req 비밀번호 재설정 확정 요청 DTO (토큰, 새 비밀번호 포함)
+     * @return 비밀번호 재설정 완료 메시지
+     */
+    @Operation(summary = "비밀번호 재설정 확정", description = "토큰 검증 후 새 비밀번호로 변경합니다.")
+    @PostMapping("/password-reset/confirm")
+    public ResponseEntity<String> confirmPasswordReset(@Valid @RequestBody PasswordResetConfirmRequest req) {
+        usersService.confirmPasswordReset(req.token(), req.newPassword());
+        return ResponseEntity.ok("비밀번호가 재설정되었습니다.");
     }
 
     /**

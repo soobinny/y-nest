@@ -31,6 +31,8 @@ public class SecurityConfig {
                         .requestMatchers(
                                 "/users/signup",
                                 "/users/login",
+                                "/users/find-id",
+                                "/users/password-reset/**",
                                 "/v3/api-docs/**",
                                 "/swagger-ui.html", "/swagger-ui/**",
                                 "/error" // 에러 페이지 접근 허용(로그에 뜨던 /error 403 방지용)
