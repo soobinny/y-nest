@@ -4,6 +4,7 @@ import jakarta.persistence.*;
 import lombok.*;
 
 import java.time.Instant;
+import java.time.LocalDate;
 
 /**
  * Users 엔티티
@@ -49,6 +50,9 @@ public class Users {
     /** 무주택 여부 (기본값 false) */
     @Column(nullable = false)
     private Boolean is_homeless = false;
+
+    @Column(name = "birthdate")
+    private LocalDate birthdate;
 
     /** 사용자 역할 (기본값 USER, ENUM: USER/OWNER) */
     @Enumerated(EnumType.STRING)

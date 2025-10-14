@@ -51,14 +51,16 @@ export default function SignupPage() {
       const payload = {
         email: form.email,
         password: form.password,
+        name: form.name,
         age: form.age ? Number(form.age) : null,
         income_band: form.income_band || null,
         region: `${form.province} ${form.city}` || null,
         is_homeless: form.is_homeless,
         role: "USER",
+        birthdate: form.birthdate,
       };
       await api.post("/users/signup", payload);
-      alert("회원가입이 완료되었습니다!");
+      alert("회원가입이 완료되었습니다.");
       window.location.href = "/login";
     } catch {
       setMessage("회원가입 중 오류가 발생했습니다.");

@@ -124,8 +124,9 @@ const styles = {
     transform: "scale(1)",
   },
   message: {
-    marginTop: 10,
+    marginTop: 20,
+    marginBottom: -10,
     textAlign: "center",
-    color: "#888",
+    color: "#ff0400ac",
   },
 };

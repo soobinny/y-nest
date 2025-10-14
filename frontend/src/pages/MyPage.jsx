@@ -64,8 +64,18 @@ export default function MyPage() {
         <div style={styles.section}>
           <h3 style={styles.sectionTitle}>📦 기본 정보</h3>
           <div style={styles.row}>
+            <span style={styles.label}>이름</span>
+            <span style={styles.value}>{user.name}</span>
+          </div>
+          <div style={styles.row}>
             <span style={styles.label}>이메일</span>
             <span style={styles.value}>{user.email}</span>
+          </div>
+          <div style={styles.row}>
+            <span style={styles.label}>생년월일</span>
+            <span style={styles.value}>
+              {user.birthdate ? user.birthdate.split("T")[0] : "미입력"}
+            </span>
           </div>
           <div style={styles.row}>
             <span style={styles.label}>나이</span>
@@ -85,7 +95,7 @@ export default function MyPage() {
             <span style={styles.value}>{user.region ?? "미입력"}</span>
           </div>
           <div style={styles.row}>
-            <span style={styles.label}>주택 상태</span>
+            <span style={styles.label}>주택</span>
             <span style={styles.value}>
               {user.is_homeless ? "무주택" : "주택 보유"}
             </span>
@@ -107,7 +117,7 @@ export default function MyPage() {
           {/* 버튼 */}
           <button
             style={styles.editBtn}
-            onClick={() => alert("내 정보 수정 페이지로 이동 예정")}
+            onClick={() => (window.location.href = "/mypage/edit")}
             onMouseEnter={(e) => (e.target.style.transform = "scale(1.03)")}
             onMouseLeave={(e) => (e.target.style.transform = "scale(1)")}
             onMouseDown={(e) => (e.target.style.transform = "scale(0.96)")}

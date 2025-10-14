@@ -14,6 +14,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.time.Instant;
+import java.time.LocalDate;
 
 /**
  * UsersService
@@ -53,10 +54,12 @@ public class UsersService {
         u.setRegion(req.region());
         u.setIs_homeless(req.is_homeless() != null ? req.is_homeless() : false);
         u.setRole(req.role() != null ? req.role() : UserRole.USER);
+        u.setBirthdate(req.birthdate()); 
 
         Users saved = usersRepository.save(u);
         return toResponse(saved);
-    }
+        }
+
 
     /**
      * Users 엔티티 → UsersResponse DTO 변환
@@ -69,7 +72,8 @@ public class UsersService {
                 u.getAge(),
                 u.getIncome_band(),
                 u.getRegion(),
-                u.getIs_homeless(),
+                u.getIs_homeless(),                
+                u.getBirthdate(),
                 u.getRole()
         );
     }
@@ -109,6 +113,7 @@ public class UsersService {
         if (req.income_band() != null) u.setIncome_band(req.income_band());
         if (req.region() != null) u.setRegion(req.region());
         if (req.is_homeless() != null) u.setIs_homeless(req.is_homeless());
+        if (req.birthdate() != null) u.setBirthdate(req.birthdate());
 
         Users saved = usersRepository.save(u);
         return toResponse(saved);
