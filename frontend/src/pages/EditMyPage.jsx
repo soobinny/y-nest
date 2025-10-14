@@ -21,7 +21,7 @@ export default function EditMyPage() {
   });
   const [passwordError, setPasswordError] = useState("");
 
-  // 🔹 사용자 정보 불러오기
+  // 사용자 정보 불러오기
   useEffect(() => {
     const fetchUser = async () => {
       try {
@@ -51,13 +51,13 @@ export default function EditMyPage() {
     fetchUser();
   }, []);
 
-  // 🔹 입력 변경 처리
+  // 입력 변경 처리
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
     setForm({ ...form, [name]: type === "checkbox" ? checked : value });
   };
 
-  // 🔹 생년월일 변경 시 자동으로 나이 계산
+  // 생년월일 변경 시 자동으로 나이 계산
   const handleBirthChange = (e) => {
     const birth = e.target.value;
     const birthYear = new Date(birth).getFullYear();
@@ -69,7 +69,7 @@ export default function EditMyPage() {
     });
   };
 
-  // 🔹 비밀번호 입력 처리 및 유효성 검사
+  // 비밀번호 입력 처리 및 유효성 검사
   const handlePasswordInput = (e) => {
     const { name, value } = e.target;
     setPasswordForm({ ...passwordForm, [name]: value });
@@ -91,7 +91,7 @@ export default function EditMyPage() {
     }
   };
 
-  // 🔹 수정 완료 (정보 + 비밀번호 동시 처리)
+  // 수정 완료 (정보 + 비밀번호 동시 처리)
   const handleSubmit = async (e) => {
     e.preventDefault();
 
@@ -102,7 +102,7 @@ export default function EditMyPage() {
     const hasNew = newPassword?.trim().length > 0;
     const hasConfirm = confirmPassword?.trim().length > 0;
 
-    // 🔸 비밀번호 폼이 열려있다면, 입력 상태를 먼저 검사
+    // 비밀번호 폼이 열려있다면, 입력 상태를 먼저 검사
     if (showPasswordForm) {
       if (hasCurrent || hasNew || hasConfirm) {
         if (!hasCurrent) {
@@ -135,7 +135,7 @@ export default function EditMyPage() {
       }
     }
 
-    // 🔸 정보 수정 (PUT)
+    // 정보 수정 (PUT)
     try {
       await api.put(
         "/users/me",
@@ -157,7 +157,7 @@ export default function EditMyPage() {
       return;
     }
 
-    // 🔸 비밀번호 변경 (3칸 다 채워졌을 때만)
+    // 비밀번호 변경
     if (showPasswordForm && hasCurrent && hasNew && hasConfirm) {
       try {
         await api.patch(
@@ -169,8 +169,8 @@ export default function EditMyPage() {
             },
           }
         );
-        setPasswordError("비밀번호가 성공적으로 변경되었습니다.");
         alert("정보가 성공적으로 수정되었습니다.");
+        window.location.href = "/mypage";
         return;
       } catch {
         setPasswordError("현재 비밀번호가 일치하지 않습니다.");
@@ -178,8 +178,9 @@ export default function EditMyPage() {
       }
     }
 
-    // 🔸 비밀번호 변경 없이 정보만 수정 시
+    // 비밀번호 변경 없이 정보만 수정 시
     alert("정보가 성공적으로 수정되었습니다.");
+    window.location.href = "/mypage";
   };
 
   if (!form) return <p style={styles.loading}>로그인 완료 후 접속해주세요.</p>;
@@ -277,6 +278,7 @@ export default function EditMyPage() {
           <input
             type="text"
             name="age"
+            placeholder="생년월일을 입력해주세요."
             value={form.age ? `나이: ${form.age}` : ""}
             readOnly
             style={{ ...styles.input, backgroundColor: "#f4f4f4" }}
@@ -343,7 +345,13 @@ const styles = {
     borderRadius: 8,
     fontSize: "14px",
   },
-  errorText: { color: "#e74c3c", fontSize: 13, marginTop: -8 },
+  errorText: {
+    color: "#e74c3c",
+    fontSize: 13,
+    marginTop: -5,
+    marginBottom: 0,
+    marginLeft: 5,
+  },
   successText: { color: "#6ecd94", fontSize: 13, marginTop: -4 },
   checkboxLabel: {
     display: "flex",
@@ -367,12 +375,14 @@ const styles = {
   passwordToggleBtn: {
     backgroundColor: "#9ed8b5",
     color: "white",
+    fontWeight: "bold",
     border: "none",
     borderRadius: 8,
     padding: "10px",
     marginBottom: "10px",
     cursor: "pointer",
     transition: "all 0.2s ease",
+    marginBottom: 0,
   },
   passwordForm: {
     display: "flex",
