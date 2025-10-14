@@ -60,7 +60,7 @@ export default function SignupPage() {
         birthdate: form.birthdate,
       };
       await api.post("/users/signup", payload);
-      alert("회원가입이 완료되었습니다!");
+      alert("회원가입이 완료되었습니다.");
       window.location.href = "/login";
     } catch {
       setMessage("회원가입 중 오류가 발생했습니다.");

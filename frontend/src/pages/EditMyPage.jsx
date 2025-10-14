@@ -13,16 +13,23 @@ export default function EditMyPage() {
     is_homeless: false,
     birthdate: "",
   });
-  const [message, setMessage] = useState("");
+  const [showPasswordForm, setShowPasswordForm] = useState(false);
+  const [passwordForm, setPasswordForm] = useState({
+    currentPassword: "",
+    newPassword: "",
+    confirmPassword: "",
+  });
+  const [passwordError, setPasswordError] = useState("");
 
   // 🔹 사용자 정보 불러오기
   useEffect(() => {
     const fetchUser = async () => {
       try {
         const res = await api.get("/users/me", {
-          headers: { Authorization: localStorage.getItem("accessToken") },
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("accessToken")}`,
+          },
         });
-        //birth 나이계산
         const birth = res.data.birthdate;
         const birthYear = birth ? new Date(birth).getFullYear() : null;
         const currentYear = new Date().getFullYear();
@@ -31,14 +38,14 @@ export default function EditMyPage() {
         setForm({
           name: res.data.name ?? "",
           email: res.data.email ?? "",
-          age: res.data.age ?? "",
+          age: calculatedAge ?? "",
           income_band: res.data.income_band ?? "",
           region: res.data.region ?? "",
           is_homeless: res.data.is_homeless ?? false,
           birthdate: res.data.birthdate ? res.data.birthdate.split("T")[0] : "",
         });
       } catch {
-        setMessage("로그인 후 이용해주세요.");
+        alert("로그인 후 이용해주세요.");
       }
     };
     fetchUser();
@@ -62,9 +69,73 @@ export default function EditMyPage() {
     });
   };
 
-  // 🔹 정보 수정 요청
+  // 🔹 비밀번호 입력 처리 및 유효성 검사
+  const handlePasswordInput = (e) => {
+    const { name, value } = e.target;
+    setPasswordForm({ ...passwordForm, [name]: value });
+
+    if (name === "newPassword") {
+      const isValid =
+        value.length >= 8 &&
+        /[A-Za-z]/.test(value) &&
+        /\d/.test(value) &&
+        /[^A-Za-z0-9]/.test(value);
+
+      if (value && !isValid) {
+        setPasswordError(
+          "비밀번호는 8자 이상, 영문자/숫자/특수문자를 각각 1자 이상 포함해야 합니다."
+        );
+      } else {
+        setPasswordError("");
+      }
+    }
+  };
+
+  // 🔹 수정 완료 (정보 + 비밀번호 동시 처리)
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    setPasswordError("");
+
+    const { currentPassword, newPassword, confirmPassword } = passwordForm;
+    const hasCurrent = currentPassword?.trim().length > 0;
+    const hasNew = newPassword?.trim().length > 0;
+    const hasConfirm = confirmPassword?.trim().length > 0;
+
+    // 🔸 비밀번호 폼이 열려있다면, 입력 상태를 먼저 검사
+    if (showPasswordForm) {
+      if (hasCurrent || hasNew || hasConfirm) {
+        if (!hasCurrent) {
+          setPasswordError("현재 비밀번호를 입력해주세요.");
+          return;
+        }
+        if (!hasNew) {
+          setPasswordError("새 비밀번호를 입력해주세요.");
+          return;
+        }
+        if (!hasConfirm) {
+          setPasswordError("비밀번호를 모두 입력해주세요.");
+          return;
+        }
+        if (newPassword !== confirmPassword) {
+          setPasswordError("새 비밀번호가 일치하지 않습니다.");
+          return;
+        }
+        const isValid =
+          newPassword.length >= 8 &&
+          /[A-Za-z]/.test(newPassword) &&
+          /\d/.test(newPassword) &&
+          /[^A-Za-z0-9]/.test(newPassword);
+        if (!isValid) {
+          setPasswordError(
+            "비밀번호는 8자 이상, 영문자/숫자/특수문자를 각각 1자 이상 포함해야 합니다."
+          );
+          return;
+        }
+      }
+    }
+
+    // 🔸 정보 수정 (PUT)
     try {
       await api.put(
         "/users/me",
@@ -76,56 +147,126 @@ export default function EditMyPage() {
           birthdate: form.birthdate || null,
         },
         {
-          headers: { Authorization: localStorage.getItem("accessToken") },
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("accessToken")}`,
+          },
         }
       );
-      alert("내 정보가 성공적으로 수정되었습니다.");
-      window.location.href = "/mypage";
     } catch {
       alert("정보 수정 중 오류가 발생했습니다.");
+      return;
     }
+
+    // 🔸 비밀번호 변경 (3칸 다 채워졌을 때만)
+    if (showPasswordForm && hasCurrent && hasNew && hasConfirm) {
+      try {
+        await api.patch(
+          "/users/me/password",
+          { currentPassword, newPassword },
+          {
+            headers: {
+              Authorization: `Bearer ${localStorage.getItem("accessToken")}`,
+            },
+          }
+        );
+        setPasswordError("비밀번호가 성공적으로 변경되었습니다.");
+        alert("정보가 성공적으로 수정되었습니다.");
+        return;
+      } catch {
+        setPasswordError("현재 비밀번호가 일치하지 않습니다.");
+        return;
+      }
+    }
+
+    // 🔸 비밀번호 변경 없이 정보만 수정 시
+    alert("정보가 성공적으로 수정되었습니다.");
   };
 
   if (!form) return <p style={styles.loading}>로그인 완료 후 접속해주세요.</p>;
 
   return (
     <AppLayout>
-      <div
-        style={styles.card}
-        onMouseEnter={(e) =>
-          (e.currentTarget.style.boxShadow = "0 8px 20px rgba(0,0,0,0.12)")
-        }
-        onMouseLeave={(e) =>
-          (e.currentTarget.style.boxShadow = "0 4px 14px rgba(0,0,0,0.08)")
-        }
-      >
+      <div style={styles.card}>
         <h2 style={styles.title}>내 정보 수정</h2>
 
         <form onSubmit={handleSubmit} style={styles.form}>
-          {/* 이름 */}
           <input
             type="text"
             name="name"
             value={form.name || ""}
             readOnly
-            style={{
-              ...styles.input,
-              backgroundColor: "#f4f4f4",
-            }}
+            style={{ ...styles.input, backgroundColor: "#f4f4f4" }}
           />
-          {/* 이메일 */}
           <input
             type="text"
             name="email"
             value={form.email || ""}
             readOnly
-            style={{
-              ...styles.input,
-              backgroundColor: "#f4f4f4",
-            }}
+            style={{ ...styles.input, backgroundColor: "#f4f4f4" }}
           />
 
-          {/* 생년월일 */}
+          {/* 비밀번호 변경 버튼 */}
+          <button
+            type="button"
+            style={styles.passwordToggleBtn}
+            onClick={() => setShowPasswordForm(!showPasswordForm)}
+          >
+            비밀번호 변경
+          </button>
+
+          {/* 비밀번호 폼 */}
+          {showPasswordForm && (
+            <div style={styles.passwordForm}>
+              <input
+                type="password"
+                name="currentPassword"
+                value={passwordForm.currentPassword}
+                onChange={handlePasswordInput}
+                placeholder="현재 비밀번호"
+                style={styles.input}
+              />
+              {passwordError === "현재 비밀번호를 입력해주세요." && (
+                <p style={styles.errorText}>{passwordError}</p>
+              )}
+              {passwordError === "현재 비밀번호가 일치하지 않습니다." && (
+                <p style={styles.errorText}>{passwordError}</p>
+              )}
+
+              <input
+                type="password"
+                name="newPassword"
+                value={passwordForm.newPassword}
+                onChange={handlePasswordInput}
+                placeholder="새 비밀번호"
+                style={styles.input}
+              />
+              {passwordError === "새 비밀번호를 입력해주세요." && (
+                <p style={styles.errorText}>{passwordError}</p>
+              )}
+              {passwordError.includes("비밀번호는 8자 이상") && (
+                <p style={styles.errorText}>{passwordError}</p>
+              )}
+
+              <input
+                type="password"
+                name="confirmPassword"
+                value={passwordForm.confirmPassword}
+                onChange={handlePasswordInput}
+                placeholder="새 비밀번호 확인"
+                style={styles.input}
+              />
+              {passwordError === "비밀번호를 모두 입력해주세요." && (
+                <p style={styles.errorText}>{passwordError}</p>
+              )}
+              {passwordError === "새 비밀번호가 일치하지 않습니다." && (
+                <p style={styles.errorText}>{passwordError}</p>
+              )}
+              {passwordError === "비밀번호가 성공적으로 변경되었습니다." && (
+                <p style={styles.successText}>{passwordError}</p>
+              )}
+            </div>
+          )}
+
           <input
             type="date"
             name="birthdate"
@@ -133,19 +274,14 @@ export default function EditMyPage() {
             onChange={handleBirthChange}
             style={styles.input}
           />
-
-          {/* 나이 */}
           <input
             type="text"
             name="age"
-            placeholder="생년월일을 선택해주세요"
             value={form.age ? `나이: ${form.age}` : ""}
-            onChange={handleChange}
             readOnly
             style={{ ...styles.input, backgroundColor: "#f4f4f4" }}
           />
 
-          {/* 소득 구간 */}
           <select
             name="income_band"
             value={form.income_band}
@@ -159,13 +295,11 @@ export default function EditMyPage() {
             <option value="중위소득 300% 이하">중위소득 300% 이하</option>
           </select>
 
-          {/* 지역 선택 */}
           <RegionSelect
             value={form.region}
             onChange={(region) => setForm({ ...form, region })}
           />
 
-          {/* 무주택 여부 */}
           <label style={styles.checkboxLabel}>
             <input
               type="checkbox"
@@ -177,18 +311,10 @@ export default function EditMyPage() {
             무주택자입니다
           </label>
 
-          {/* 버튼 */}
-          <button
-            type="submit"
-            style={styles.button}
-            onMouseEnter={(e) => (e.target.style.transform = "scale(1.02)")}
-            onMouseLeave={(e) => (e.target.style.transform = "scale(1)")}
-          >
+          <button type="submit" style={styles.button}>
             수정 완료
           </button>
         </form>
-
-        {message && <p style={styles.message}>{message}</p>}
       </div>
     </AppLayout>
   );
@@ -217,6 +343,8 @@ const styles = {
     borderRadius: 8,
     fontSize: "14px",
   },
+  errorText: { color: "#e74c3c", fontSize: 13, marginTop: -8 },
+  successText: { color: "#6ecd94", fontSize: 13, marginTop: -4 },
   checkboxLabel: {
     display: "flex",
     alignItems: "center",
@@ -235,6 +363,21 @@ const styles = {
     cursor: "pointer",
     transition: "all 0.2s ease",
   },
-  message: { marginTop: 10, textAlign: "center", color: "#888" },
   loading: { textAlign: "center", marginTop: 80 },
+  passwordToggleBtn: {
+    backgroundColor: "#9ed8b5",
+    color: "white",
+    border: "none",
+    borderRadius: 8,
+    padding: "10px",
+    marginBottom: "10px",
+    cursor: "pointer",
+    transition: "all 0.2s ease",
+  },
+  passwordForm: {
+    display: "flex",
+    flexDirection: "column",
+    gap: 10,
+    animation: "fadeIn 0.3s ease-in-out",
+  },
 };
