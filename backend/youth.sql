@@ -32,13 +32,16 @@ CREATE TABLE products
 CREATE TABLE housing_announcements
 (
     id          INT AUTO_INCREMENT PRIMARY KEY,
-    product_id  INT NOT NULL,
+    product_id  INT NOT NULL UNIQUE,
     region_name VARCHAR(100),
     notice_date DATE,
     close_date  DATE,
-    status      VARCHAR(50),
-    category    VARCHAR(100),
-    FOREIGN KEY (product_id) REFERENCES products (id) ON DELETE CASCADE
+    status      VARCHAR(30),
+    category    VARCHAR(30),
+    created_at  TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at  TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    CONSTRAINT fk_housing_product
+        FOREIGN KEY (product_id) REFERENCES products (id) ON DELETE CASCADE
 );
 
 CREATE TABLE finance_companies
