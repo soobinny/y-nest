@@ -75,6 +75,20 @@ export default function LoginPage() {
         </form>
         {message && <p style={styles.message}>{message}</p>}
       </div>
+
+      {/* 로그인 하단 링크들 */}
+      <div style={styles.linkContainer}>
+        <span style={styles.link}>아이디 찾기</span>
+        <span style={styles.divider}>|</span>
+        <span style={styles.link}>비밀번호 찾기</span>
+        <span style={styles.divider}>|</span>
+        <span
+          style={{ ...styles.link}}
+          onClick={() => (window.location.href = "/signup")}
+        >
+          회원가입
+        </span>
+      </div>
     </AppLayout>
   );
 }
@@ -87,6 +101,7 @@ const styles = {
     padding: "40px 30px",
     transition: "all 0.25s ease",
     minWidth: "350px",
+    minHeight: "300px",
   },
   title: { textAlign: "center", marginBottom: 25, color: "#444" },
   form: { display: "flex", flexDirection: "column", gap: 14 },
@@ -122,11 +137,29 @@ const styles = {
     cursor: "pointer",
     transition: "all 0.1s ease",
     transform: "scale(1)",
+    marginTop: 10
   },
   message: {
     marginTop: 20,
     marginBottom: -10,
     textAlign: "center",
     color: "#ff0400ac",
+  },
+
+  linkContainer: {
+    display: "flex",
+    justifyContent: "center",
+    alignItems: "center",
+    gap: "10px",
+    marginTop: "-70px",
+    fontSize: "14px",
+    color: "#888",
+  },
+  link: {
+    cursor: "pointer",
+    transition: "color 0.2s",
+  },
+  divider: {
+    color: "#ccc",
   },
 };
