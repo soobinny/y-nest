@@ -190,6 +190,7 @@ const styles = {
     fontSize: "16px",
     justifyContent: "center",
     flex: 1,
+     marginLeft: 100,
   },
   link: {
     color: "#333",

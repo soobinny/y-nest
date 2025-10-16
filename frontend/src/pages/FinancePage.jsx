@@ -5,12 +5,13 @@ import AppLayout from "../components/AppLayout";
 export default function FinancePage() {
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [category, setCategory] = useState("DEPOSIT"); // 예금 기본
+  const [category, setCategory] = useState("DEPOSIT");
   const [keyword, setKeyword] = useState("");
+  const [sortOption, setSortOption] = useState("createdAt,desc");
 
   useEffect(() => {
     fetchProducts();
-  }, [category]);
+  }, [category, sortOption]);
 
   const fetchProducts = async () => {
     try {
@@ -19,7 +20,7 @@ export default function FinancePage() {
         params: {
           productType: category,
           keyword,
-          sort: "interestRate,desc",
+          sort: sortOption,
         },
       });
       setProducts(res.data.content || []);
@@ -34,33 +35,46 @@ export default function FinancePage() {
     <AppLayout>
       <div style={styles.page}>
         <div style={styles.card}>
+          {/* 제목 */}
           <h2 style={styles.title}>금융상품</h2>
 
-          {/* 카테고리 탭 */}
-          <div style={styles.tabs}>
-            {[
-              { key: "DEPOSIT", label: "예금" },
-              { key: "SAVING", label: "적금" },
-              { key: "LOAN", label: "대출" },
-            ].map((t) => (
-              <button
-                key={t.key}
-                onClick={() => setCategory(t.key)}
-                style={{
-                  ...styles.tab,
-                  ...(category === t.key ? styles.activeTab : {}),
-                }}
-              >
-                {t.label}
-              </button>
-            ))}
+          {/* 카테고리 탭 + 정렬 */}
+          <div style={styles.tabRow}>
+            <div style={styles.tabs}>
+              {[
+                { key: "DEPOSIT", label: "예금" },
+                { key: "SAVING", label: "적금" },
+                { key: "LOAN", label: "대출" },
+              ].map((t) => (
+                <button
+                  key={t.key}
+                  onClick={() => setCategory(t.key)}
+                  style={{
+                    ...styles.tab,
+                    ...(category === t.key ? styles.activeTab : {}),
+                  }}
+                >
+                  {t.label}
+                </button>
+              ))}
+            </div>
+
+            {/* 정렬 드롭다운 */}
+            <select
+              value={sortOption}
+              onChange={(e) => setSortOption(e.target.value)}
+              style={styles.sortSelect}
+            >
+              <option value="createdAt,desc">최신 등록순</option>
+              <option value="productName,asc">가나다순</option>
+            </select>
           </div>
 
           {/* 검색창 */}
           <div style={styles.searchBox}>
             <input
               type="text"
-              placeholder="상품명 또는 은행명 검색"
+              placeholder="상품명 검색"
               value={keyword}
               onChange={(e) => setKeyword(e.target.value)}
               style={styles.input}
@@ -136,10 +150,11 @@ export default function FinancePage() {
 const styles = {
   page: {
     background: "#fdfaf6",
-    minHeight: "100vh",
+    height: "100%",
     display: "flex",
     justifyContent: "center",
     padding: "80px 20px",
+    overflow: "visible",
   },
   card: {
     background: "#fff",
@@ -147,6 +162,7 @@ const styles = {
     boxShadow: "0 4px 14px rgba(0,0,0,0.08)",
     padding: "40px 35px",
     width: "100%",
+    height: "100%",
     maxWidth: "1000px",
   },
   title: {
@@ -155,10 +171,15 @@ const styles = {
     marginBottom: "25px",
     textAlign: "center",
   },
+  tabRow: {
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: "20px",
+  },
   tabs: {
     display: "flex",
     gap: "12px",
-    marginBottom: "20px",
   },
   tab: {
     background: "#f5f5f5",
@@ -173,6 +194,14 @@ const styles = {
     background: "#9ed8b5",
     color: "#fff",
     fontWeight: "600",
+  },
+  sortSelect: {
+    border: "1px solid #ddd",
+    borderRadius: "8px",
+    padding: "8px 12px",
+    fontSize: "14px",
+    background: "#fff",
+    cursor: "pointer",
   },
   searchBox: {
     display: "flex",
