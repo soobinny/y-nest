@@ -27,7 +27,7 @@ public class HousingAnnouncements {
     /** 기본 키 (자동 증가) */
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Integer id;
+    private Long id;
 
     /**
      * 연관된 상품 정보
