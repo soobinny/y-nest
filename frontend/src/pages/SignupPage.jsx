@@ -68,7 +68,7 @@ export default function SignupPage() {
   };
 
   return (
-    <AppLayout>
+    <AppLayout narrow>
       <div
         style={styles.card}
         onMouseEnter={(e) =>

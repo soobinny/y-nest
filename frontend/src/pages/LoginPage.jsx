@@ -23,7 +23,7 @@ export default function LoginPage() {
   };
 
   return (
-    <AppLayout>
+    <AppLayout narrow>
       <div
         style={styles.card}
         onMouseEnter={(e) =>
