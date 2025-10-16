@@ -41,7 +41,9 @@ export default function AppLayout({ children, narrow = false }) {
       <header style={styles.header}>
         <div style={styles.navContainer}>
           <nav style={styles.nav}>
-            <a href="/home" style={styles.link}>홈</a>
+            <a href="/home" style={styles.link}>
+              홈
+            </a>
 
             {/* 주거공고 */}
             <div
@@ -49,7 +51,9 @@ export default function AppLayout({ children, narrow = false }) {
               onMouseEnter={() => setActiveDropdown("housing")}
               onMouseLeave={() => setActiveDropdown(null)}
             >
-              <a href="/housing" style={styles.link}>주거공고</a>
+              <a href="/housing" style={styles.link}>
+                주거공고
+              </a>
               {activeDropdown === "housing" && (
                 <div style={styles.dropdown}>
                   {[
@@ -58,7 +62,11 @@ export default function AppLayout({ children, narrow = false }) {
                     { name: "매입임대", link: "/housing?type=maeip" },
                     { name: "행복주택", link: "/housing?type=happy" },
                   ].map((item) => (
-                    <a key={item.name} href={item.link} style={styles.dropdownItem}>
+                    <a
+                      key={item.name}
+                      href={item.link}
+                      style={styles.dropdownItem}
+                    >
                       {item.name}
                     </a>
                   ))}
@@ -72,7 +80,9 @@ export default function AppLayout({ children, narrow = false }) {
               onMouseEnter={() => setActiveDropdown("finance")}
               onMouseLeave={() => setActiveDropdown(null)}
             >
-              <a href="/finance" style={styles.link}>금융상품</a>
+              <a href="/finance" style={styles.link}>
+                금융상품
+              </a>
               {activeDropdown === "finance" && (
                 <div style={styles.dropdown}>
                   {[
@@ -80,7 +90,11 @@ export default function AppLayout({ children, narrow = false }) {
                     { name: "적금", link: "/finance?type=saving" },
                     { name: "대출", link: "/finance?type=loan" },
                   ].map((item) => (
-                    <a key={item.name} href={item.link} style={styles.dropdownItem}>
+                    <a
+                      key={item.name}
+                      href={item.link}
+                      style={styles.dropdownItem}
+                    >
                       {item.name}
                     </a>
                   ))}
@@ -190,7 +204,7 @@ const styles = {
     fontSize: "16px",
     justifyContent: "center",
     flex: 1,
-     marginLeft: 100,
+    marginLeft: 100,
   },
   link: {
     color: "#333",
@@ -205,6 +219,7 @@ const styles = {
     borderRadius: "8px",
     padding: "8px 16px",
     fontSize: "14px",
+    fontWeight: "bold",
     cursor: "pointer",
     transition: "background 0.2s ease",
   },

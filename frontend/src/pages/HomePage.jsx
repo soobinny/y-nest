@@ -44,9 +44,21 @@ export default function HomePage() {
   };
 
   const noticeList = [
-    { type: "금융", title: "청년도약적금 금리 5.5%로 상향 조정", link: "/finance" },
-    { type: "주거", title: "행복주택 4차 모집이 시작되었습니다", link: "/housing" },
-    { type: "정책", title: "청년월세지원 2025년 1차 신청 일정 안내", link: "/housing" },
+    {
+      type: "금융",
+      title: "청년도약적금 금리 5.5%로 상향 조정",
+      link: "/finance",
+    },
+    {
+      type: "주거",
+      title: "행복주택 4차 모집이 시작되었습니다",
+      link: "/housing",
+    },
+    {
+      type: "정책",
+      title: "청년월세지원 2025년 1차 신청 일정 안내",
+      link: "/housing",
+    },
     { type: "주거", title: "청년 전세임대 접수 마감 D-2", link: "/housing" },
   ];
 
@@ -61,7 +73,9 @@ export default function HomePage() {
       <header style={styles.header}>
         <div style={styles.navContainer}>
           <nav style={styles.nav}>
-            <a href="/" style={styles.link}>홈</a>
+            <a href="/" style={styles.link}>
+              홈
+            </a>
 
             {/* 주거공고 */}
             <div
@@ -69,7 +83,9 @@ export default function HomePage() {
               onMouseEnter={() => setActiveDropdown("housing")}
               onMouseLeave={() => setActiveDropdown(null)}
             >
-              <a href="/housing" style={styles.link}>주거공고</a>
+              <a href="/housing" style={styles.link}>
+                주거공고
+              </a>
               {activeDropdown === "housing" && (
                 <div style={styles.dropdown}>
                   {[
@@ -78,7 +94,11 @@ export default function HomePage() {
                     { name: "매입임대", link: "/housing?type=maeip" },
                     { name: "행복주택", link: "/housing?type=happy" },
                   ].map((item) => (
-                    <a key={item.name} href={item.link} style={styles.dropdownItem}>
+                    <a
+                      key={item.name}
+                      href={item.link}
+                      style={styles.dropdownItem}
+                    >
                       {item.name}
                     </a>
                   ))}
@@ -92,7 +112,9 @@ export default function HomePage() {
               onMouseEnter={() => setActiveDropdown("finance")}
               onMouseLeave={() => setActiveDropdown(null)}
             >
-              <a href="/finance" style={styles.link}>금융상품</a>
+              <a href="/finance" style={styles.link}>
+                금융상품
+              </a>
               {activeDropdown === "finance" && (
                 <div style={styles.dropdown}>
                   {[
@@ -100,7 +122,11 @@ export default function HomePage() {
                     { name: "적금", link: "/finance?type=saving" },
                     { name: "대출", link: "/finance?type=loan" },
                   ].map((item) => (
-                    <a key={item.name} href={item.link} style={styles.dropdownItem}>
+                    <a
+                      key={item.name}
+                      href={item.link}
+                      style={styles.dropdownItem}
+                    >
                       {item.name}
                     </a>
                   ))}
@@ -183,7 +209,9 @@ export default function HomePage() {
           onClick={() => (window.location.href = "/finance")}
         >
           <h2 style={styles.cardTitle}>💰 금융상품</h2>
-          <p style={styles.cardDesc}>청년 맞춤 적금, 통장, 대출 혜택을 한눈에!</p>
+          <p style={styles.cardDesc}>
+            청년 맞춤 적금, 통장, 대출 혜택을 한눈에!
+          </p>
         </div>
 
         <div
@@ -199,7 +227,9 @@ export default function HomePage() {
           onClick={() => (window.location.href = "/housing")}
         >
           <h2 style={styles.cardTitle}>🏠 주거공고</h2>
-          <p style={styles.cardDesc}>청년 전세임대, 행복주택 등 최신 공고 확인</p>
+          <p style={styles.cardDesc}>
+            청년 전세임대, 행복주택 등 최신 공고 확인
+          </p>
         </div>
       </section>
 
@@ -255,9 +285,7 @@ export default function HomePage() {
       </section>
 
       {/* 푸터 */}
-      <footer style={styles.footer}>
-        © 2025 Y-Nest
-      </footer>
+      <footer style={styles.footer}>© 2025 Y-Nest</footer>
     </div>
   );
 }
@@ -310,6 +338,7 @@ const styles = {
     borderRadius: "8px",
     padding: "8px 16px",
     fontSize: "14px",
+    fontWeight: "bold",
     cursor: "pointer",
     transition: "background 0.2s ease",
   },

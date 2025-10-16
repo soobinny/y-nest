@@ -9,6 +9,12 @@ export default function FinancePage() {
   const [keyword, setKeyword] = useState("");
   const [sortOption, setSortOption] = useState("createdAt,desc");
 
+  // 새 필터 상태
+  const [dropdownOpen, setDropdownOpen] = useState(false);
+  const [selectedBanks, setSelectedBanks] = useState([]);
+  const [minRate, setMinRate] = useState(0);
+  const [maxRate, setMaxRate] = useState(10);
+
   useEffect(() => {
     fetchProducts();
   }, [category, sortOption]);
@@ -21,6 +27,9 @@ export default function FinancePage() {
           productType: category,
           keyword,
           sort: sortOption,
+          banks: selectedBanks,
+          minRate,
+          maxRate,
         },
       });
       setProducts(res.data.content || []);
@@ -31,116 +40,237 @@ export default function FinancePage() {
     }
   };
 
+  const handleBankToggle = (bank, checked) => {
+    setSelectedBanks((prev) =>
+      checked ? [...prev, bank] : prev.filter((b) => b !== bank)
+    );
+  };
+
   return (
     <AppLayout>
       <div style={styles.page}>
-        <div style={styles.card}>
-          {/* 제목 */}
-          <h2 style={styles.title}>금융상품</h2>
+        {/* 🔹 왼쪽 필터 사이드바 */}
+        <aside style={styles.sidebar}>
+          <h3 style={styles.filterTitle}>조건 검색</h3>
 
-          {/* 카테고리 탭 + 정렬 */}
-          <div style={styles.tabRow}>
-            <div style={styles.tabs}>
-              {[
-                { key: "DEPOSIT", label: "예금" },
-                { key: "SAVING", label: "적금" },
-                { key: "LOAN", label: "대출" },
-              ].map((t) => (
-                <button
-                  key={t.key}
-                  onClick={() => setCategory(t.key)}
-                  style={{
-                    ...styles.tab,
-                    ...(category === t.key ? styles.activeTab : {}),
-                  }}
-                >
-                  {t.label}
-                </button>
-              ))}
-            </div>
-
-            {/* 정렬 드롭다운 */}
-            <select
-              value={sortOption}
-              onChange={(e) => setSortOption(e.target.value)}
-              style={styles.sortSelect}
+          {/* 은행 선택 */}
+          <div style={styles.filterGroup}>
+            <div
+              style={{ ...styles.filterLabel, cursor: "pointer" }}
+              onClick={() => setDropdownOpen(!dropdownOpen)}
             >
-              <option value="createdAt,desc">최신 등록순</option>
-              <option value="productName,asc">가나다순</option>
-            </select>
-          </div>
-
-          {/* 검색창 */}
-          <div style={styles.searchBox}>
-            <input
-              type="text"
-              placeholder="상품명 검색"
-              value={keyword}
-              onChange={(e) => setKeyword(e.target.value)}
-              style={styles.input}
-            />
-            <button onClick={fetchProducts} style={styles.searchBtn}>
-              검색
-            </button>
-          </div>
-
-          {/* 결과 수 */}
-          <p style={styles.resultCount}>총 {products.length}개</p>
-
-          {/* 리스트 */}
-          {loading ? (
-            <p style={{ textAlign: "center", color: "#777" }}>불러오는 중...</p>
-          ) : (
-            <div style={styles.list}>
-              {products.length === 0 ? (
-                <p style={{ textAlign: "center", color: "#888" }}>
-                  해당 카테고리에 상품이 없습니다.
-                </p>
-              ) : (
-                products.map((item) => (
-                  <div
-                    key={item.id}
-                    style={styles.item}
-                    onMouseEnter={(e) =>
-                      (e.currentTarget.style.boxShadow =
-                        "0 6px 16px rgba(0,0,0,0.1)")
-                    }
-                    onMouseLeave={(e) =>
-                      (e.currentTarget.style.boxShadow =
-                        "0 2px 8px rgba(0,0,0,0.04)")
-                    }
-                  >
-                    <div style={styles.itemHeader}>
-                      <h3 style={styles.itemTitle}>{item.productName}</h3>
-                      <span style={styles.provider}>{item.provider}</span>
-                    </div>
-                    <p style={styles.condition}>
-                      {item.joinCondition || "가입 조건 없음"}
-                    </p>
-                    <div style={styles.infoRow}>
-                      <span>금리: {item.interestRate ?? "-"}%</span>
-                      <span>
-                        최소 예치금:{" "}
-                        {item.minDeposit
-                          ? item.minDeposit.toLocaleString() + "원"
-                          : "-"}
-                      </span>
-                    </div>
-                    {item.detailUrl && (
-                      <a
-                        href={item.detailUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        style={styles.link}
-                      >
-                        자세히 보기 →
-                      </a>
-                    )}
-                  </div>
-                ))
-              )}
+              은행 선택 ▾
             </div>
-          )}
+
+            {dropdownOpen && (
+              <div style={styles.dropdownList}>
+                {[
+                  "국민은행",
+                  "신한은행",
+                  "우리은행",
+                  "하나은행",
+                  "농협은행",
+                  "IBK기업은행",
+                ].map((bank) => (
+                  <label key={bank} style={styles.checkboxLabel}>
+                    <input
+                      type="checkbox"
+                      checked={selectedBanks.includes(bank)}
+                      onChange={(e) => handleBankToggle(bank, e.target.checked)}
+                    />
+                    {bank}
+                  </label>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* 금리 슬라이더 */}
+          <div style={styles.filterGroup}>
+            <label style={styles.filterLabel}>금리 범위</label>
+
+            <div style={styles.rangeContainer}>
+              {/* 최소 금리 */}
+              <input
+                type="range"
+                min="0"
+                max="10"
+                step="0.1"
+                value={minRate}
+                onChange={(e) => {
+                  const newMin = parseFloat(e.target.value);
+                  if (newMin <= maxRate - 0.1) setMinRate(newMin);
+                }}
+                style={{
+                  ...styles.rangeInput,
+                  position: "absolute",
+                  top: 12,
+                  left: 0,
+                  zIndex: minRate > 9 ? 5 : 3,
+                }}
+              />
+
+              {/* 최대 금리 */}
+              <input
+                type="range"
+                min="0"
+                max="10"
+                step="0.1"
+                value={maxRate}
+                onChange={(e) => {
+                  const newMax = parseFloat(e.target.value);
+                  if (newMax >= minRate + 0.1) setMaxRate(newMax);
+                }}
+                style={{
+                  ...styles.rangeInput,
+                  position: "absolute",
+                  top: 12,
+                  left: 0,
+                  zIndex: 4,
+                }}
+              />
+
+              {/* 트랙 강조 */}
+              <div
+                style={{
+                  position: "absolute",
+                  top: "14px",
+                  left: 0,
+                  height: "6px",
+                  width: "100%",
+                  borderRadius: "5px",
+                  background: `linear-gradient(to right, 
+                    #ddd ${((minRate - 0) / 10) * 100}%, 
+                    #9ed8b5 ${((minRate - 0) / 10) * 100}%, 
+                    #9ed8b5 ${((maxRate - 0) / 10) * 100}%, 
+                    #ddd ${((maxRate - 0) / 10) * 100}%)`,
+                  pointerEvents: "none",
+                }}
+              />
+            </div>
+
+            <p style={styles.rateText}>
+              금리 {minRate}% ~ {maxRate}% 사이 상품 보기
+            </p>
+          </div>
+
+          {/* 검색 버튼 */}
+          <button onClick={fetchProducts} style={styles.filterButton}>
+            선택된 조건 검색하기
+          </button>
+        </aside>
+
+        {/* 오른쪽 금융상품 카드 영역 */}
+        <div style={styles.cardContainer}>
+          <div style={styles.card}>
+            <h2 style={styles.title}>금융상품</h2>
+
+            {/* 카테고리 탭 + 정렬 */}
+            <div style={styles.tabRow}>
+              <div style={styles.tabs}>
+                {[
+                  { key: "DEPOSIT", label: "예금" },
+                  { key: "SAVING", label: "적금" },
+                  { key: "LOAN", label: "대출" },
+                ].map((t) => (
+                  <button
+                    key={t.key}
+                    onClick={() => setCategory(t.key)}
+                    style={{
+                      ...styles.tab,
+                      ...(category === t.key ? styles.activeTab : {}),
+                    }}
+                  >
+                    {t.label}
+                  </button>
+                ))}
+              </div>
+
+              {/* 정렬 드롭다운 */}
+              <select
+                value={sortOption}
+                onChange={(e) => setSortOption(e.target.value)}
+                style={styles.sortSelect}
+              >
+                <option value="createdAt,desc">최신 등록순</option>
+                <option value="productName,asc">가나다순</option>
+              </select>
+            </div>
+
+            {/* 검색창 */}
+            <div style={styles.searchBox}>
+              <input
+                type="text"
+                placeholder="상품명 검색"
+                value={keyword}
+                onChange={(e) => setKeyword(e.target.value)}
+                style={styles.input}
+              />
+              <button onClick={fetchProducts} style={styles.searchBtn}>
+                검색
+              </button>
+            </div>
+
+            {/* 결과 수 */}
+            <p style={styles.resultCount}>총 {products.length}개</p>
+
+            {/* 리스트 */}
+            {loading ? (
+              <p style={{ textAlign: "center", color: "#777" }}>
+                불러오는 중...
+              </p>
+            ) : (
+              <div style={styles.list}>
+                {products.length === 0 ? (
+                  <p style={{ textAlign: "center", color: "#888" }}>
+                    해당 조건의 상품이 없습니다.
+                  </p>
+                ) : (
+                  products.map((item) => (
+                    <div
+                      key={item.id}
+                      style={styles.item}
+                      onMouseEnter={(e) =>
+                        (e.currentTarget.style.boxShadow =
+                          "0 6px 16px rgba(0,0,0,0.1)")
+                      }
+                      onMouseLeave={(e) =>
+                        (e.currentTarget.style.boxShadow =
+                          "0 2px 8px rgba(0,0,0,0.04)")
+                      }
+                    >
+                      <div style={styles.itemHeader}>
+                        <h3 style={styles.itemTitle}>{item.productName}</h3>
+                        <span style={styles.provider}>{item.provider}</span>
+                      </div>
+                      <p style={styles.condition}>
+                        {item.joinCondition || "가입 조건 없음"}
+                      </p>
+                      <div style={styles.infoRow}>
+                        <span>금리: {item.interestRate ?? "-"}%</span>
+                        <span>
+                          최소 예치금:{" "}
+                          {item.minDeposit
+                            ? item.minDeposit.toLocaleString() + "원"
+                            : "-"}
+                        </span>
+                      </div>
+                      {item.detailUrl && (
+                        <a
+                          href={item.detailUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          style={styles.link}
+                        >
+                          자세히 보기 →
+                        </a>
+                      )}
+                    </div>
+                  ))
+                )}
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </AppLayout>
@@ -149,12 +279,88 @@ export default function FinancePage() {
 
 const styles = {
   page: {
-    background: "#fdfaf6",
-    height: "100%",
-    display: "flex",
-    justifyContent: "center",
+    display: "grid",
+    gridTemplateColumns: "250px 1.3fr",
+    gap: "40px",
+    maxWidth: "1200px",
+    margin: "0 auto",
     padding: "80px 20px",
-    overflow: "visible",
+    background: "#fdfaf6",
+    alignItems: "start",
+  },
+  sidebar: {
+    background: "#fff",
+    borderRadius: "12px",
+    boxShadow: "0 4px 14px rgba(0,0,0,0.08)",
+    padding: "25px 20px",
+    height: "fit-content",
+    position: "sticky",
+    top: "100px",
+  },
+  filterTitle: {
+    fontSize: "18px",
+    fontWeight: "700",
+    marginBottom: "20px",
+  },
+  filterGroup: {
+    marginBottom: "25px",
+  },
+  filterLabel: {
+    display: "block",
+    fontSize: "14px",
+    fontWeight: "600",
+    marginBottom: "8px",
+  },
+  dropdownButton: {
+    width: "100%",
+    border: "0px solid #ddd",
+    borderRadius: "8px",
+    padding: "3px",
+    fontSize: "14px",
+    fontWeight: "500",
+    textAlign: "left",
+    cursor: "pointer",
+    background: "#fff",
+  },
+  dropdownList: {
+    marginTop: "6px",
+    borderRadius: "8px",
+    background: "#fff",
+    maxHeight: "180px",
+    overflowY: "auto",
+    padding: "8px",
+  },
+  checkboxLabel: {
+    display: "flex",
+    alignItems: "center",
+    gap: "8px",
+    padding: "4px 0",
+    fontSize: "14px",
+    cursor: "pointer",
+  },
+  slider: {
+    width: "100%",
+    accentColor: "#9ed8b5",
+  },
+
+  rateText: {
+    fontSize: "13px",
+    color: "#555",
+    marginTop: "6px",
+  },
+  filterButton: {
+    width: "100%",
+    background: "#eeeeeeff",
+    border: "1px solid #fff",
+    color: "#333",
+    borderRadius: "8px",
+    padding: "10px 0",
+    fontWeight: "600",
+    cursor: "pointer",
+    transition: "all 0.2s ease",
+  },
+  cardContainer: {
+    flex: 1,
   },
   card: {
     background: "#fff",
@@ -162,8 +368,7 @@ const styles = {
     boxShadow: "0 4px 14px rgba(0,0,0,0.08)",
     padding: "40px 35px",
     width: "100%",
-    height: "100%",
-    maxWidth: "1000px",
+    minHeight: "700px",
   },
   title: {
     fontSize: "22px",
@@ -238,7 +443,7 @@ const styles = {
     borderRadius: "12px",
     boxShadow: "0 2px 8px rgba(0,0,0,0.04)",
     padding: "22px 26px",
-    transition: "all 0.2s ease",
+    transition: "box-shadow 0.2s ease",
   },
   itemHeader: {
     display: "flex",
@@ -271,5 +476,38 @@ const styles = {
     textDecoration: "none",
     fontSize: "13px",
     fontWeight: "500",
+  },
+  checkboxGroup: {
+    display: "flex",
+    flexDirection: "column",
+    gap: "6px",
+    padding: "8px 4px",
+    borderRadius: "8px",
+    background: "#fff",
+  },
+  rangeContainer: {
+    position: "relative",
+    width: "100%",
+    height: "35px",
+  },
+
+  rangeInput: {
+    width: "100%",
+    accentColor: "#9ed8b5",
+    appearance: "none",
+    height: "6px",
+    borderRadius: "5px",
+    outline: "none",
+    cursor: "pointer",
+    background: "transparent",
+  },
+
+  hiddenRange: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    width: "100%",
+    opacity: 0,
+    pointerEvents: "none",
   },
 };
