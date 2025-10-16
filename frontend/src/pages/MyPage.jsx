@@ -6,20 +6,26 @@ export default function MyPage() {
   const [user, setUser] = useState(null);
   const [message, setMessage] = useState("");
 
-  useEffect(() => {
-    const fetchUser = async () => {
-      try {
-        const res = await api.get("/users/me", {
-          headers: { Authorization: localStorage.getItem("accessToken") },
-        });
-        setUser(res.data);
-      } catch {
-        setMessage("로그인 후 이용해주세요.");
-      }
-    };
-    fetchUser();
-  }, []);
+useEffect(() => {
+  const token = localStorage.getItem("accessToken");
+  if (!token) {
+    window.location.href = "/login";
+    return;
+  }
 
+  const fetchUser = async () => {
+    try {
+      const res = await api.get("/users/me", {
+        headers: { Authorization: token },
+      });
+      setUser(res.data);
+    } catch {
+      window.location.href = "/login";
+    }
+  };
+
+  fetchUser();
+}, []);
   const handleLogout = () => {
     if (window.confirm("로그아웃 하시겠습니까?")) {
       localStorage.removeItem("accessToken");
@@ -45,8 +51,7 @@ export default function MyPage() {
     }
   };
 
-  if (!user) return <p style={styles.loading}>로그인 완료 후 접속해주세요.</p>;
-
+  if (!user) return null;
   return (
     <AppLayout>
       <div

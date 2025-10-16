@@ -16,7 +16,7 @@ export default function LoginPage() {
       const res = await api.post("/users/login", form);
       const { token, tokenType } = res.data;
       localStorage.setItem("accessToken", `${tokenType} ${token}`);
-      window.location.href = "/mypage";
+      window.location.href = "/home";
     } catch {
       setMessage("이메일 또는 비밀번호가 올바르지 않습니다.");
     }

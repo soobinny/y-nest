@@ -109,7 +109,6 @@ export default function SignupPage() {
               비밀번호는 8자 이상, 영문자·숫자·특수문자를 포함해야 합니다.
             </p>
           )}
-
           <input
             type="password"
             name="passwordConfirm"
@@ -140,7 +139,6 @@ export default function SignupPage() {
             readOnly
             style={{ ...styles.input, backgroundColor: "#f4f4f4" }}
           />
-
           <select
             name="income_band"
             onChange={handleChange}
@@ -154,14 +152,11 @@ export default function SignupPage() {
             <option value="중위소득 300% 이하">중위소득 300% 이하</option>
             <option value="해당 없음">해당 없음</option>
           </select>
-
           {form.income_band === "해당 없음" && (
             <p style={styles.infoText}>
-              소득 구간은 회원가입 후 마이페이지에서 수정할 수
-              있습니다.
+              소득 구간은 회원가입 후 마이페이지에서 수정할 수 있습니다.
             </p>
           )}
-
           <RegionSelect
             value={`${form.province} ${form.city}`}
             onChange={(region) => {
@@ -169,7 +164,6 @@ export default function SignupPage() {
               setForm({ ...form, province: p || "", city: c || "" });
             }}
           />
-
           <label style={styles.checkboxLabel}>
             <input
               type="checkbox"
@@ -180,7 +174,6 @@ export default function SignupPage() {
             />
             무주택자입니다
           </label>
-
           <button
             type="submit"
             style={styles.button}
@@ -207,8 +200,16 @@ const styles = {
     transition: "all 0.25s ease",
     minWidth: "350px",
   },
-  title: { textAlign: "center", marginBottom: 25, color: "#444" },
-  form: { display: "flex", flexDirection: "column", gap: 14 },
+  title: {
+    textAlign: "center",
+    marginBottom: 25,
+    color: "#444",
+  },
+  form: {
+    display: "flex",
+    flexDirection: "column",
+    gap: 14,
+  },
   input: {
     padding: "12px",
     border: "1px solid #ddd",
@@ -233,12 +234,12 @@ const styles = {
     marginBottom: "-4px",
   },
   infoText: {
-  fontSize: "12px",
-  color: "#666",
-  marginTop: "-6px",
-  marginLeft: "4px",
-  marginBottom: "-4px",
-},
+    fontSize: "12px",
+    color: "#666",
+    marginTop: "-6px",
+    marginLeft: "4px",
+    marginBottom: "-4px",
+  },
   button: {
     backgroundColor: "#6ecd94ff",
     color: "white",
@@ -250,5 +251,9 @@ const styles = {
     transition: "all 0.1s ease",
     transform: "scale(1)",
   },
-  message: { marginTop: 10, textAlign: "center", color: "#888" },
+  message: {
+    marginTop: 10,
+    textAlign: "center",
+    color: "#888",
+  },
 };
