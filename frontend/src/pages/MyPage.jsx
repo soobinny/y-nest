@@ -53,7 +53,7 @@ useEffect(() => {
 
   if (!user) return null;
   return (
-    <AppLayout>
+    <AppLayout narrow>
       <div
         style={styles.card}
         onMouseEnter={(e) =>

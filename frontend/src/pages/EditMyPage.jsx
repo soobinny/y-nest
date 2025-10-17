@@ -186,7 +186,7 @@ export default function EditMyPage() {
   if (!form) return <p style={styles.loading}>로그인 완료 후 접속해주세요.</p>;
 
   return (
-    <AppLayout>
+    <AppLayout narrow>
       <div style={styles.card}>
         <h2 style={styles.title}>내 정보 수정</h2>
 
