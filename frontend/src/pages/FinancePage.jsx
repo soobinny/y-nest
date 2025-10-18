@@ -7,7 +7,7 @@ export default function FinancePage() {
   const [loading, setLoading] = useState(true);
   const [category, setCategory] = useState("DEPOSIT");
   const [keyword, setKeyword] = useState("");
-  const [sortOption, setSortOption] = useState("createdAt,desc");
+  const [sortOption, setSortOption] = useState("id,desc");
 
   // 새 필터 상태
   const [dropdownOpen, setDropdownOpen] = useState(false);
@@ -20,25 +20,27 @@ export default function FinancePage() {
   }, [category, sortOption]);
 
   const fetchProducts = async () => {
-    try {
-      setLoading(true);
-      const res = await api.get("/finance/products", {
-        params: {
-          productType: category,
-          keyword,
-          sort: sortOption,
-          banks: selectedBanks,
-          minRate,
-          maxRate,
-        },
-      });
-      setProducts(res.data.content || []);
-    } catch (err) {
-      console.error("금융상품 불러오기 실패:", err);
-    } finally {
-      setLoading(false);
-    }
-  };
+  try {
+    setLoading(true);
+
+    const res = await api.get("/api/finance/products", {
+      params: {
+        productType: category,
+        keyword,
+        minRate,
+        maxRate,
+        sort: sortOption,
+      },
+    });
+
+    console.log("서버 응답:", res.data);
+    setProducts(res.data.content || []);
+  } catch (err) {
+    console.error("금융상품 불러오기 실패:", err);
+  } finally {
+    setLoading(false);
+  }
+};
 
   const handleBankToggle = (bank, checked) => {
     setSelectedBanks((prev) =>
@@ -85,70 +87,44 @@ export default function FinancePage() {
             )}
           </div>
 
-          {/* 금리 슬라이더 */}
           <div style={styles.filterGroup}>
             <label style={styles.filterLabel}>금리 범위</label>
-
-            <div style={styles.rangeContainer}>
-              {/* 최소 금리 */}
+            <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
               <input
-                type="range"
-                min="0"
-                max="10"
-                step="0.1"
+                type="number"
                 value={minRate}
-                onChange={(e) => {
-                  const newMin = parseFloat(e.target.value);
-                  if (newMin <= maxRate - 0.1) setMinRate(newMin);
-                }}
+                onChange={(e) => setMinRate(parseFloat(e.target.value) || 0)}
+                min={0}
+                max={maxRate}
+                step={0.1}
                 style={{
-                  ...styles.rangeInput,
-                  position: "absolute",
-                  top: 12,
-                  left: 0,
-                  zIndex: minRate > 9 ? 5 : 3,
+                  width: "50px",
+                  height: "20px",
+                  padding: "0 0px 0 13px",
+                  border: "1px solid #ddd",
+                  borderRadius: "6px",
+                  textAlign: "center",
                 }}
               />
-
-              {/* 최대 금리 */}
+              <span>~</span>
               <input
-                type="range"
-                min="0"
-                max="10"
-                step="0.1"
+                type="number"
                 value={maxRate}
-                onChange={(e) => {
-                  const newMax = parseFloat(e.target.value);
-                  if (newMax >= minRate + 0.1) setMaxRate(newMax);
-                }}
+                onChange={(e) => setMaxRate(parseFloat(e.target.value) || 0)}
+                min={minRate}
+                max={10}
+                step={0.1}
                 style={{
-                  ...styles.rangeInput,
-                  position: "absolute",
-                  top: 12,
-                  left: 0,
-                  zIndex: 4,
+                  width: "50px",
+                  height: "20px",
+                  padding: "0 0px 0 13px",
+                  border: "1px solid #ddd",
+                  borderRadius: "6px",
+                  textAlign: "center",
                 }}
               />
-
-              {/* 트랙 강조 */}
-              <div
-                style={{
-                  position: "absolute",
-                  top: "14px",
-                  left: 0,
-                  height: "6px",
-                  width: "100%",
-                  borderRadius: "5px",
-                  background: `linear-gradient(to right, 
-                    #ddd ${((minRate - 0) / 10) * 100}%, 
-                    #9ed8b5 ${((minRate - 0) / 10) * 100}%, 
-                    #9ed8b5 ${((maxRate - 0) / 10) * 100}%, 
-                    #ddd ${((maxRate - 0) / 10) * 100}%)`,
-                  pointerEvents: "none",
-                }}
-              />
+              <span>%</span>
             </div>
-
             <p style={styles.rateText}>
               금리 {minRate}% ~ {maxRate}% 사이 상품 보기
             </p>
@@ -171,7 +147,7 @@ export default function FinancePage() {
                 {[
                   { key: "DEPOSIT", label: "예금" },
                   { key: "SAVING", label: "적금" },
-                  { key: "LOAN", label: "대출" },
+                //   { key: "LOAN", label: "대출" }, // 추후 백엔드 로직 변경 예정!
                 ].map((t) => (
                   <button
                     key={t.key}
@@ -192,8 +168,10 @@ export default function FinancePage() {
                 onChange={(e) => setSortOption(e.target.value)}
                 style={styles.sortSelect}
               >
-                <option value="createdAt,desc">최신 등록순</option>
+                <option value="id,desc">최신 등록순</option>
                 <option value="productName,asc">가나다순</option>
+                  <option value="interest_rate,desc">금리 높은순</option> {/* ✅ 추가 */}
+  <option value="interest_rate,asc">금리 낮은순</option> {/* ✅ 추가 */}
               </select>
             </div>
 
@@ -338,15 +316,11 @@ const styles = {
     fontSize: "14px",
     cursor: "pointer",
   },
-  slider: {
-    width: "100%",
-    accentColor: "#9ed8b5",
-  },
 
   rateText: {
     fontSize: "13px",
     color: "#555",
-    marginTop: "6px",
+    marginTop: "8px",
   },
   filterButton: {
     width: "100%",
@@ -485,29 +459,5 @@ const styles = {
     borderRadius: "8px",
     background: "#fff",
   },
-  rangeContainer: {
-    position: "relative",
-    width: "100%",
-    height: "35px",
-  },
 
-  rangeInput: {
-    width: "100%",
-    accentColor: "#9ed8b5",
-    appearance: "none",
-    height: "6px",
-    borderRadius: "5px",
-    outline: "none",
-    cursor: "pointer",
-    background: "transparent",
-  },
-
-  hiddenRange: {
-    position: "absolute",
-    top: 0,
-    left: 0,
-    width: "100%",
-    opacity: 0,
-    pointerEvents: "none",
-  },
 };

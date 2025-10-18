@@ -13,8 +13,10 @@ api.interceptors.request.use((config) => {
   const token = localStorage.getItem("accessToken");
 
   // 회원가입 / 로그인 요청은 Authorization 헤더 제외
-  const isAuthFree =
-    config.url.includes("/users/signup") || config.url.includes("/users/login");
+ const isAuthFree =
+    config.url.includes("/users/signup") ||
+    config.url.includes("/users/login") ||
+    config.url.includes("/finance/products");
 
   if (token && !isAuthFree) {
     config.headers.Authorization = token;

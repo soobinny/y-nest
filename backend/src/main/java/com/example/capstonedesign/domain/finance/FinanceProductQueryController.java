@@ -52,15 +52,16 @@ public class FinanceProductQueryController {
         m.put("id", "id");
 
         // 금리
-        m.put("interestRate", "interestRate");
+        m.put("interestRate", "interest_rate");
         m.put("interest_rate", "interest_rate");
 
+
         // 최소 예치액
-        m.put("minDeposit", "minDeposit");
+        m.put("minDeposit", "min_deposit");
         m.put("min_deposit", "min_deposit");
 
         // 생성일(실제 엔티티에 있을 때만 유의미)
-        m.put("createdAt", "createdAt");
+        m.put("createdAt", "created_at");
         m.put("created_at", "created_at");
 
         // 상품 유형
