@@ -20,27 +20,27 @@ export default function FinancePage() {
   }, [category, sortOption]);
 
   const fetchProducts = async () => {
-  try {
-    setLoading(true);
+    try {
+      setLoading(true);
 
-    const res = await api.get("/api/finance/products", {
-      params: {
-        productType: category,
-        keyword,
-        minRate,
-        maxRate,
-        sort: sortOption,
-      },
-    });
+      const res = await api.get("/api/finance/products", {
+        params: {
+          productType: category,
+          keyword,
+          minRate,
+          maxRate,
+          sort: sortOption,
+        },
+      });
 
-    console.log("서버 응답:", res.data);
-    setProducts(res.data.content || []);
-  } catch (err) {
-    console.error("금융상품 불러오기 실패:", err);
-  } finally {
-    setLoading(false);
-  }
-};
+      console.log("서버 응답:", res.data);
+      setProducts(res.data.content || []);
+    } catch (err) {
+      console.error("금융상품 불러오기 실패:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleBankToggle = (bank, checked) => {
     setSelectedBanks((prev) =>
@@ -147,7 +147,7 @@ export default function FinancePage() {
                 {[
                   { key: "DEPOSIT", label: "예금" },
                   { key: "SAVING", label: "적금" },
-                //   { key: "LOAN", label: "대출" }, // 추후 백엔드 로직 변경 예정!
+                  //   { key: "LOAN", label: "대출" }, // 추후 백엔드 로직 변경 예정!
                 ].map((t) => (
                   <button
                     key={t.key}
@@ -170,8 +170,10 @@ export default function FinancePage() {
               >
                 <option value="id,desc">최신 등록순</option>
                 <option value="productName,asc">가나다순</option>
-                  <option value="interest_rate,desc">금리 높은순</option> {/* ✅ 추가 */}
-  <option value="interest_rate,asc">금리 낮은순</option> {/* ✅ 추가 */}
+                <option value="interest_rate,desc">금리 높은순</option>{" "}
+                {/* ✅ 추가 */}
+                <option value="interest_rate,asc">금리 낮은순</option>{" "}
+                {/* ✅ 추가 */}
               </select>
             </div>
 
@@ -221,9 +223,17 @@ export default function FinancePage() {
                         <h3 style={styles.itemTitle}>{item.productName}</h3>
                         <span style={styles.provider}>{item.provider}</span>
                       </div>
-                      <p style={styles.condition}>
-                        {item.joinCondition || "가입 조건 없음"}
-                      </p>
+                      <pre
+                        style={styles.condition}
+                        dangerouslySetInnerHTML={{
+                          __html: (item.joinCondition || "가입 조건 없음")
+                            .replace(/:/g, "")
+                            .replace(/\*/g, "")
+                            .replace(/(가입 방법)/g, "<strong>$1</strong>")
+                            .replace(/(가입 대상)/g, "<strong>$1</strong>")
+                            .replace(/(비고)/g, "<strong>$1</strong>"),
+                        }}
+                      />
                       <div style={styles.infoRow}>
                         <span>금리: {item.interestRate ?? "-"}%</span>
                         <span>
@@ -436,6 +446,16 @@ const styles = {
     fontSize: "13px",
     color: "#555",
     marginBottom: "10px",
+    whiteSpace: "pre-line",
+    lineHeight: "1.7",
+    letterSpacing: "0.2px",
+    fontFamily: "Pretendard, 'Noto Sans KR', sans-serif",
+    background: "#fafafa",
+    borderRadius: "8px",
+    padding: "10px 12px",
+    display: "flex",
+    flexDirection: "column",
+    gap: "4px",
   },
   infoRow: {
     display: "flex",
@@ -459,5 +479,4 @@ const styles = {
     borderRadius: "8px",
     background: "#fff",
   },
-
 };
