@@ -271,10 +271,11 @@ const styles = {
     gridTemplateColumns: "250px 1.3fr",
     gap: "40px",
     maxWidth: "1200px",
-    margin: "0 auto",
+    margin: "0",
     padding: "80px 20px",
     background: "#fdfaf6",
     alignItems: "start",
+    transform: "translateX(-185px)", 
   },
   sidebar: {
     background: "#fff",
