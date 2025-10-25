@@ -15,11 +15,7 @@ export default function AppLayout({ children, narrow = false }) {
       localStorage.removeItem("accessToken");
       setIsLoggedIn(false);
       alert("로그아웃 되었습니다.");
-      if (window.location.pathname !== "/") {
-        window.location.href = "/";
-      } else {
-        window.location.reload();
-      }
+      window.location.href = "/home";
     } else {
       window.location.href = "/login";
     }
