@@ -15,11 +15,7 @@ export default function AppLayout({ children, narrow = false }) {
       localStorage.removeItem("accessToken");
       setIsLoggedIn(false);
       alert("로그아웃 되었습니다.");
-      if (window.location.pathname !== "/") {
-        window.location.href = "/";
-      } else {
-        window.location.reload();
-      }
+      window.location.href = "/home";
     } else {
       window.location.href = "/login";
     }
@@ -66,6 +62,12 @@ export default function AppLayout({ children, narrow = false }) {
                       key={item.name}
                       href={item.link}
                       style={styles.dropdownItem}
+                      onMouseEnter={(e) =>
+                        Object.assign(e.currentTarget.style, styles.dropdownItemHover)
+                      }
+                      onMouseLeave={(e) =>
+                        (e.currentTarget.style.backgroundColor = "white")
+                      }
                     >
                       {item.name}
                     </a>
@@ -94,6 +96,12 @@ export default function AppLayout({ children, narrow = false }) {
                       key={item.name}
                       href={item.link}
                       style={styles.dropdownItem}
+                      onMouseEnter={(e) =>
+                        Object.assign(e.currentTarget.style, styles.dropdownItemHover)
+                      }
+                      onMouseLeave={(e) =>
+                        (e.currentTarget.style.backgroundColor = "white")
+                      }
                     >
                       {item.name}
                     </a>
@@ -124,6 +132,12 @@ export default function AppLayout({ children, narrow = false }) {
                       key={item.name}
                       style={styles.dropdownItem}
                       onClick={(e) => handleProtectedClick(e, item.link)}
+                      onMouseEnter={(e) =>
+                        Object.assign(e.currentTarget.style, styles.dropdownItemHover)
+                      }
+                      onMouseLeave={(e) =>
+                        (e.currentTarget.style.backgroundColor = "white")
+                      }
                     >
                       {item.name}
                     </span>
@@ -232,14 +246,13 @@ const styles = {
   },
   dropdown: {
     position: "absolute",
-    top: "100%",
+    top: "105%",
     left: 0,
     backgroundColor: "#fff",
     boxShadow: "0 4px 10px rgba(0,0,0,0.1)",
     borderRadius: "10px",
-    marginTop: "8px",
     minWidth: "160px",
-    zIndex: 20,
+    zIndex: 9999,
     display: "flex",
     flexDirection: "column",
   },
@@ -250,6 +263,10 @@ const styles = {
     textDecoration: "none",
     transition: "background 0.2s ease",
     cursor: "pointer",
+  },
+  dropdownItemHover: {
+    backgroundColor: "#f9f9f9",
+    transition: "background-color 0.2s ease",
   },
   main: {
     flex: 1,
