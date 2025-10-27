@@ -49,9 +49,12 @@ dependencies {
     runtimeOnly 'io.jsonwebtoken:jjwt-impl:0.11.5'
     runtimeOnly 'io.jsonwebtoken:jjwt-jackson:0.11.5'
 
+    // WebFlux 추가 (비동기 HTTP 요청용 WebClient)
     implementation 'org.springframework.boot:spring-boot-starter-web'      // 기존 MVC
     implementation 'org.springframework.boot:spring-boot-starter-webflux'  // WebClient 사용
 
+    // Jsoup (HTML 파싱, 웹 크롤링용)
+    implementation 'org.jsoup:jsoup:1.17.2'
 }
 
 tasks.named('test') {

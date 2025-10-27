@@ -25,4 +25,16 @@ public interface ProductsRepository extends JpaRepository<Products, Integer> {
      *   WHERE type = ? AND name = ? AND provider = ?
      */
     Optional<Products> findByTypeAndNameAndProvider(ProductType type, String name, String provider);
+
+    /**
+     * 상세 페이지 URL로 상품 조회
+     * -----------------------------------------------------
+     * @param detailUrl 상품 상세 정보 페이지 URL
+     * @return Optional<Products> — 해당 URL을 가진 상품이 존재할 경우 반환
+     * <p>
+     * 자동 생성되는 SQL 예시:
+     * SELECT * FROM products
+     * WHERE detail_url = ?
+     */
+    Optional<Products> findByDetailUrl(String detailUrl);
 }
