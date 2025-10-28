@@ -8,5 +8,5 @@ public enum LoanProductType {
     RENT_HOUSE_LOAN,
 
     // 개인신용대출 상품 (예: 무담보 신용대출)
-    CREDIT_LOAN;
+    CREDIT_LOAN
 }
