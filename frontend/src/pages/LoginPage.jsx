@@ -78,17 +78,27 @@ export default function LoginPage() {
 
       {/* 로그인 하단 링크들 */}
       <div style={styles.linkContainer}>
-        <span style={styles.link}>아이디 찾기</span>
-        <span style={styles.divider}>|</span>
-        <span style={styles.link}>비밀번호 찾기</span>
-        <span style={styles.divider}>|</span>
-        <span
-          style={{ ...styles.link }}
-          onClick={() => (window.location.href = "/signup")}
-        >
-          회원가입
-        </span>
-      </div>
+  <span
+    style={styles.link}
+    onClick={() => (window.location.href = "/find-id")}
+  >
+    아이디 찾기
+  </span>
+  <span style={styles.divider}>|</span>
+  <span
+    style={styles.link}
+    onClick={() => (window.location.href = "/find-password")}
+  >
+    비밀번호 찾기
+  </span>
+  <span style={styles.divider}>|</span>
+  <span
+    style={styles.link}
+    onClick={() => (window.location.href = "/signup")}
+  >
+    회원가입
+  </span>
+</div>
     </AppLayout>
   );
 }
