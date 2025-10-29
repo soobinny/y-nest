@@ -13,7 +13,7 @@ export default function FindPasswordPage() {
     setError("");
     try {
       await api.post("/users/password-reset/request", { email });
-      setMessage("비밀번호 재설정 안내 메일을 확인해 주세요. (15분 내 유효)");
+      setMessage("비밀번호 재설정 안내 메일을 확인해 주세요.");
     } catch {
       setError("이메일 전송 중 오류가 발생했습니다.");
     }
@@ -21,7 +21,15 @@ export default function FindPasswordPage() {
 
   return (
     <AppLayout narrow>
-      <div style={styles.card}>
+      <div
+        style={styles.card}
+        onMouseEnter={(e) =>
+          (e.currentTarget.style.boxShadow = "0 8px 20px rgba(0,0,0,0.12)")
+        }
+        onMouseLeave={(e) =>
+          (e.currentTarget.style.boxShadow = "0 4px 14px rgba(0,0,0,0.08)")
+        }
+      >
         <h2 style={styles.title}>비밀번호 찾기</h2>
         <form onSubmit={handleSubmit} style={styles.form}>
           <input

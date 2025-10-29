@@ -23,7 +23,15 @@ export default function FindIdPage() {
 
   return (
     <AppLayout narrow>
-      <div style={styles.card}>
+      <div
+        style={styles.card}
+        onMouseEnter={(e) =>
+          (e.currentTarget.style.boxShadow = "0 8px 20px rgba(0,0,0,0.12)")
+        }
+        onMouseLeave={(e) =>
+          (e.currentTarget.style.boxShadow = "0 4px 14px rgba(0,0,0,0.08)")
+        }
+      >
         <h2 style={styles.title}>아이디 찾기</h2>
         <form onSubmit={handleSubmit} style={styles.form}>
           <input
@@ -38,7 +46,7 @@ export default function FindIdPage() {
           <input
             type="text"
             name="region"
-            placeholder="지역 (예: 서울특별시)"
+            placeholder="지역 (예: 서울특별시 강남구)"
             value={form.region}
             onChange={handleChange}
             style={styles.input}
@@ -96,7 +104,7 @@ const styles = {
   error: {
     color: "#ff0400ac",
     textAlign: "center",
-    marginTop: "15px",
+    marginTop: "14px",
   },
   resultBox: {
     textAlign: "center",
