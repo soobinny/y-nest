@@ -78,17 +78,27 @@ export default function LoginPage() {
 
       {/* 로그인 하단 링크들 */}
       <div style={styles.linkContainer}>
-        <span style={styles.link}>아이디 찾기</span>
-        <span style={styles.divider}>|</span>
-        <span style={styles.link}>비밀번호 찾기</span>
-        <span style={styles.divider}>|</span>
-        <span
-          style={{ ...styles.link}}
-          onClick={() => (window.location.href = "/signup")}
-        >
-          회원가입
-        </span>
-      </div>
+  <span
+    style={styles.link}
+    onClick={() => (window.location.href = "/find-id")}
+  >
+    아이디 찾기
+  </span>
+  <span style={styles.divider}>|</span>
+  <span
+    style={styles.link}
+    onClick={() => (window.location.href = "/find-password")}
+  >
+    비밀번호 찾기
+  </span>
+  <span style={styles.divider}>|</span>
+  <span
+    style={styles.link}
+    onClick={() => (window.location.href = "/signup")}
+  >
+    회원가입
+  </span>
+</div>
     </AppLayout>
   );
 }
@@ -137,13 +147,14 @@ const styles = {
     cursor: "pointer",
     transition: "all 0.1s ease",
     transform: "scale(1)",
-    marginTop: 10
+    marginTop: 10,
   },
   message: {
-    marginTop: 20,
-    marginBottom: -10,
+    marginTop: 10,
     textAlign: "center",
     color: "#ff0400ac",
+    fontSize: "14px",
+    lineHeight: "1.4",
   },
 
   linkContainer: {
@@ -151,7 +162,7 @@ const styles = {
     justifyContent: "center",
     alignItems: "center",
     gap: "10px",
-    marginTop: "-70px",
+    marginTop: "-60px",
     fontSize: "14px",
     color: "#888",
   },

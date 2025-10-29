@@ -7,6 +7,8 @@ import MyPage from "./pages/MyPage.jsx";
 import EditMyPage from "./pages/EditMyPage.jsx";
 import HomePage from "./pages/HomePage.jsx";
 import FinancePage from "./pages/FinancePage.jsx";
+import FindIdPage from "./pages/FindIdPage";
+import FindPasswordPage from "./pages/FindPasswordPage";
 
 ReactDOM.createRoot(document.getElementById("root")).render(
   <React.StrictMode>
@@ -18,6 +20,8 @@ ReactDOM.createRoot(document.getElementById("root")).render(
         <Route path="/mypage/edit" element={<EditMyPage />} />
         <Route path="/home" element={<HomePage />} />
         <Route path="/finance" element={<FinancePage />} />
+        <Route path="/find-id" element={<FindIdPage />} />
+        <Route path="/find-password" element={<FindPasswordPage />} />
       </Routes>
     </BrowserRouter>
   </React.StrictMode>
