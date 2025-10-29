@@ -55,14 +55,9 @@ public class FinanceProductQueryController {
         m.put("interestRate", "interest_rate");
         m.put("interest_rate", "interest_rate");
 
-
         // 최소 예치액
         m.put("minDeposit", "min_deposit");
         m.put("min_deposit", "min_deposit");
-
-        // 생성일(실제 엔티티에 있을 때만 유의미)
-        m.put("createdAt", "created_at");
-        m.put("created_at", "created_at");
 
         // 상품 유형
         m.put("productType", "productType");
@@ -113,7 +108,7 @@ public class FinanceProductQueryController {
      * 금융 상품 목록 조회
      * <p>
      * 지원 기능:
-     * - productType: 예금/적금 필터
+     * - productType: 예금/적금/대출 상품 필터
      * - finCoNo:     금융 회사 코드 필터
      * - keyword: products.name / products.provider LIKE 검색
      * - minRate / maxRate: 금리 구간 필터
@@ -122,13 +117,13 @@ public class FinanceProductQueryController {
     @Operation(
             summary = "금융 상품 목록 조회",
             description = """
-                    예·적금/회사 코드/키워드(상품명·회사명)/금리 범위 필터 + 페이지네이션/정렬
+                    예금·적금·대출/회사 코드/키워드(상품명·회사명)/금리 범위 필터 + 페이지네이션/정렬
                     정렬 예시: ?sort=id,desc 또는 ?sort=interestRate,asc
                     (Swagger 기본값 'string'은 무시되며, 허용되지 않은 키는 자동 무시됩니다.)"""
     )
     @GetMapping
     public Page<FinanceProductsResponse> list(
-            @Parameter(description = "상품 종류: DEPOSIT(정기예금), SAVING(적금)")
+            @Parameter(description = "상품 종류: DEPOSIT(정기예금), SAVING(적금), MORTGAGE_LOAN(주택담보대출), RENT_HOUSE_LOAN(전세자금대출), CREDIT_LOAN(개인신용대출)")
             @RequestParam(required = false) FinanceProductType productType,
             @Parameter(description = "금융 회사 코드(fin_co_no)")
             @RequestParam(required = false) String finCoNo,
@@ -173,9 +168,9 @@ public class FinanceProductQueryController {
                 .detailUrl(p != null ? p.getDetailUrl() : null)
                 .finCoNo(fp.getFinCoNo())
                 .productType(fp.getProductType())
-                .interestRate(fp.getInterest_rate())   // 엔티티가 snake_case 필드/게터를 쓰는 경우
-                .minDeposit(fp.getMin_deposit())       // 동일
-                .joinCondition(fp.getJoin_condition()) // 동일
+                .interestRate(fp.getInterestRate())   // 엔티티가 snake_case 필드/게터를 쓰는 경우
+                .minDeposit(fp.getMinDeposit())       // 동일
+                .joinCondition(fp.getJoinCondition()) // 동일
                 .build();
     }
 }

@@ -54,20 +54,30 @@ public class FinanceProducts {
      * - 예: "만 19세 이상, 신규 가입자만 가능"
      */
     @Lob
-    private String join_condition;
+    @Column(name = "join_condition", columnDefinition = "TEXT")
+    private String joinCondition;
 
     /**
      * 대표 금리
      * - precision = 5, scale = 2 → 최대 999.99 까지 저장 가능
      * - 예: 3.50 (%)
      */
-    @Column(precision = 5, scale = 2)
-    private BigDecimal interest_rate;
+    @Column(name = "interest_rate", precision = 5, scale = 2)
+    private BigDecimal interestRate;
 
     /**
      * 최소 예치금 (단위: 원)
      * - nullable 허용
      * - 예: 1000000 (100만원)
      */
-    private Integer min_deposit;
+    @Column(name = "min_deposit")
+    private Integer minDeposit;
+
+    /**
+     * 대출상품 옵션 리스트 (1:N)
+     * - 예: 금리구간, 상환방식, 담보유형 등
+     * - 예금/적금 상품의 경우 비어 있음
+     */
+    @OneToMany(mappedBy = "financeProduct", cascade = CascadeType.ALL, orphanRemoval = true)
+    private java.util.List<FinanceLoanOption> loanOptions = new java.util.ArrayList<>();
 }
