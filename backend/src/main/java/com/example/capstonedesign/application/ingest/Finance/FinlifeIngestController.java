@@ -1,4 +1,4 @@
-package com.example.capstonedesign.application.ingest;
+package com.example.capstonedesign.application.ingest.Finance;
 
 import io.swagger.v3.oas.annotations.Operation;
 import lombok.RequiredArgsConstructor;

@@ -1,4 +1,4 @@
-package com.example.capstonedesign.application.ingest;
+package com.example.capstonedesign.application.ingest.LH;
 
 import com.example.capstonedesign.domain.housingannouncements.entity.HousingAnnouncements;
 import com.example.capstonedesign.domain.housingannouncements.entity.HousingCategory;
