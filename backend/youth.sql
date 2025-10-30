@@ -158,6 +158,31 @@ CREATE TABLE sh_announcements
 );
 
 -- =========================
+-- youth_policies
+-- =========================
+CREATE TABLE youth_policies
+(
+    id              BIGINT AUTO_INCREMENT PRIMARY KEY,
+    policy_no       VARCHAR(50)  NOT NULL UNIQUE,
+    policy_name     VARCHAR(255) NOT NULL,
+    description     MEDIUMTEXT,
+    keyword         VARCHAR(255),
+    category_large  VARCHAR(100),
+    category_middle VARCHAR(100),
+    agency          VARCHAR(255),
+    apply_url       VARCHAR(500),
+    region_code     TEXT,
+    target_age      VARCHAR(50),
+    support_content MEDIUMTEXT,
+    start_date      VARCHAR(100),
+    end_date        VARCHAR(100),
+    created_at      DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at      DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    INDEX idx_policy_region (region_code(100)),
+    INDEX idx_policy_category (category_large, category_middle)
+);
+
+-- =========================
 -- favorites
 -- =========================
 CREATE TABLE favorites
