@@ -27,4 +27,7 @@ public interface FinanceProductsRepository extends JpaRepository<FinanceProducts
 
     /** 특정 금융상품 타입별 전체 조회 (예: 예금, 적금, 대출 등) */
     List<FinanceProducts> findByProductType(FinanceProductType financeProductType);
+
+    /** 여러 금융상품 타입 조건으로 조회 */
+    List<FinanceProducts> findByProductTypeIn(List<FinanceProductType> mortgageLoan);
 }
