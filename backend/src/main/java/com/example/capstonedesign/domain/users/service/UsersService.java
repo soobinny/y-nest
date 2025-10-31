@@ -4,6 +4,7 @@ import com.example.capstonedesign.common.exception.ApiException;
 import com.example.capstonedesign.common.exception.ErrorCode;
 import com.example.capstonedesign.domain.users.config.PasswordEncoder;
 import com.example.capstonedesign.domain.users.dto.request.SignupRequest;
+import com.example.capstonedesign.domain.users.dto.request.UpdateUserRequest;
 import com.example.capstonedesign.domain.users.dto.response.UsersResponse;
 import com.example.capstonedesign.domain.users.entity.PasswordResetToken;
 import com.example.capstonedesign.domain.users.entity.UserRole;
@@ -69,8 +70,22 @@ public class UsersService {
     }
 
     // --------------------------------------------------------------------------
-    // 2. 아이디(이메일) 찾기 - 인증 코드 전송 및 검증
+    // 2. 사용자 조회 관련 (로그인 등에서 사용)
     // --------------------------------------------------------------------------
+    public Users requireActiveByEmail(String email) {
+        return usersRepository.findByEmailAndDeletedFalse(email)
+                .orElseThrow(() -> new ApiException(ErrorCode.UNAUTHORIZED, "이메일을 찾을 수 없습니다."));
+    }
+
+    public Users requireActiveById(Integer id) {
+        return usersRepository.findById(id)
+                .filter(u -> !Boolean.TRUE.equals(u.getDeleted()))
+                .orElseThrow(() -> new ApiException(ErrorCode.UNAUTHORIZED, "활성화된 사용자가 아닙니다."));
+    }
+
+    // --------------------------------------------------------------------------
+    // 3. 아이디(이메일) 찾기 - 인증 코드 전송 및 검증
+    // ---------------------------------------------------------------------------
     @Transactional
     public void sendIdVerificationCode(String name, String email) {
         Optional<Users> userOpt = usersRepository.findByEmailAndDeletedFalse(email);
@@ -112,8 +127,8 @@ public class UsersService {
     }
 
     // --------------------------------------------------------------------------
-    // 3. 비밀번호 재설정 (토큰 발급 및 검증)
-    // --------------------------------------------------------------------------
+    // 4. 비밀번호 변경 / 재설정
+    // -------------------------------------------------------------------------
     @Transactional
     public void requestPasswordReset(String email) {
         usersRepository.findByEmailAndDeletedFalse(email).ifPresent(user -> {
@@ -156,6 +171,37 @@ public class UsersService {
     }
 
     // --------------------------------------------------------------------------
+    // 5. 프로필 수정 / 탈퇴
+    // --------------------------------------------------------------------------
+    @Transactional
+    public UsersResponse updateProfile(String email, UpdateUserRequest req) {
+        Users u = requireActiveByEmail(email);
+
+        if (req.age() != null) u.setAge(req.age());
+        if (req.income_band() != null) u.setIncome_band(req.income_band());
+        if (req.region() != null) u.setRegion(req.region());
+        if (req.is_homeless() != null) u.setIs_homeless(req.is_homeless());
+        if (req.birthdate() != null) u.setBirthdate(req.birthdate());
+
+        Users saved = usersRepository.save(u);
+        return toResponse(saved);
+    }
+
+    // --------------------------------------------------------------------------
+    // 6. 회원 탈퇴
+    // --------------------------------------------------------------------------
+    @Transactional
+    public String delete(String email, String rawPassword) {
+        Users u = requireActiveByEmail(email);
+        if (!passwordEncoder.matches(rawPassword, u.getPassword())) {
+            throw new ApiException(ErrorCode.UNAUTHORIZED, "비밀번호가 일치하지 않습니다.");
+        }
+        u.setDeleted(true);
+        u.setDeleted_at(Instant.now());
+        return "회원 탈퇴가 완료되었습니다.";
+    }
+
+    // --------------------------------------------------------------------------
     // 유틸 메서드
     // --------------------------------------------------------------------------
     private String generate6DigitCode() {
@@ -168,7 +214,7 @@ public class UsersService {
         return Base64.getUrlEncoder().withoutPadding().encodeToString(buf);
     }
 
-    private UsersResponse toResponse(Users u) {
+    public UsersResponse toResponse(Users u) {
         return new UsersResponse(
                 u.getId(),
                 u.getEmail(),
