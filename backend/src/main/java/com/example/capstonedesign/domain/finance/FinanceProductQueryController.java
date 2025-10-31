@@ -52,20 +52,20 @@ public class FinanceProductQueryController {
         m.put("id", "id");
 
         // 금리
-        m.put("interestRate", "interest_rate");
-        m.put("interest_rate", "interest_rate");
+        m.put("interestRate", "interestRate");
+        m.put("interest_rate", "interestRate");
 
         // 최소 예치액
-        m.put("minDeposit", "min_deposit");
-        m.put("min_deposit", "min_deposit");
+        m.put("minDeposit", "minDeposit");
+        m.put("min_deposit", "minDeposit");
 
         // 상품 유형
         m.put("productType", "productType");
-        m.put("product_type", "product_type");
+        m.put("product_type", "productType");
 
         // 회사 코드
         m.put("finCoNo", "finCoNo");
-        m.put("fin_co_no", "fin_co_no");
+        m.put("fin_co_no", "finCoNo");
 
         SORT_MAP = Collections.unmodifiableMap(m);
     }
