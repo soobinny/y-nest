@@ -1,6 +1,7 @@
 package com.example.capstonedesign.domain.finance.financeproducts.dto.response;
 
 import com.example.capstonedesign.domain.finance.financeproducts.entity.FinanceProductType;
+import com.fasterxml.jackson.annotation.JsonInclude;
 import lombok.Builder;
 import lombok.Data;
 
@@ -11,6 +12,7 @@ import java.math.BigDecimal;
  * - 개인신용대출(CREDIT_LOAN) 응답 DTO
  * - 상품 기본정보 + 등급별(1~13등급) 평균 금리 정보 포함
  */
+@JsonInclude(JsonInclude.Include.NON_NULL)
 @Data
 @Builder
 public class FinanceLoanResponse {
@@ -23,6 +25,11 @@ public class FinanceLoanResponse {
 
     /** 상품 유형 (FinanceProductType.CREDIT_LOAN) */
     private FinanceProductType productType;
+
+    /** 평균 금리 관련 필드 */
+    private BigDecimal lendRateMin;      // 최저 금리
+    private BigDecimal lendRateMax;      // 최고 금리
+    private BigDecimal lendRateAvg;      // 평균 금리
 
     /** 금리유형 코드 (예: FIXED, VARIABLE 등) */
     private String crdtLendRateType;
@@ -42,4 +49,9 @@ public class FinanceLoanResponse {
 
     /** 평균 금리 */
     private BigDecimal crdtGradAvg;
+
+    /** 추천 점수 (낮을수록 추천순위 높음) */
+    private Double score;
+    /** 추천 근거 요약 (예: 청년층 + 저소득 우대) */
+    private String reason;
 }

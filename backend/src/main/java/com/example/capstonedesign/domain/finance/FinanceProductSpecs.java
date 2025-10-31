@@ -70,7 +70,7 @@ public final class FinanceProductSpecs {
         return (root, q, cb) -> {
             if (min == null) return null;
             // 엔티티 필드명이 interestRate 라면 여기서도 camelCase로 써야 함!
-            return cb.greaterThanOrEqualTo(root.get("interest_rate"), min);
+            return cb.greaterThanOrEqualTo(root.get("interestRate"), min);
         };
     }
 
@@ -80,7 +80,7 @@ public final class FinanceProductSpecs {
     public static Specification<FinanceProducts> maxRate(BigDecimal max) {
         return (root, q, cb) -> {
             if (max == null) return null;
-            return cb.lessThanOrEqualTo(root.get("interest_rate"), max);
+            return cb.lessThanOrEqualTo(root.get("interestRate"), max);
         };
     }
 }
