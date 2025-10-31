@@ -138,18 +138,18 @@ public class FinanceProductQueryController {
      * 예시: /api/finance/products/recommend/{userId}?type=SAVING
      */
     @Operation(summary = "사용자 맞춤 예금/적금 추천", description = """
-    사용자 나이, 소득 구간(중위소득 100~300%), 금리, 예치금 조건을 기준으로
-    맞춤형 예금·적금 상품을 추천합니다.
+    사용자의 나이, 소득 구간(중위소득 100~300%), 금리, 예치금 조건을 기준으로 맞춤형 예금·적금 상품을 추천합니다.
 
     추천 로직 요약:
     - 청년층(20~35세) 및 저소득층(150% 이하): 소액 예치 가능하고 금리가 높은 상품 우대
     - 중위·고소득층(200~300%): 예치금 규모가 크고 안정적인 상품 중심 추천
     - 금리가 높을수록, 예치금이 낮을수록, 점수가 낮을수록 상위 노출
-    - 상위 10개의 추천 상품만 반환됩니다.
+    - 내부적으로 산출된 종합 점수에 따라 상위 10개의 추천 상품 반환
     """)
     @GetMapping("/recommend/{userId}")
     public List<FinanceProductsResponse> recommendForUser(
-            @PathVariable Integer userId,
+            @Parameter(description = "사용자 ID") @PathVariable Integer userId,
+            @Parameter(description = "조회할 예금·적금 상품 선택(DEPOSIT: 예금, SAVING: 적굼)")
             @RequestParam(defaultValue = "DEPOSIT") DSProductType type
     ) {
         // DSProductType → FinanceProductType 매핑 필요

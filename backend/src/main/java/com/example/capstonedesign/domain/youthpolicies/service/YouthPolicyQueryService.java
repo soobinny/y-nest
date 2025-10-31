@@ -98,7 +98,7 @@ public class YouthPolicyQueryService {
                 .map(YouthPolicyResponse::fromEntity);
     }
 
-    /** 사용자 맞춤 추천 (지역·나이·소득 기반 필터링) */
+    /** 사용자 맞춤 추천 (지역·나이·소득 기반 + 추천 점수·사유 포함) */
     public List<YouthPolicyResponse> recommendForUser(Integer userId, boolean strictRegionMatch) {
         Users user = usersRepository.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다."));
@@ -112,9 +112,66 @@ public class YouthPolicyQueryService {
                 .filter(p -> matchRegion(region, regionPrefix, p.getRegionCode(), strictRegionMatch))
                 .filter(p -> matchAgeFlexible(p.getTargetAge(), age))
                 .filter(p -> matchIncomeKeyword(p.getKeyword(), incomeBand))
-                .sorted(Comparator.comparing(YouthPolicy::getStartDate, Comparator.nullsLast(Comparator.reverseOrder())))
-                .map(YouthPolicyResponse::fromEntity)
+                .map(policy -> {
+                    double score = calculateRecommendationScore(age, incomeBand, region, policy);
+                    String reason = getRecommendationReason(age, incomeBand, region, policy);
+                    return YouthPolicyResponse.fromEntityWithRecommendation(policy, score, reason);
+                })
+                .sorted(Comparator.comparingDouble(YouthPolicyResponse::getScore))
+                .limit(10)
                 .toList();
+    }
+
+    /** 추천 점수 계산 (낮을수록 우선순위 ↑)
+     * -------------------------------------------------
+     * - 연령 적합도 × 소득 구간 × 지역 일치도 가중치 반영
+     */
+    private double calculateRecommendationScore(int age, String incomeBand, String region, YouthPolicy policy) {
+        double baseScore = 1.0;
+
+        // 나이 적합도 (범위에 가까울수록 우대)
+        double ageFactor = matchAgeFlexible(policy.getTargetAge(), age) ? 0.8 : 1.2;
+
+        // 소득 가중치 (낮은 소득일수록 우대)
+        double incomeFactor = switch (incomeBand) {
+            case "중위소득100%이하" -> 0.7;
+            case "중위소득150%이하" -> 0.85;
+            case "중위소득200%이하" -> 1.0;
+            case "중위소득300%이하" -> 1.15;
+            default -> 1.0;
+        };
+
+        // 지역 일치도 (정확히 일치할수록 점수 낮음)
+        double regionFactor = (policy.getRegionCode() != null && policy.getRegionCode().contains(convertRegionToCode(region))) ? 0.8 : 1.1;
+
+        return baseScore * ageFactor * incomeFactor * regionFactor;
+    }
+
+    /** 추천 사유 생성 */
+    private String getRecommendationReason(int age, String incomeBand, String region, YouthPolicy policy) {
+        StringBuilder sb = new StringBuilder();
+
+        // 연령 관련 설명
+        if (policy.getTargetAge() != null && matchAgeFlexible(policy.getTargetAge(), age))
+            sb.append("나이 조건에 적합, ");
+        else
+            sb.append("연령 외 조건 우대, ");
+
+        // 소득 관련 설명
+        switch (incomeBand) {
+            case "중위소득100%이하" -> sb.append("저소득층 맞춤 정책, ");
+            case "중위소득150%이하" -> sb.append("중저소득층 혜택 정책, ");
+            case "중위소득200%이하" -> sb.append("보통 소득층 적합, ");
+            case "중위소득300%이하" -> sb.append("고소득층 일반 지원 대상, ");
+        }
+
+        // 지역 관련 설명
+        if (policy.getRegionCode() != null && policy.getRegionCode().contains(convertRegionToCode(region)))
+            sb.append(region).append(" 지역 거주자 우대");
+        else
+            sb.append("전국 대상 정책 가능");
+
+        return sb.toString().replaceAll(", $", "");
     }
 
     /** 지역코드 매칭 로직 */

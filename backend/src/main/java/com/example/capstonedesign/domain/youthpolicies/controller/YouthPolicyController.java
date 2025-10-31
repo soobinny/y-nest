@@ -60,20 +60,21 @@ public class YouthPolicyController {
     }
 
     /** 사용자 맞춤 추천 정책 조회 */
-    @Operation(
-            summary = "사용자 맞춤 정책 추천",
-            description = """
-            회원의 나이, 지역, 소득대역 정보를 기반으로 개인 맞춤형 청년정책을 추천합니다.
-            <br><br>
-            <b>strictRegionMatch 옵션 설명</b><br>
-            - <code>true</code>: 해당 시·군·구 지역 코드만 포함된 정책만 표시 (전국 단위 제외)<br>
-            - <code>false</code> (기본값): 사용자의 광역시·도 단위 포함 정책도 표시
-            """
-    )
+    @Operation(summary = "사용자 맞춤 정책 추천", description = """
+    사용자의 나이, 지역, 소득 구간(중위소득 100~300%)을 기준으로 맞춤형 청년정책을 추천합니다.
+
+    추천 로직 요약:
+    - 청년층(19~34세): 취업·창업·주거 관련 정책을 중심으로 추천
+    - 중장년층(35~49세): 생계·가족·금융 지원 정책 우선 추천
+    - 저소득층(중위소득 150% 이하): 소득 보전 및 임대 지원 정책 강화
+    - 중산층(중위소득 200~300%): 자산 형성·저축·교육 지원 정책 중심 추천
+    - 지역 일치 정책은 우선순위를 높여 표시하며, 전국 단위 정책은 보조적으로 포함됨
+    - 내부적으로 산출된 종합 점수에 따라 상위 10개의 추천 상품 반환
+    """)
     @GetMapping("/recommend/{userId}")
     public List<YouthPolicyResponse> recommendPolicies(
             @Parameter(description = "사용자 ID") @PathVariable Integer userId,
-            @Parameter(description = "지역 일치 기준 (true=시·군·구만, false=광역시·도 포함)", example = "false")
+            @Parameter(description = "지역 일치 여부 (true=시·군·구만, false=광역시·도 포함)")
             @RequestParam(defaultValue = "false") boolean strictRegionMatch
     ) {
         return queryService.recommendForUser(userId, strictRegionMatch);
