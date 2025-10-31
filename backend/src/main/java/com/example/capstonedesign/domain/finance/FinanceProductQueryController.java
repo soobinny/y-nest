@@ -59,6 +59,7 @@ public class FinanceProductQueryController {
         m.put("minDeposit", "minDeposit");
         m.put("min_deposit", "minDeposit");
 
+
         // 상품 유형
         m.put("productType", "productType");
         m.put("product_type", "productType");
