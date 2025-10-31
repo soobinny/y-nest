@@ -18,10 +18,12 @@ public class FinlifeIngestScheduler {
 
     // 매일 03:10 (기본값은 properties에서 관리)
     @Scheduled(cron = "${finlife.ingest.cron}")
+    @Scheduled(cron = "${finlife.ingest.cron}")
     public void runNightly() {
         log.info("FinLife nightly ingest start");
         int company = service.syncCompanies(10);
         int products = service.syncDepositAndSaving(20);
-        log.info("FinLife nightly ingest done - companies: {}, products: {}", company, products);
+        int loans = service.syncLoans(20);
+        log.info("FinLife nightly ingest done - companies: {}, products: {}, loans: {}", company, products, loans);
     }
 }

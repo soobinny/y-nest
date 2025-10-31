@@ -18,7 +18,7 @@ public class FinlifeIngestController {
 
     private final FinlifeIngestService service;
 
-    @Operation(summary = "금융기관 동기화", description = "finance_companies upsert")
+    @Operation(summary = "금융 기관 동기화", description = "finance_companies upsert")
     @PostMapping("/companies")
     public ResponseEntity<String> ingestCompanies(@RequestParam(defaultValue = "5") int maxPages) {
         int count = service.syncCompanies(maxPages);
@@ -39,5 +39,12 @@ public class FinlifeIngestController {
         int c = service.syncCompanies(companyPages);
         int p = service.syncDepositAndSaving(productPages);
         return ResponseEntity.ok("done - companies: " + c + ", products: " + p);
+    }
+
+    @Operation(summary = "대출 상품 동기화", description = "products/finance_products/loan_options upsert")
+    @PostMapping("/loans")
+    public ResponseEntity<String> ingestLoans(@RequestParam(defaultValue = "10") int maxPages) {
+        int count = service.syncLoans(maxPages);
+        return ResponseEntity.ok("loan products upserted: " + count);
     }
 }

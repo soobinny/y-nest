@@ -27,6 +27,9 @@ public enum ErrorCode {
     /** 중복 충돌 (이미 존재하는 데이터 등) */
     CONFLICT(409, "Conflict"),
 
+    /** 외부 API 호출 실패 (Finlife, LH, 등 외부 연동 실패 시) */
+    EXTERNAL_API_ERROR(502, "External API Error"),
+
     /** 서버 내부 에러 (예상치 못한 오류) */
     INTERNAL_SERVER_ERROR(500, "Internal Server Error");
 
