@@ -1,19 +1,26 @@
 package com.example.capstonedesign.domain.users.controller;
 
-import com.example.capstonedesign.domain.users.dto.request.PasswordResetConfirmRequest;
-import com.example.capstonedesign.domain.users.dto.request.PasswordResetRequest;
-import com.example.capstonedesign.domain.users.dto.request.SignupRequest;
+import com.example.capstonedesign.common.exception.ApiException;
+import com.example.capstonedesign.common.exception.ErrorCode;
+import com.example.capstonedesign.domain.users.config.JwtTokenProvider;
+import com.example.capstonedesign.domain.users.config.PasswordEncoder;
+import com.example.capstonedesign.domain.users.dto.request.*;
+import com.example.capstonedesign.domain.users.dto.response.TokenResponse;
 import com.example.capstonedesign.domain.users.dto.response.UsersResponse;
+import com.example.capstonedesign.domain.users.entity.Users;
 import com.example.capstonedesign.domain.users.service.UsersService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 /**
@@ -33,6 +40,8 @@ import org.springframework.web.bind.annotation.*;
 public class UsersController {
 
     private final UsersService usersService;
+    private final PasswordEncoder passwordEncoder;
+    private final JwtTokenProvider jwtTokenProvider;
 
     // ---------------------------------------------------------
     // 1. 회원 가입
@@ -50,7 +59,84 @@ public class UsersController {
     }
 
     // ---------------------------------------------------------
-    // 2. 아이디(이메일) 찾기 - 인증 번호 발송
+    // 2. 로그인
+    // ---------------------------------------------------------
+    @Operation(
+            summary = "로그인 (JWT 발급)",
+            description = "이메일/비밀번호 검증 후 액세스 토큰(JWT)을 발급합니다.",
+            responses = {
+                    @ApiResponse(responseCode = "200", description = "로그인 성공",
+                            content = @Content(schema = @Schema(implementation = TokenResponse.class))),
+                    @ApiResponse(responseCode = "401", description = "인증 실패",
+                            content = @Content(schema = @Schema(implementation = ApiError.class)))
+            }
+    )
+    @PostMapping("/login")
+    public ResponseEntity<TokenResponse> login(@Valid @RequestBody LoginRequest req) {
+        // (1) 사용자 조회 (활성 사용자 보장)
+        Users user = usersService.requireActiveByEmail(req.email());
+
+        // (2) 비밀번호 검증
+        if (!passwordEncoder.matches(req.password(), user.getPassword())) {
+            throw new ApiException(ErrorCode.UNAUTHORIZED, "이메일 또는 비밀번호가 올바르지 않습니다.");
+        }
+
+        // (3) 토큰 발급: principal = userId(Long)
+        String token = jwtTokenProvider.generate(
+                Long.valueOf(user.getId()),  // id가 Integer 라면 longValue()/valueOf로 변환
+                user.getEmail(),
+                user.getRole()
+        );
+        long expiresIn = jwtTokenProvider.getExpirySeconds();
+
+        return ResponseEntity.ok(new TokenResponse(token, "Bearer", expiresIn));
+    }
+
+    // ---------------------------------------------------------
+    // 3. 내 정보 조회
+    // ---------------------------------------------------------
+    @Operation(
+            summary = "내 정보 조회",
+            description = "JWT의 principal(권장: userId)로 내 정보를 조회합니다.",
+            security = @SecurityRequirement(name = "bearerAuth"),
+            responses = {
+                    @ApiResponse(responseCode = "200", description = "조회 성공",
+                            content = @Content(schema = @Schema(implementation = UsersResponse.class))),
+                    @ApiResponse(responseCode = "401", description = "인증 실패",
+                            content = @Content(schema = @Schema(implementation = ApiError.class)))
+            }
+    )
+    @GetMapping("/me")
+    public ResponseEntity<UsersResponse> me(@AuthenticationPrincipal Object principal) {
+        Users me = resolveUserFromPrincipal(principal);
+        return ResponseEntity.ok(usersService.toResponse(me));
+    }
+
+    // ---------------------------------------------------------
+    // 4. 내 정보 수정
+    // ---------------------------------------------------------
+    @Operation(
+            summary = "내 프로필 수정",
+            description = "전달된 필드만 부분 업데이트합니다.",
+            security = @SecurityRequirement(name = "bearerAuth"),
+            responses = {
+                    @ApiResponse(responseCode = "200", description = "수정 성공",
+                            content = @Content(schema = @Schema(implementation = UsersResponse.class))),
+                    @ApiResponse(responseCode = "401", description = "인증 실패",
+                            content = @Content(schema = @Schema(implementation = ApiError.class)))
+            }
+    )
+    @PutMapping("/me")
+    public ResponseEntity<UsersResponse> updateMe(@Valid @RequestBody UpdateUserRequest req) {
+        Object principal = SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        Users me = resolveUserFromPrincipal(principal);
+        // UsersService에 id 기반 업데이트가 없다면 email 기반 메서드 사용
+        UsersResponse updated = usersService.updateProfile(me.getEmail(), req);
+        return ResponseEntity.ok(updated);
+    }
+
+    // ---------------------------------------------------------
+    // 5. 아이디(이메일) 찾기 - 인증 번호 발송
     // ---------------------------------------------------------
     @Operation(summary = "아이디(이메일) 찾기 - 인증 번호 발송",
             description = "이름과 이메일이 일치하는 사용자가 존재하면 인증 번호를 이메일로 발송합니다.")
@@ -69,7 +155,7 @@ public class UsersController {
     }
 
     // ---------------------------------------------------------
-    // 3. 아이디(이메일) 찾기 - 인증 번호 확인
+    // 6. 아이디(이메일) 찾기 - 인증 번호 확인
     // ---------------------------------------------------------
     @Operation(summary = "아이디(이메일) 찾기 - 인증 번호 확인",
             description = "입력한 인증 번호가 일치하면 본인 확인된 이메일(아이디)을 반환합니다.")
@@ -88,7 +174,7 @@ public class UsersController {
     }
 
     // ---------------------------------------------------------
-    // 4. 비밀번호 재설정 요청 (메일 전송)
+    // 7. 비밀번호 재설정 요청 (메일 전송)
     // ---------------------------------------------------------
     @Operation(summary = "비밀번호 재설정 요청", description = "이메일로 비밀번호 재설정 링크를 발송합니다.")
     @ApiResponse(responseCode = "200", description = "비밀번호 재설정 메일 발송")
@@ -99,7 +185,7 @@ public class UsersController {
     }
 
     // ---------------------------------------------------------
-    // 5. 비밀번호 재설정 확정
+    // 8. 비밀번호 재설정 확정
     // ---------------------------------------------------------
     @Operation(summary = "비밀번호 재설정 확정", description = "토큰 검증 후 새 비밀번호로 변경합니다.")
     @ApiResponses({
@@ -114,6 +200,28 @@ public class UsersController {
     }
 
     // ---------------------------------------------------------
+    // 9. 회원 탈퇴
+    // ---------------------------------------------------------
+    @Operation(
+            summary = "회원 탈퇴(소프트 삭제)",
+            description = "비밀번호 재확인 후 deleted=true, deleted_at 기록.",
+            security = @SecurityRequirement(name = "bearerAuth"),
+            responses = {
+                    @ApiResponse(responseCode = "200", description = "탈퇴 성공",
+                            content = @Content(schema = @Schema(implementation = String.class))),
+                    @ApiResponse(responseCode = "401", description = "인증 실패/비밀번호 불일치",
+                            content = @Content(schema = @Schema(implementation = ApiError.class)))
+            }
+    )
+    @DeleteMapping("/delete")
+    public ResponseEntity<String> delete(@Valid @RequestBody DeleteRequest req) {
+        Object principal = SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        Users me = resolveUserFromPrincipal(principal);
+        String msg = usersService.delete(me.getEmail(), req.password());
+        return ResponseEntity.ok(msg);
+    }
+
+    // ---------------------------------------------------------
     // 공통 에러 응답 포맷 (Swagger 문서 표시용)
     // ---------------------------------------------------------
     @Schema(name = "ApiError", description = "에러 응답 포맷")
@@ -125,6 +233,25 @@ public class UsersController {
             this.code = code;
             this.message = message;
         }
+    }
+
+    // principal(Long id / String email / UserDetails.username ...)을 Users 엔티티로 해석
+    private Users resolveUserFromPrincipal(Object principal) {
+        if (principal instanceof Long uid) {
+            // Users.id가 Integer면 변환 필요
+            Integer id = Math.toIntExact(uid);
+            return usersService.requireActiveById(id);
+        }
+        if (principal instanceof String email) {
+            return usersService.requireActiveByEmail(email);
+        }
+        // UserDetails 등 다른 타입 대응
+        String username = principal.toString();
+        if (username.matches("\\d+")) {
+            Integer id = Integer.valueOf(username);
+            return usersService.requireActiveById(id);
+        }
+        return usersService.requireActiveByEmail(username);
     }
 }
 
