@@ -1,4 +1,4 @@
-package com.example.capstonedesign.application.ingest;
+package com.example.capstonedesign.application.ingest.Finance;
 
 import com.example.capstonedesign.domain.finance.financecompanies.entity.FinanceCompanies;
 import com.example.capstonedesign.domain.finance.financecompanies.repository.FinanceCompaniesRepository;

@@ -5,6 +5,7 @@ import com.example.capstonedesign.domain.housingannouncements.entity.HousingCate
 import com.example.capstonedesign.domain.housingannouncements.entity.HousingStatus;
 import com.example.capstonedesign.domain.housingannouncements.service.HousingAnnouncementsService;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springdoc.core.annotations.ParameterObject;
@@ -12,10 +13,9 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.web.PageableDefault;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 /**
  * HousingAnnouncementsController
@@ -112,5 +112,33 @@ public class HousingAnnouncementsController {
             Pageable pageable
     ) {
         return service.getRecent(pageable);
+    }
+
+    /**
+     * 사용자 맞춤 LH 주택 공고 추천 API
+     * -------------------------------------------------
+     * 사용자의 나이, 지역, 소득 구간(중위소득 100~300%) 정보를 기반으로 개인 맞춤형 LH 주택 공고 추천
+     * GET /api/housings/recommend/{userId}?strictRegionMatch=false
+     *
+     * @param userId 사용자 ID
+     * @param strictRegionMatch 지역 일치 여부 (true=시·군·구만, false=광역시·도 포함)
+     * @return 맞춤형 추천 LH 주택 공고 목록
+     */
+    @Operation(summary = "사용자 맞춤 LH 주택 공고 추천", description = """
+    사용자의 나이, 지역, 소득 구간(중위소득 100~300%)을 기준으로 맞춤형 LH 주택 공고를 추천합니다.
+
+    추천 로직 요약:
+    - 청년층(20~35세) 및 저소득층(중위소득 150% 이하): 소액 예치가 가능하고 금리가 높은 상품 우대
+    - 중위·고소득층(200~300%): 예치금 규모가 크고 안정성이 높은 상품(정기예금 중심) 추천
+    - 금리가 높을수록, 최소 예치금이 낮을수록, 점수가 낮을수록 상위 노출
+    - 내부적으로 산출된 종합 점수에 따라 상위 10개의 추천 상품 반환
+    """)
+    @GetMapping("/recommend/{userId}")
+    public List<HousingAnnouncementsResponse> recommendForUser(
+            @Parameter(description = "사용자 ID") @PathVariable Integer userId,
+            @Parameter(description = "지역 일치 여부 (true=시·군·구만, false=광역시·도 포함)")
+            @RequestParam(defaultValue = "false") boolean strictRegionMatch
+    ) {
+        return service.recommendForUser(userId, strictRegionMatch);
     }
 }

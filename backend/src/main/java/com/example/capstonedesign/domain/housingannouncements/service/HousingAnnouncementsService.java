@@ -5,6 +5,8 @@ import com.example.capstonedesign.domain.housingannouncements.entity.HousingAnno
 import com.example.capstonedesign.domain.housingannouncements.entity.HousingCategory;
 import com.example.capstonedesign.domain.housingannouncements.entity.HousingStatus;
 import com.example.capstonedesign.domain.housingannouncements.repository.HousingAnnouncementsRepository;
+import com.example.capstonedesign.domain.users.entity.Users;
+import com.example.capstonedesign.domain.users.repository.UsersRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -14,6 +16,9 @@ import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
+import java.time.temporal.ChronoUnit;
+import java.util.Comparator;
+import java.util.List;
 
 /**
  * HousingAnnouncementsService
@@ -29,6 +34,7 @@ import java.time.LocalDate;
 public class HousingAnnouncementsService {
 
     private final HousingAnnouncementsRepository repository;
+    private final UsersRepository usersRepository;
 
     // --------------------------------------------------------
     // 전체 공고 조회
@@ -128,28 +134,176 @@ public class HousingAnnouncementsService {
     }
 
     // --------------------------------------------------------
+    // 사용자 맞춤형 추천 공고 조회
+    // --------------------------------------------------------
+
+    /**
+     * 사용자 맞춤형 LH 주택 공고 추천
+     * -------------------------------------------------
+     * - 사용자의 나이, 지역, 소득대역(income_band)을 기반으로 맞춤 추천
+     * - 저소득층: 임대주택 중심 / 중산층: 분양주택 중심
+     * - 지역 일치 여부에 따라 가중치 부여
+     * - 점수(score)가 낮을수록 추천 순위가 높음
+     */
+    public List<HousingAnnouncementsResponse> recommendForUser(Integer userId, boolean strictRegionMatch) {
+        Users user = usersRepository.findById(userId)
+                .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다."));
+
+        int age = user.getAge();
+        String region = user.getRegion();
+        String incomeBand = user.getIncome_band();
+
+        // 전체 공고 데이터 로드
+        List<HousingAnnouncements> all = repository.findAll();
+
+        return all.stream()
+                .filter(ha -> matchAge(ha.getCategory(), age))
+                .filter(ha -> matchIncome(incomeBand, ha.getCategory()))
+                .filter(ha -> matchRegion(region, ha.getRegionName(), strictRegionMatch))
+                .map(ha -> {
+                    double score = calculateRecommendationScore(age, incomeBand, region, ha);
+                    String reason = getRecommendationReason(age, incomeBand, region, ha);
+
+                    return HousingAnnouncementsResponse.builder()
+                            .id(ha.getId())
+                            .name(ha.getProduct().getName())
+                            .provider(ha.getProduct().getProvider())
+                            .regionName(ha.getRegionName())
+                            .noticeDate(ha.getNoticeDate())
+                            .closeDate(ha.getCloseDate())
+                            .status(ha.getStatus())
+                            .category(ha.getCategory())
+                            .detailUrl(ha.getProduct().getDetailUrl())
+                            .score(score)
+                            .reason(reason)
+                            .build();
+                })
+                .sorted(Comparator.comparingDouble(HousingAnnouncementsResponse::getScore))
+                .limit(10)
+                .toList();
+    }
+
+    // 나이별 선호 주택 유형 매칭
+    private boolean matchAge(HousingCategory category, int age) {
+        return switch (category) {
+            case 임대주택 -> age < 35 || age > 60; // 청년·노년층 중심
+            case 분양주택 -> age >= 30 && age <= 50;
+            default -> true;
+        };
+    }
+
+    // 소득대역별 매칭 (저소득층은 임대 위주, 고소득층은 분양 위주)
+    private boolean matchIncome(String incomeBand, HousingCategory category) {
+        if (incomeBand == null) return true;
+        return switch (incomeBand) {
+            case "중위소득100%이하", "중위소득150%이하" -> category == HousingCategory.임대주택;
+            case "중위소득200%이하", "중위소득300%이하" -> category == HousingCategory.분양주택;
+            default -> true;
+        };
+    }
+
+    // 지역 매칭 (strictRegionMatch가 true면 시·도 완전 일치)
+    private boolean matchRegion(String userRegion, String announcementRegion, boolean strict) {
+        if (userRegion == null || announcementRegion == null) return true;
+        return strict
+                ? announcementRegion.startsWith(userRegion)
+                : announcementRegion.startsWith(userRegion.substring(0, 2));
+    }
+
+    // 추천 점수 계산 (낮을수록 상위)
+    private double calculateRecommendationScore(int age, String incomeBand, String region, HousingAnnouncements ha) {
+        double score = 50.0; // 기본값 (낮을수록 상위)
+
+        // 지역 일치 시 가점
+        if (ha.getRegionName() != null && region != null &&
+                ha.getRegionName().startsWith(region.substring(0, 2))) {
+            score -= 10;
+        }
+
+        // 소득대역별 가중치 (소득 낮을수록 점수 하락)
+        score -= switch (incomeBand) {
+            case "중위소득100%이하" -> 10;
+            case "중위소득150%이하" -> 7;
+            case "중위소득200%이하" -> 4;
+            case "중위소득300%이하" -> 2;
+            default -> 0;
+        };
+
+        // 연령대별 우대 (청년/노년층에 가점)
+        if (age < 30) score -= 5;
+        else if (age > 60) score -= 3;
+
+        // 마감 임박(7일 이내) 공고 우대
+        if (ha.getCloseDate() != null) {
+            long daysLeft = ChronoUnit.DAYS.between(LocalDate.now(), ha.getCloseDate());
+            if (daysLeft <= 7 && daysLeft >= 0) {
+                score -= (7 - daysLeft) * 1.5; // 임박할수록 가점↑
+            }
+        }
+
+        // 1점 이하로 떨어지지 않도록 방어
+        return Math.max(score, 1);
+    }
+
+    // 추천 이유 문자열 구성
+    private String getRecommendationReason(int age, String incomeBand, String region, HousingAnnouncements ha) {
+        StringBuilder reason = new StringBuilder();
+
+        // 지역
+        if (region != null && ha.getRegionName() != null &&
+                ha.getRegionName().startsWith(region.substring(0, 2))) {
+            reason.append("거주 지역과 동일 지역인 공고, ");
+        } else {
+            reason.append("타지역 공고이지만 조건 적합, ");
+        }
+
+        // 소득
+        if (incomeBand != null) {
+            if (incomeBand.contains("100") || incomeBand.contains("150")) {
+                reason.append("저소득층 대상 임대주택 우선 추천, ");
+            } else if (incomeBand.contains("200") || incomeBand.contains("300")) {
+                reason.append("중산층을 위한 분양주택 추천, ");
+            }
+        }
+
+        // 연령
+        if (age < 30) {
+            reason.append("청년층 우대 대상, ");
+        } else if (age > 60) {
+            reason.append("노년층 우대 대상, ");
+        }
+
+        // 마감임박
+        if (ha.getCloseDate() != null && ChronoUnit.DAYS.between(LocalDate.now(), ha.getCloseDate()) <= 3) {
+            reason.append("마감 임박 공고");
+        }
+
+        // 마지막 쉼표 제거
+        return reason.toString().replaceAll(", $", "");
+    }
+
+    // --------------------------------------------------------
     // 내부 유틸리티
     // --------------------------------------------------------
 
     /**
      * Entity → DTO 변환 메서드
-     * (응답 시 Product 엔티티의 연관 필드 포함)
-     *
-     * @param ha HousingAnnouncements 엔티티
-     * @return HousingAnnouncementsResponse DTO
+     * ---------------------------------------------------------
+     * - HousingAnnouncements 엔티티를 Response DTO로 변환
+     * - 일반 목록/검색/조회 API에서 사용
      */
     private HousingAnnouncementsResponse toResponse(HousingAnnouncements ha) {
-        return new HousingAnnouncementsResponse(
-                ha.getId(),
-                ha.getProduct().getName(),
-                ha.getProduct().getProvider(),
-                ha.getRegionName(),
-                ha.getNoticeDate(),
-                ha.getCloseDate(),
-                ha.getStatus(),
-                ha.getCategory(),
-                ha.getProduct().getDetailUrl()
-        );
+        return HousingAnnouncementsResponse.builder()
+                .id(ha.getId())
+                .name(ha.getProduct().getName())
+                .provider(ha.getProduct().getProvider())
+                .regionName(ha.getRegionName())
+                .noticeDate(ha.getNoticeDate())
+                .closeDate(ha.getCloseDate())
+                .status(ha.getStatus())
+                .category(ha.getCategory())
+                .detailUrl(ha.getProduct().getDetailUrl())
+                .build();
     }
 
     /**

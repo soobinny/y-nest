@@ -67,35 +67,35 @@ CREATE TABLE finance_products
 -- =========================
 CREATE TABLE finance_loan_options
 (
-    id                 INT AUTO_INCREMENT PRIMARY KEY,
-    finance_product_id INT           NOT NULL,
+    id                     INT AUTO_INCREMENT PRIMARY KEY,
+    finance_product_id     INT           NOT NULL,
 
     -- 기본 금리 정보
-    lend_rate_min      DECIMAL(5, 2) NULL,
-    lend_rate_max      DECIMAL(5, 2) NULL,
-    lend_rate_avg      DECIMAL(5, 2) NULL,
+    lend_rate_min          DECIMAL(5, 2) NULL,
+    lend_rate_max          DECIMAL(5, 2) NULL,
+    lend_rate_avg          DECIMAL(5, 2) NULL,
 
     -- 대출 옵션 공통 필드
-    rpay_type_name     VARCHAR(100)  NULL, -- 상환유형 이름 (예: 원리금균등, 만기일시)
-    lend_type_name     VARCHAR(100)  NULL, -- 금리유형 이름 (예: 고정, 변동)
-    mrtg_type_name     VARCHAR(100)  NULL, -- 담보유형 이름 (예: 아파트, 보증 등)
+    rpay_type_name         VARCHAR(100)  NULL, -- 상환유형 이름 (예: 원리금균등, 만기일시)
+    lend_type_name         VARCHAR(100)  NULL, -- 금리유형 이름 (예: 고정, 변동)
+    mrtg_type_name         VARCHAR(100)  NULL, -- 담보유형 이름 (예: 아파트, 보증 등)
 
     -- 신용등급별 금리 필드 추가
-    crdt_lend_rate_type     VARCHAR(10)   NULL COMMENT '금리구분 코드',
-    crdt_lend_rate_type_nm  VARCHAR(100)  NULL COMMENT '금리구분명 (고정/변동)',
-    crdt_grad_1             DECIMAL(5, 2) NULL COMMENT '900점 초과',
-    crdt_grad_4             DECIMAL(5, 2) NULL COMMENT '801~900점',
-    crdt_grad_5             DECIMAL(5, 2) NULL COMMENT '701~800점',
-    crdt_grad_6             DECIMAL(5, 2) NULL COMMENT '601~700점',
-    crdt_grad_10            DECIMAL(5, 2) NULL COMMENT '501~600점',
-    crdt_grad_11            DECIMAL(5, 2) NULL COMMENT '401~500점',
-    crdt_grad_12            DECIMAL(5, 2) NULL COMMENT '301~400점',
-    crdt_grad_13            DECIMAL(5, 2) NULL COMMENT '300점 이하',
-    crdt_grad_avg           DECIMAL(5, 2) NULL COMMENT '평균 금리',
+    crdt_lend_rate_type    VARCHAR(10)   NULL COMMENT '금리구분 코드',
+    crdt_lend_rate_type_nm VARCHAR(100)  NULL COMMENT '금리구분명 (고정/변동)',
+    crdt_grad_1            DECIMAL(5, 2) NULL COMMENT '900점 초과',
+    crdt_grad_4            DECIMAL(5, 2) NULL COMMENT '801~900점',
+    crdt_grad_5            DECIMAL(5, 2) NULL COMMENT '701~800점',
+    crdt_grad_6            DECIMAL(5, 2) NULL COMMENT '601~700점',
+    crdt_grad_10           DECIMAL(5, 2) NULL COMMENT '501~600점',
+    crdt_grad_11           DECIMAL(5, 2) NULL COMMENT '401~500점',
+    crdt_grad_12           DECIMAL(5, 2) NULL COMMENT '301~400점',
+    crdt_grad_13           DECIMAL(5, 2) NULL COMMENT '300점 이하',
+    crdt_grad_avg          DECIMAL(5, 2) NULL COMMENT '평균 금리',
 
     -- 생성/수정 시각
-    created_at         TIMESTAMP     NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at         TIMESTAMP     NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    created_at             TIMESTAMP     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at             TIMESTAMP     NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
 
     -- FK
     CONSTRAINT fk_flo_product
@@ -120,7 +120,7 @@ CREATE INDEX idx_flo_types_name ON finance_loan_options (lend_type_name, rpay_ty
 CREATE INDEX idx_flo_crdt_avg ON finance_loan_options (crdt_grad_avg);
 
 -- =========================
--- housing_announcements
+-- LH housing_announcements
 -- =========================
 CREATE TABLE housing_announcements
 (
@@ -135,6 +135,51 @@ CREATE TABLE housing_announcements
     updated_at  TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     CONSTRAINT fk_housing_product
         FOREIGN KEY (product_id) REFERENCES products (id) ON DELETE CASCADE
+);
+
+-- =========================
+-- SH housing_announcements
+-- =========================
+CREATE TABLE sh_announcements
+(
+    id           BIGINT AUTO_INCREMENT PRIMARY KEY,
+    source       VARCHAR(100) NOT NULL,
+    external_id  VARCHAR(100) NOT NULL,
+    title        VARCHAR(500),
+    department   VARCHAR(255),
+    post_date    DATE,
+    views        INT,
+    content_html LONGTEXT,
+    attachments  JSON,
+    crawled_at   DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at   DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    UNIQUE KEY ux_sh_source_extid (source, external_id),
+    INDEX idx_post_date (post_date)
+);
+
+-- =========================
+-- youth_policies
+-- =========================
+CREATE TABLE youth_policies
+(
+    id              BIGINT AUTO_INCREMENT PRIMARY KEY,
+    policy_no       VARCHAR(50)  NOT NULL UNIQUE,
+    policy_name     VARCHAR(255) NOT NULL,
+    description     MEDIUMTEXT,
+    keyword         VARCHAR(255),
+    category_large  VARCHAR(100),
+    category_middle VARCHAR(100),
+    agency          VARCHAR(255),
+    apply_url       VARCHAR(500),
+    region_code     TEXT,
+    target_age      VARCHAR(50),
+    support_content MEDIUMTEXT,
+    start_date      VARCHAR(100),
+    end_date        VARCHAR(100),
+    created_at      DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at      DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    INDEX idx_policy_region (region_code(100)),
+    INDEX idx_policy_category (category_large, category_middle)
 );
 
 -- =========================
