@@ -38,7 +38,7 @@ public class FinanceProductRecommendationService {
                 .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다."));
 
         int age = user.getAge();
-        String incomeBand = user.getIncome_band();
+        String incomeBand = user.getIncome_band().replace(" ", "");
 
         // DSProductType → FinanceProductType 변환
         FinanceProductType productType = switch (type) {

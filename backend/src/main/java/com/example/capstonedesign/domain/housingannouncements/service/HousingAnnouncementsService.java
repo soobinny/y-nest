@@ -151,7 +151,7 @@ public class HousingAnnouncementsService {
 
         int age = user.getAge();
         String region = user.getRegion();
-        String incomeBand = user.getIncome_band();
+        String incomeBand = user.getIncome_band().replace(" ", "");
 
         // 전체 공고 데이터 로드
         List<HousingAnnouncements> all = repository.findAll();
