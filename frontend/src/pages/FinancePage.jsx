@@ -147,7 +147,7 @@ export default function FinancePage() {
                 {[
                   { key: "DEPOSIT", label: "예금" },
                   { key: "SAVING", label: "적금" },
-                  //   { key: "LOAN", label: "대출" }, // 추후 백엔드 로직 변경 예정!
+                  { key: "LOAN", label: "대출" },
                 ].map((t) => (
                   <button
                     key={t.key}
@@ -170,10 +170,8 @@ export default function FinancePage() {
               >
                 <option value="id,desc">최신 등록순</option>
                 <option value="productName,asc">가나다순</option>
-                <option value="interest_rate,desc">금리 높은순</option>{" "}
-                {/* ✅ 추가 */}
-                <option value="interest_rate,asc">금리 낮은순</option>{" "}
-                {/* ✅ 추가 */}
+                <option value="interestRate,desc">금리 높은순</option>{" "}
+                <option value="interestRate,asc">금리 낮은순</option>{" "}
               </select>
             </div>
 
