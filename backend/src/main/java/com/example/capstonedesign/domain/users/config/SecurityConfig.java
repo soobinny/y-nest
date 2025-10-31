@@ -34,6 +34,8 @@ public class SecurityConfig {
                                 "/users/find-id",
                                 "/users/password-reset/**",
                                 "/api/finance/products/**",
+                                "/api/housings/**",      
+                                "/admin/ingest/**",      
                                 "/v3/api-docs/**",
                                 "/swagger-ui.html", "/swagger-ui/**",
                                 "/error" // 에러 페이지 접근 허용(로그에 뜨던 /error 403 방지용)
