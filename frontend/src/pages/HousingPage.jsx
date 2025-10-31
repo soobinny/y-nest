@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+﻿import { useEffect, useState } from "react";
 import AppLayout from "../components/AppLayout";
 import api from "../lib/axios";
 
@@ -13,6 +13,7 @@ const CATEGORY_TABS = [
 const STATUS_OPTIONS = [
   { label: "전체", value: "ALL" },
   { label: "공고중", value: "공고중" },
+  { label: "정정공고중", value: "정정공고중" },
   { label: "접수중", value: "접수중" },
   { label: "접수마감", value: "접수마감" },
   { label: "종료", value: "종료" },
@@ -20,8 +21,8 @@ const STATUS_OPTIONS = [
 
 const SORT_OPTIONS = [
   { label: "최근 공고순", value: "noticeDate,desc" },
-  { label: "마감 임박순", value: "closeDate,asc" },
-  { label: "마감일 최신순", value: "closeDate,desc" },
+  { label: "마감일 임박순", value: "closeDate,asc" },
+  { label: "마감일 늦은순", value: "closeDate,desc" },
 ];
 
 const formatKoreanDate = (value) => {
@@ -79,7 +80,9 @@ export default function HousingPage() {
       } catch (err) {
         console.error("주거공고 불러오기 실패:", err);
         if (!ignore) {
-          setError("주거공고를 불러오지 못했습니다. 잠시 후 다시 시도해 주세요.");
+          setError(
+            "주거공고를 불러오지 못했습니다. 잠시 후 다시 시도해 주세요."
+          );
         }
       } finally {
         if (!ignore) setLoading(false);
@@ -98,14 +101,17 @@ export default function HousingPage() {
       setHighlightError("");
       try {
         const [closingRes, recentRes] = await Promise.all([
-          api.get("/api/housings/closing-soon", { params: { page: 0, size: 5 } }),
+          api.get("/api/housings/closing-soon", {
+            params: { page: 0, size: 5 },
+          }),
           api.get("/api/housings/recent", { params: { page: 0, size: 5 } }),
         ]);
         if (ignore) return;
         setClosingSoon(closingRes.data?.content || []);
         setRecent(recentRes.data?.content || []);
       } catch (err) {
-        if (!ignore) setHighlightError("하이라이트 정보를 불러오는 데 실패했습니다.");
+        if (!ignore)
+          setHighlightError("하이라이트 정보를 불러오는 데 실패했습니다.");
       } finally {
         if (!ignore) setHighlightLoading(false);
       }
@@ -135,8 +141,16 @@ export default function HousingPage() {
         {/* 상단 하이라이트 */}
         <section style={styles.highlightSection}>
           <div style={styles.highlightGrid}>
-            <HighlightCard title="마감 임박 공고" items={closingSoon} loading={highlightLoading} />
-            <HighlightCard title="최근 등록 공고" items={recent} loading={highlightLoading} />
+            <HighlightCard
+              title="💡 마감 임박 공고"
+              items={closingSoon}
+              loading={highlightLoading}
+            />
+            <HighlightCard
+              title="💡 최근 등록 공고"
+              items={recent}
+              loading={highlightLoading}
+            />
           </div>
         </section>
 
@@ -146,19 +160,33 @@ export default function HousingPage() {
 
           {/* 조건 검색 */}
           <div style={styles.filters}>
-            <div style={styles.categoryTabs}>
-              {CATEGORY_TABS.map((tab) => (
-                <button
-                  key={tab.value}
-                  onClick={() => handleCategoryChange(tab.value)}
-                  style={{
-                    ...styles.tab,
-                    ...(category === tab.value ? styles.tabActive : {}),
-                  }}
-                >
-                  {tab.label}
-                </button>
-              ))}
+            <div style={styles.categoryHeader}>
+              <div style={styles.categoryTabs}>
+                {CATEGORY_TABS.map((tab) => (
+                  <button
+                    key={tab.value}
+                    onClick={() => handleCategoryChange(tab.value)}
+                    style={{
+                      ...styles.tab,
+                      ...(category === tab.value ? styles.tabActive : {}),
+                    }}
+                  >
+                    {tab.label}
+                  </button>
+                ))}
+              </div>
+
+              <select
+                style={styles.sortSelect}
+                value={sort}
+                onChange={(e) => setSort(e.target.value)}
+              >
+                {SORT_OPTIONS.map((opt) => (
+                  <option key={opt.value} value={opt.value}>
+                    {opt.label}
+                  </option>
+                ))}
+              </select>
             </div>
 
             <div style={styles.filterRow}>
@@ -174,21 +202,9 @@ export default function HousingPage() {
                 ))}
               </select>
 
-              <select
-                style={styles.select}
-                value={sort}
-                onChange={(e) => setSort(e.target.value)}
-              >
-                {SORT_OPTIONS.map((opt) => (
-                  <option key={opt.value} value={opt.value}>
-                    {opt.label}
-                  </option>
-                ))}
-              </select>
-
               <input
                 style={styles.input}
-                placeholder="지역 입력 (예: 서울특별시)"
+                placeholder="지역 검색"
                 value={regionInput}
                 onChange={(e) => setRegionInput(e.target.value)}
                 onKeyDown={(e) => e.key === "Enter" && handleSearch()}
@@ -209,20 +225,24 @@ export default function HousingPage() {
           ) : (
             <>
               <p style={styles.count}>
-                {displayStart} - {displayEnd} / 총 {totalElements.toLocaleString()}건
+                {displayStart} - {displayEnd} / 총{" "}
+                {totalElements.toLocaleString()}건
               </p>
               <ul style={styles.list}>
                 {list.map((item) => (
                   <li key={item.id} style={styles.card}>
                     <div style={styles.cardHeader}>
-                      <h3 style={styles.cardTitle}>{item.name}</h3>
+                      <h3 style={styles.cardTitle}>
+                        {item.name.replace(/\s*\d+일전$/, "")}
+                      </h3>
                       <span style={styles.status}>{item.status}</span>
                     </div>
                     <p style={styles.meta}>
                       {item.regionName || "-"} / {item.provider || "-"}
                     </p>
                     <p style={styles.date}>
-                      {formatKoreanDate(item.noticeDate)} ~ {formatKoreanDate(item.closeDate)}
+                      {formatKoreanDate(item.noticeDate)} ~{" "}
+                      {formatKoreanDate(item.closeDate)}
                     </p>
                     {item.detailUrl && (
                       <a
@@ -239,6 +259,28 @@ export default function HousingPage() {
               </ul>
             </>
           )}
+
+          <div style={styles.pagination}>
+            <button
+              onClick={() => setPage((p) => Math.max(p - 1, 0))}
+              disabled={page === 0}
+              style={styles.pageButton}
+            >
+              이전
+            </button>
+
+            <span style={styles.pageInfo}>
+              {page + 1} / {totalPages} 페이지
+            </span>
+
+            <button
+              onClick={() => setPage((p) => (p + 1 < totalPages ? p + 1 : p))}
+              disabled={page + 1 >= totalPages}
+              style={styles.pageButton}
+            >
+              다음
+            </button>
+          </div>
         </section>
       </div>
     </AppLayout>
@@ -246,6 +288,9 @@ export default function HousingPage() {
 }
 
 function HighlightCard({ title, items, loading }) {
+  const [hovered, setHovered] = useState(null);
+
+
   return (
     <div style={styles.highlightCard}>
       <h3 style={styles.highlightTitle}>{title}</h3>
@@ -256,11 +301,25 @@ function HighlightCard({ title, items, loading }) {
       ) : (
         <ul style={styles.highlightList}>
           {items.map((item) => (
-            <li key={item.id} style={styles.highlightItem}>
-              <strong>{item.name}</strong>
+                       <li
+              key={item.id}
+              style={{
+                ...styles.highlightItem,
+                ...(hovered === item.id ? styles.highlightItemHover : {}),
+              }}
+              onMouseEnter={() => setHovered(item.id)}
+              onMouseLeave={() => setHovered(null)}
+
+               onClick={() => {
+                if (item.detailUrl) window.open(item.detailUrl, "_blank");
+              }}
+            >
+              <strong>{item.name.replace(/\s*\d+일전$/, "")}</strong>
               <div style={styles.highlightMeta}>
                 <span>{item.regionName || "전국"}</span>
-                <span>{formatKoreanDate(item.noticeDate)}</span>
+                <span style={{ marginLeft: "6px" }}>
+                  {formatKoreanDate(item.noticeDate)}
+                </span>
               </div>
             </li>
           ))}
@@ -281,7 +340,7 @@ const styles = {
     gap: "40px",
   },
   highlightSection: {
-    width: "90%",
+    width: "98%",
     maxWidth: "1200px",
   },
   highlightGrid: {
@@ -295,13 +354,24 @@ const styles = {
     boxShadow: "0 4px 12px rgba(0,0,0,0.08)",
     padding: "20px",
   },
-  highlightTitle: { fontSize: "16px", fontWeight: "700", marginBottom: "10px" },
+  highlightTitle: {
+    fontSize: "22px",
+    fontWeight: "700",
+    borderBottom: "20px solid #ffffffff",
+    marginBottom: "10px",
+  },
   highlightEmpty: { color: "#aaa", fontSize: "13px" },
-  highlightList: { listStyle: "none", margin: 0, padding: 0 },
+  highlightList: { listStyle: "none", margin: 0, padding: 0, fontSize: "15px" },
   highlightItem: {
     borderBottom: "1px solid #eee",
     paddingBottom: "8px",
     marginBottom: "6px",
+    borderRadius: "8px",
+    transition: "background-color 0.15s ease",
+    cursor: "pointer",
+  },
+    highlightItemHover: {
+    background: "#f9f9f9",
   },
   highlightMeta: { fontSize: "13px", color: "#666", marginTop: "4px" },
 
@@ -314,12 +384,24 @@ const styles = {
     boxShadow: "0 6px 20px rgba(0,0,0,0.08)",
     padding: "35px 40px",
   },
-  title: { fontSize: "22px", fontWeight: "700", textAlign: "center", marginBottom: "24px" },
+  title: {
+    fontSize: "22px",
+    fontWeight: "700",
+    textAlign: "center",
+    marginBottom: "24px",
+  },
   filters: {
     display: "flex",
     flexDirection: "column",
     gap: "16px",
     marginBottom: "24px",
+  },
+  categoryHeader: {
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "center",
+    flexWrap: "wrap",
+    gap: "10px",
   },
   categoryTabs: { display: "flex", gap: "10px", flexWrap: "wrap" },
   tab: {
@@ -333,36 +415,63 @@ const styles = {
   },
   tabActive: { background: "#9ed8b5", color: "#fff" },
   filterRow: {
-    display: "grid",
-    gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
+    display: "flex",
+    alignItems: "center",
     gap: "10px",
+    width: "100%",
   },
   select: {
     border: "1px solid #ddd",
     borderRadius: "8px",
     padding: "10px 12px",
     fontSize: "14px",
+    width: "160px",
+    minWidth: "160px",
+  },
+  sortSelect: {
+    border: "1px solid #ddd",
+    borderRadius: "8px",
+    padding: "8px 12px",
+    fontSize: "14px",
+    background: "#fff",
+    cursor: "pointer",
+    minWidth: "100px",
   },
   input: {
     border: "1px solid #ddd",
     borderRadius: "8px",
     padding: "10px 12px",
     fontSize: "14px",
+    flex: 1,
+    minWidth: "200px",
   },
   searchButton: {
     background: "#9ed8b5",
     border: "none",
     color: "#fff",
     borderRadius: "8px",
-    padding: "10px 0",
+    padding: "10px 16px",
     fontWeight: "600",
     cursor: "pointer",
+    marginLeft: "auto",
   },
   loading: { textAlign: "center", color: "#777" },
   error: { textAlign: "center", color: "#c00" },
   empty: { textAlign: "center", color: "#888" },
-  count: { fontSize: "13px", color: "#777", textAlign: "right", marginBottom: "10px" },
-  list: { listStyle: "none", margin: 0, padding: 0, display: "flex", flexDirection: "column", gap: "16px" },
+  count: {
+    fontSize: "13px",
+    color: "#777",
+    textAlign: "right",
+    marginBottom: "10px",
+  },
+  list: {
+    listStyle: "none",
+    margin: 0,
+    padding: 0,
+    display: "flex",
+    flexDirection: "column",
+    gap: "16px",
+  },
   card: {
     border: "1px solid #eee",
     borderRadius: "12px",
@@ -370,17 +479,41 @@ const styles = {
     background: "#fff",
     boxShadow: "0 2px 8px rgba(0,0,0,0.04)",
   },
-  cardHeader: { display: "flex", justifyContent: "space-between", marginBottom: "8px" },
+  cardHeader: {
+    display: "flex",
+    justifyContent: "space-between",
+    marginBottom: "8px",
+  },
   cardTitle: { fontSize: "17px", fontWeight: "600" },
   status: {
-    background: "#9ed8b5",
-    color: "#fff",
-    borderRadius: "8px",
+    color: "#4eb166e5",
     padding: "3px 10px",
-    fontSize: "12px",
+    fontSize: "15px",
     fontWeight: "600",
   },
   meta: { fontSize: "14px", color: "#666" },
   date: { fontSize: "13px", color: "#777", marginTop: "4px" },
   link: { color: "#0077cc", fontSize: "13px", textDecoration: "none" },
+
+  pagination: {
+    display: "flex",
+    justifyContent: "center",
+    alignItems: "center",
+    gap: "12px",
+    marginTop: "20px",
+  },
+  pageButton: {
+    background: "#9ed8b5",
+    border: "none",
+    color: "#fff",
+    borderRadius: "8px",
+    padding: "8px 16px",
+    fontWeight: "600",
+    cursor: "pointer",
+    transition: "opacity 0.2s",
+  },
+  pageInfo: {
+    fontSize: "14px",
+    color: "#555",
+  },
 };
