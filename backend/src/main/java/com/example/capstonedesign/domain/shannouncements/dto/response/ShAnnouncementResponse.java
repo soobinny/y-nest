@@ -1,6 +1,7 @@
 package com.example.capstonedesign.domain.shannouncements.dto.response;
 
 import com.example.capstonedesign.domain.shannouncements.entity.ShAnnouncement;
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.Builder;
 import lombok.Data;
@@ -15,6 +16,7 @@ import java.util.Map;
  * - SH공사 공고 조회용 DTO
  * - Entity → Response 변환 전용
  */
+@JsonInclude(JsonInclude.Include.NON_NULL)
 @Data
 @Builder
 public class ShAnnouncementResponse {
@@ -27,6 +29,11 @@ public class ShAnnouncementResponse {
     private String recruitStatus;             // 진행 상태
     private String supplyType;                // 공급 유형
     private List<Map<String, String>> attachments; // 첨부파일 목록
+
+    /** 추천 점수 (낮을수록 추천순위 높음) */
+    private Double score;
+    /** 추천 근거 요약 */
+    private String reason;
 
     /** Entity → DTO 변환 */
     public static ShAnnouncementResponse fromEntity(ShAnnouncement e) {

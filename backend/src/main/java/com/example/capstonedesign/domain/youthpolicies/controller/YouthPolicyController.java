@@ -45,15 +45,15 @@ public class YouthPolicyController {
         return queryService.getPaged(keyword, regionCode, pageable);
     }
 
-    /** 최근 7일 내 등록된 정책 조회 */
-    @Operation(summary = "최근 공고 조회 (7일 이내 등록)", description = "최근 일주일 내 등록된 청년정책을 조회합니다.")
+    /** 최근 30일 내 등록된 정책 조회 */
+    @Operation(summary = "최근 공고 조회 (30일 이내 등록)", description = "최근 한 달 이내에 등록된 청년정책을 조회합니다.")
     @GetMapping("/recent")
     public Page<YouthPolicyResponse> getRecentPolicies(@ParameterObject Pageable pageable) {
         return queryService.getRecentPolicies(pageable);
     }
 
-    /** 마감 임박 정책 조회 (3일 내 종료 예정) */
-    @Operation(summary = "마감 임박 공고 조회 (3일 내 마감)", description = "3일 내 마감되는 청년정책 목록을 조회합니다.")
+    /** 마감 임박 정책 조회 (7일 내 종료 예정) */
+    @Operation(summary = "마감 임박 공고 조회 (7일 내 마감)", description = "7일 내 마감되는 청년정책 목록을 조회합니다.")
     @GetMapping("/closing-soon")
     public Page<YouthPolicyResponse> getClosingSoonPolicies(@ParameterObject Pageable pageable) {
         return queryService.getClosingSoonPolicies(pageable);

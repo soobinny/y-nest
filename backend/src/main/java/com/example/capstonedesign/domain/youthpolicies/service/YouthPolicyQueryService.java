@@ -47,10 +47,10 @@ public class YouthPolicyQueryService {
         return page.map(YouthPolicyResponse::fromEntity);
     }
 
-    /** 최근 공고 (시작일 기준 7일 이내) */
+    /** 최근 공고 (시작일 기준 30일 이내) */
     public Page<YouthPolicyResponse> getRecentPolicies(Pageable pageable) {
         LocalDate today = LocalDate.now();
-        LocalDate sevenDaysAgo = today.minusDays(7);
+        LocalDate sevenDaysAgo = today.minusDays(30);
 
         List<YouthPolicy> recent = repository.findAll().stream()
                 .filter(p -> p.getStartDate() != null)
@@ -73,10 +73,10 @@ public class YouthPolicyQueryService {
                 .map(YouthPolicyResponse::fromEntity);
     }
 
-    /** 마감 임박 공고 (3일 내 종료 예정) */
+    /** 마감 임박 공고 (7일 내 종료 예정) */
     public Page<YouthPolicyResponse> getClosingSoonPolicies(Pageable pageable) {
         LocalDate today = LocalDate.now();
-        LocalDate threeDaysLater = today.plusDays(3);
+        LocalDate threeDaysLater = today.plusDays(7);
 
         List<YouthPolicy> closingSoon = repository.findAll().stream()
                 .filter(p -> p.getEndDate() != null)
