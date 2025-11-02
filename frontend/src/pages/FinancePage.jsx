@@ -2,8 +2,71 @@ import { useEffect, useState } from "react";
 import api from "../lib/axios";
 import AppLayout from "../components/AppLayout";
 
+const LOAN_TYPE_CONFIG = [
+  { type: "MORTGAGE_LOAN", title: "주택담보대출" },
+  { type: "RENT_HOUSE_LOAN", title: "전세자금대출" },
+  { type: "CREDIT_LOAN", title: "개인신용대출" },
+];
+
+const INITIAL_LOAN_RESULTS = LOAN_TYPE_CONFIG.reduce((acc, cur) => {
+  acc[cur.type] = [];
+  return acc;
+}, {});
+
+const formatRate = (value) => {
+  if (value === null || value === undefined || value === "") return "-";
+  const num = Number(value);
+  if (Number.isNaN(num)) return "-";
+  return num.toFixed(2).replace(/\.?0+$/, "");
+};
+
+const formatRateWithUnit = (value) => {
+  const formatted = formatRate(value);
+  return formatted === "-" ? "-" : `${formatted}%`;
+};
+
+const buildLoanFields = (type, item) => {
+  switch (type) {
+    case "MORTGAGE_LOAN":
+      return [
+        { label: "최저 금리", value: formatRateWithUnit(item.lendRateMin) },
+        { label: "최고 금리", value: formatRateWithUnit(item.lendRateMax) },
+        { label: "평균 금리", value: formatRateWithUnit(item.lendRateAvg) },
+        { label: "금리 유형", value: item.lendTypeName || "-" },
+        { label: "상환 방식", value: item.rpayTypeName || "-" },
+        { label: "담보 유형", value: item.mrtgTypeName || "-" },
+      ];
+    case "RENT_HOUSE_LOAN":
+      return [
+        { label: "최저 금리", value: formatRateWithUnit(item.lendRateMin) },
+        { label: "최고 금리", value: formatRateWithUnit(item.lendRateMax) },
+        { label: "평균 금리", value: formatRateWithUnit(item.lendRateAvg) },
+        { label: "금리 유형", value: item.lendTypeName || "-" },
+        { label: "상환 방식", value: item.rpayTypeName || "-" },
+      ];
+    case "CREDIT_LOAN":
+      return [
+        { label: "평균 금리", value: formatRateWithUnit(item.crdtGradAvg) },
+        { label: "금리 유형", value: item.crdtLendRateTypeNm || "-" },
+        { label: "1등급", value: formatRateWithUnit(item.crdtGrad1) },
+        { label: "4등급", value: formatRateWithUnit(item.crdtGrad4) },
+        { label: "5등급", value: formatRateWithUnit(item.crdtGrad5) },
+        { label: "6등급", value: formatRateWithUnit(item.crdtGrad6) },
+        { label: "10등급", value: formatRateWithUnit(item.crdtGrad10) },
+        { label: "11등급", value: formatRateWithUnit(item.crdtGrad11) },
+        { label: "12등급", value: formatRateWithUnit(item.crdtGrad12) },
+        { label: "13등급", value: formatRateWithUnit(item.crdtGrad13) },
+      ];
+    default:
+      return [];
+  }
+};
+
 export default function FinancePage() {
   const [products, setProducts] = useState([]);
+  const [loanResults, setLoanResults] = useState(() => ({
+    ...INITIAL_LOAN_RESULTS,
+  }));
   const [loading, setLoading] = useState(true);
   const [category, setCategory] = useState("DEPOSIT");
   const [keyword, setKeyword] = useState("");
@@ -14,6 +77,11 @@ export default function FinancePage() {
   const [selectedBanks, setSelectedBanks] = useState([]);
   const [minRate, setMinRate] = useState(0);
   const [maxRate, setMaxRate] = useState(10);
+  const isLoanCategory = category === "LOAN";
+  const totalLoanCount = LOAN_TYPE_CONFIG.reduce(
+    (sum, { type }) => sum + (loanResults[type]?.length || 0),
+    0
+  );
 
   useEffect(() => {
     fetchProducts();
@@ -22,6 +90,30 @@ export default function FinancePage() {
   const fetchProducts = async () => {
     try {
       setLoading(true);
+
+      if (category === "LOAN") {
+        setLoanResults({ ...INITIAL_LOAN_RESULTS });
+
+        const responses = await Promise.allSettled(
+          LOAN_TYPE_CONFIG.map(({ type }) =>
+            api.get(`/api/finance/loans/options/type/${type}`)
+          )
+        );
+
+        const nextLoanResults = { ...INITIAL_LOAN_RESULTS };
+        responses.forEach((result, index) => {
+          const { type } = LOAN_TYPE_CONFIG[index];
+          if (result.status === "fulfilled") {
+            nextLoanResults[type] = result.value?.data || [];
+          } else {
+            console.error(`대출 정보 조회 실패(${type}):`, result.reason);
+          }
+        });
+
+        setLoanResults(nextLoanResults);
+        setProducts([]);
+        return;
+      }
 
       const res = await api.get("/api/finance/products", {
         params: {
@@ -37,6 +129,9 @@ export default function FinancePage() {
       setProducts(res.data.content || []);
     } catch (err) {
       console.error("금융상품 불러오기 실패:", err);
+      if (category === "LOAN") {
+        setLoanResults({ ...INITIAL_LOAN_RESULTS });
+      }
     } finally {
       setLoading(false);
     }
@@ -190,13 +285,67 @@ export default function FinancePage() {
             </div>
 
             {/* 결과 수 */}
-            <p style={styles.resultCount}>총 {products.length}개</p>
+            <p style={styles.resultCount}>
+              총 {isLoanCategory ? totalLoanCount : products.length}개
+            </p>
 
             {/* 리스트 */}
             {loading ? (
               <p style={{ textAlign: "center", color: "#777" }}>
                 불러오는 중...
               </p>
+            ) : isLoanCategory ? (
+              <div style={styles.loanWrapper}>
+                {LOAN_TYPE_CONFIG.map(({ type, title }) => {
+                  const items = loanResults[type] || [];
+                  return (
+                    <section key={type} style={styles.loanSection}>
+                      <div style={styles.loanSectionHeader}>
+                        <h3 style={styles.loanSectionTitle}>{title}</h3>
+                        <span style={styles.loanSectionCount}>
+                          {items.length}개
+                        </span>
+                      </div>
+                      {items.length === 0 ? (
+                        <p style={styles.loanEmpty}>등록된 상품이 없습니다.</p>
+                      ) : (
+                        <div style={styles.loanList}>
+                          {items.map((item, index) => (
+                            <div key={`${type}-${index}`} style={styles.loanItem}>
+                              <div style={styles.loanItemHeader}>
+                                <div>
+                                  <h4 style={styles.loanItemTitle}>
+                                    {item.productName || "-"}
+                                  </h4>
+                                  <span style={styles.loanProvider}>
+                                    {item.companyName || "-"}
+                                  </span>
+                                </div>
+                                <span style={styles.loanBadge}>{title}</span>
+                              </div>
+                              <div style={styles.loanFields}>
+                                {buildLoanFields(type, item).map((field, fieldIdx) => (
+                                  <div
+                                    key={`${type}-${field.label}-${fieldIdx}`}
+                                    style={styles.loanFieldRow}
+                                  >
+                                    <span style={styles.loanFieldLabel}>
+                                      {field.label}
+                                    </span>
+                                    <span style={styles.loanFieldValue}>
+                                      {field.value}
+                                    </span>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </section>
+                  );
+                })}
+              </div>
             ) : (
               <div style={styles.list}>
                 {products.length === 0 ? (
@@ -414,6 +563,97 @@ const styles = {
   resultCount: {
     color: "#555",
     marginBottom: "15px",
+  },
+  loanWrapper: {
+    display: "flex",
+    flexDirection: "column",
+    gap: "24px",
+  },
+  loanSection: {
+    background: "#fff",
+    borderRadius: "12px",
+    border: "1px solid #eee",
+    padding: "22px 24px",
+    boxShadow: "0 2px 8px rgba(0,0,0,0.04)",
+  },
+  loanSectionHeader: {
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: "12px",
+  },
+  loanSectionTitle: {
+    fontSize: "18px",
+    fontWeight: "600",
+  },
+  loanSectionCount: {
+    fontSize: "13px",
+    color: "#777",
+  },
+  loanEmpty: {
+    fontSize: "14px",
+    color: "#777",
+    textAlign: "center",
+    padding: "12px 0",
+  },
+  loanList: {
+    display: "flex",
+    flexDirection: "column",
+    gap: "16px",
+  },
+  loanItem: {
+    border: "1px solid #f0f0f0",
+    borderRadius: "10px",
+    padding: "18px 20px",
+    background: "#fafafa",
+    boxShadow: "0 1px 4px rgba(0,0,0,0.06)",
+  },
+  loanItemHeader: {
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "flex-start",
+    gap: "12px",
+    marginBottom: "12px",
+  },
+  loanItemTitle: {
+    fontSize: "16px",
+    fontWeight: "600",
+    marginBottom: "4px",
+  },
+  loanProvider: {
+    fontSize: "13px",
+    color: "#666",
+  },
+  loanBadge: {
+    fontSize: "12px",
+    color: "#4a8f66",
+    background: "#e4f3eb",
+    borderRadius: "999px",
+    padding: "4px 10px",
+    fontWeight: "600",
+  },
+  loanFields: {
+    display: "grid",
+    gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))",
+    gap: "10px",
+  },
+  loanFieldRow: {
+    display: "flex",
+    flexDirection: "column",
+    background: "#fff",
+    borderRadius: "8px",
+    border: "1px solid #f2f2f2",
+    padding: "10px 12px",
+  },
+  loanFieldLabel: {
+    fontSize: "12px",
+    color: "#888",
+    marginBottom: "4px",
+  },
+  loanFieldValue: {
+    fontSize: "14px",
+    fontWeight: "600",
+    color: "#333",
   },
   list: {
     display: "flex",
