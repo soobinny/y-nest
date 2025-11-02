@@ -39,6 +39,7 @@ export default function HousingPage() {
   const [totalPages, setTotalPages] = useState(0);
   const [totalElements, setTotalElements] = useState(0);
   const [page, setPage] = useState(0);
+  const [hoveredCard, setHoveredCard] = useState(null);
   const [category, setCategory] = useState("ALL");
   const [status, setStatus] = useState("ALL");
   const [sort, setSort] = useState("noticeDate,desc");
@@ -230,7 +231,15 @@ export default function HousingPage() {
               </p>
               <ul style={styles.list}>
                 {list.map((item) => (
-                  <li key={item.id} style={styles.card}>
+                  <li
+                    key={item.id}
+                    style={{
+                      ...styles.card,
+                      ...(hoveredCard === item.id ? styles.cardHover : {}),
+                    }}
+                    onMouseEnter={() => setHoveredCard(item.id)}
+                    onMouseLeave={() => setHoveredCard(null)}
+                  >
                     <div style={styles.cardHeader}>
                       <h3 style={styles.cardTitle}>
                         {item.name.replace(/\s*\d+일전$/, "")}
@@ -478,6 +487,10 @@ const styles = {
     padding: "22px 26px",
     background: "#fff",
     boxShadow: "0 2px 8px rgba(0,0,0,0.04)",
+    transition: "box-shadow 0.2s ease",
+  },
+  cardHover: {
+    boxShadow: "0 6px 16px rgba(0,0,0,0.1)",
   },
   cardHeader: {
     display: "flex",
