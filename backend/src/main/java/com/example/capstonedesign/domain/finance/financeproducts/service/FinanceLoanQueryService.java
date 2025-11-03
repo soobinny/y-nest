@@ -125,7 +125,7 @@ public class FinanceLoanQueryService {
                 .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다."));
 
         int age = user.getAge();
-        String incomeBand = user.getIncome_band();
+        String incomeBand = user.getIncome_band().replace(" ", "");
 
         // 소득 구간별 대출유형 필터링
         List<FinanceProductType> targetTypes = switch (incomeBand) {

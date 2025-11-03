@@ -111,7 +111,7 @@ public class ShAnnouncementService {
 
         int age = user.getAge();
         String region = user.getRegion();
-        String incomeBand = user.getIncome_band();
+        String incomeBand = user.getIncome_band().replace(" ", "");
 
         // 모든 공고 데이터 로드
         List<ShAnnouncement> all = repo.findAll();

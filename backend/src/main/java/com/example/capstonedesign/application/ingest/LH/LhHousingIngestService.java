@@ -547,21 +547,28 @@ public class LhHousingIngestService {
     /** 사이트 표시 문자열을 도메인 enum 으로 매핑(알 수 없는 값은 종료로 폴백) */
     private HousingStatus mapToStatus(String status) {
         if (status == null) return HousingStatus.공고중;
+
         return switch (status.trim()) {
             case "공고중" -> HousingStatus.공고중;
             case "접수중" -> HousingStatus.접수중;
             case "정정공고중" -> HousingStatus.정정공고중;
             case "접수마감" -> HousingStatus.접수마감;
-            default -> HousingStatus.종료; // 예외 케이스 안전 처리
+            case "모집완료", "종료", "완료" -> HousingStatus.모집완료;
+            default -> HousingStatus.공고중; // 기본값
         };
     }
 
     /** 카테고리 문자열을 도메인 enum 으로 매핑(기본값: 임대) */
     private HousingCategory mapToCategory(String category) {
-        if (category == null) return HousingCategory.임대주택;
+        if (category == null) return HousingCategory.기타;
+
         return switch (category.trim()) {
+            case "임대주택" -> HousingCategory.임대주택;
             case "분양주택" -> HousingCategory.분양주택;
-            default -> HousingCategory.임대주택;
+            case "상가" -> HousingCategory.상가;
+            case "토지" -> HousingCategory.토지;
+            case "주거복지" -> HousingCategory.주거복지;
+            default -> HousingCategory.기타;
         };
     }
 }

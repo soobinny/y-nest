@@ -58,6 +58,9 @@ dependencies {
 
     // SMTP 의존성 JavaMailSender Bean 등록
     implementation 'org.springframework.boot:spring-boot-starter-mail'
+
+    // JSON 처리
+    implementation 'org.json:json:20240303'
 }
 
 tasks.named('test') {

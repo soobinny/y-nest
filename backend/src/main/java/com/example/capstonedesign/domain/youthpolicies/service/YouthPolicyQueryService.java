@@ -105,7 +105,7 @@ public class YouthPolicyQueryService {
 
         int age = user.getAge();
         String region = user.getRegion();
-        String incomeBand = user.getIncome_band();
+        String incomeBand = user.getIncome_band().replace(" ", "");
         String regionPrefix = convertRegionToCode(region);
 
         return repository.findAll().stream()

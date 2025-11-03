@@ -137,6 +137,21 @@ CREATE TABLE housing_announcements
         FOREIGN KEY (product_id) REFERENCES products (id) ON DELETE CASCADE
 );
 
+CREATE TABLE lh_notices
+(
+    id            BIGINT AUTO_INCREMENT PRIMARY KEY,
+    upp_ais_tp_nm VARCHAR(100),                    -- 공고유형명 (예: 임대공고, 분양공고)
+    ais_tp_cd_nm  VARCHAR(100),                    -- 세부유형명
+    pan_nm        VARCHAR(255),                    -- 공고명
+    cnp_cd_nm     VARCHAR(100),                    -- 지역명
+    pan_ss        VARCHAR(50),                     -- 공고상태
+    pan_nt_st_dt  VARCHAR(50),                     -- 공고게시일
+    clsg_dt       VARCHAR(50),                     -- 공고마감일
+    dtl_url       VARCHAR(500),                    -- 상세URL
+    created_at    DATETIME DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE KEY uk_lh_notice (pan_nm, pan_nt_st_dt) -- 중복방지
+);
+
 -- =========================
 -- SH housing_announcements
 -- =========================

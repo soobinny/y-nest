@@ -1,9 +1,103 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import api from "../lib/axios";
 import AppLayout from "../components/AppLayout";
 
+const LOAN_TYPE_CONFIG = [
+  { type: "MORTGAGE_LOAN", title: "주택담보대출" },
+  { type: "RENT_HOUSE_LOAN", title: "전세자금대출" },
+  { type: "CREDIT_LOAN", title: "개인신용대출" },
+];
+
+const LOAN_PAGE_SIZE = 10;
+
+const INITIAL_LOAN_RESULTS = LOAN_TYPE_CONFIG.reduce((acc, cur) => {
+  acc[cur.type] = [];
+  return acc;
+}, {});
+
+const INITIAL_LOAN_PAGES = LOAN_TYPE_CONFIG.reduce((acc, cur) => {
+  acc[cur.type] = 1;
+  return acc;
+}, {});
+
+const formatRate = (value) => {
+  if (value === null || value === undefined || value === "") return "-";
+  const num = Number(value);
+  if (Number.isNaN(num)) return "-";
+  return num.toFixed(2).replace(/\.?0+$/, "");
+};
+
+const formatRateWithUnit = (value) => {
+  const formatted = formatRate(value);
+  return formatted === "-" ? "-" : `${formatted}%`;
+};
+
+const buildLoanFields = (type, item) => {
+  switch (type) {
+    case "MORTGAGE_LOAN":
+      return [
+        { label: "최저 금리", value: formatRateWithUnit(item.lendRateMin) },
+        { label: "최고 금리", value: formatRateWithUnit(item.lendRateMax) },
+        { label: "평균 금리", value: formatRateWithUnit(item.lendRateAvg) },
+        { label: "금리 유형", value: item.lendTypeName || "-" },
+        { label: "상환 방식", value: item.rpayTypeName || "-" },
+        { label: "담보 유형", value: item.mrtgTypeName || "-" },
+      ];
+    case "RENT_HOUSE_LOAN":
+      return [
+        { label: "최저 금리", value: formatRateWithUnit(item.lendRateMin) },
+        { label: "최고 금리", value: formatRateWithUnit(item.lendRateMax) },
+        { label: "평균 금리", value: formatRateWithUnit(item.lendRateAvg) },
+        { label: "금리 유형", value: item.lendTypeName || "-" },
+        { label: "상환 방식", value: item.rpayTypeName || "-" },
+      ];
+    case "CREDIT_LOAN":
+      return [
+        { label: "평균 금리", value: formatRateWithUnit(item.crdtGradAvg) },
+        { label: "금리 유형", value: item.crdtLendRateTypeNm || "-" },
+        { label: "1등급", value: formatRateWithUnit(item.crdtGrad1) },
+        { label: "4등급", value: formatRateWithUnit(item.crdtGrad4) },
+        { label: "5등급", value: formatRateWithUnit(item.crdtGrad5) },
+        { label: "6등급", value: formatRateWithUnit(item.crdtGrad6) },
+        { label: "10등급", value: formatRateWithUnit(item.crdtGrad10) },
+        { label: "11등급", value: formatRateWithUnit(item.crdtGrad11) },
+        { label: "12등급", value: formatRateWithUnit(item.crdtGrad12) },
+        { label: "13등급", value: formatRateWithUnit(item.crdtGrad13) },
+      ];
+    default:
+      return [];
+  }
+};
+
+const groupLoanItemsByProduct = (items = []) => {
+  const grouped = new Map();
+
+  items.forEach((item) => {
+    const key = `${item.productName || ""}::${item.companyName || ""}`;
+    if (!grouped.has(key)) {
+      grouped.set(key, {
+        productName: item.productName || "-",
+        companyName: item.companyName || "-",
+        variants: [],
+      });
+    }
+    grouped.get(key).variants.push(item);
+  });
+
+  return Array.from(grouped.values());
+};
+
 export default function FinancePage() {
   const [products, setProducts] = useState([]);
+  const [loanResults, setLoanResults] = useState(() => ({
+    ...INITIAL_LOAN_RESULTS,
+  }));
+  const [activeLoanType, setActiveLoanType] = useState(
+    LOAN_TYPE_CONFIG[0].type
+  );
+  const [loanPageByType, setLoanPageByType] = useState({
+    ...INITIAL_LOAN_PAGES,
+  });
   const [loading, setLoading] = useState(true);
   const [category, setCategory] = useState("DEPOSIT");
   const [keyword, setKeyword] = useState("");
@@ -14,14 +108,99 @@ export default function FinancePage() {
   const [selectedBanks, setSelectedBanks] = useState([]);
   const [minRate, setMinRate] = useState(0);
   const [maxRate, setMaxRate] = useState(10);
+  const isLoanCategory = category === "LOAN";
+  const activeLoanGroups = useMemo(() => {
+    if (!isLoanCategory) {
+      return [];
+    }
+    return groupLoanItemsByProduct(loanResults[activeLoanType] || []);
+  }, [isLoanCategory, loanResults, activeLoanType]);
+  const activeLoanPage = loanPageByType[activeLoanType] || 1;
+  const totalLoanPages = Math.max(
+    1,
+    Math.ceil(activeLoanGroups.length / LOAN_PAGE_SIZE) || 1
+  );
+  const paginatedLoanGroups = isLoanCategory
+    ? activeLoanGroups.slice(
+        (activeLoanPage - 1) * LOAN_PAGE_SIZE,
+        activeLoanPage * LOAN_PAGE_SIZE
+      )
+    : [];
+  const displayedLoanCount = isLoanCategory ? activeLoanGroups.length : 0;
+  const activeLoanConfig = LOAN_TYPE_CONFIG.find(
+    ({ type }) => type === activeLoanType
+  );
+  const visibleLoanConfigs =
+    isLoanCategory && activeLoanConfig
+      ? [
+          {
+            ...activeLoanConfig,
+            groups: paginatedLoanGroups,
+            totalGroups: activeLoanGroups.length,
+            totalPages: totalLoanPages,
+            page: activeLoanPage,
+          },
+        ]
+      : [];
 
   useEffect(() => {
     fetchProducts();
   }, [category, sortOption]);
 
+  useEffect(() => {
+    if (category === "LOAN") {
+      setActiveLoanType((prev) => {
+        if (LOAN_TYPE_CONFIG.some(({ type }) => type === prev)) {
+          return prev;
+        }
+        return LOAN_TYPE_CONFIG[0].type;
+      });
+    }
+  }, [category]);
+
+  useEffect(() => {
+    if (!isLoanCategory || !activeLoanConfig) return;
+
+    setLoanPageByType((prev) => {
+      const currentPage = prev[activeLoanType] || 1;
+      const clampedPage = Math.min(currentPage, totalLoanPages);
+      if (clampedPage === currentPage) {
+        return prev;
+      }
+      return {
+        ...prev,
+        [activeLoanType]: clampedPage,
+      };
+    });
+  }, [isLoanCategory, activeLoanType, totalLoanPages, activeLoanConfig]);
+
   const fetchProducts = async () => {
     try {
       setLoading(true);
+
+      if (category === "LOAN") {
+        setLoanResults({ ...INITIAL_LOAN_RESULTS });
+
+        const responses = await Promise.allSettled(
+          LOAN_TYPE_CONFIG.map(({ type }) =>
+            api.get(`/api/finance/loans/options/type/${type}`)
+          )
+        );
+
+        const nextLoanResults = { ...INITIAL_LOAN_RESULTS };
+        responses.forEach((result, index) => {
+          const { type } = LOAN_TYPE_CONFIG[index];
+          if (result.status === "fulfilled") {
+            nextLoanResults[type] = result.value?.data || [];
+          } else {
+            console.error(`대출 정보 조회 실패(${type}):`, result.reason);
+          }
+        });
+
+        setLoanResults(nextLoanResults);
+        setProducts([]);
+        return;
+      }
 
       const res = await api.get("/api/finance/products", {
         params: {
@@ -37,9 +216,34 @@ export default function FinancePage() {
       setProducts(res.data.content || []);
     } catch (err) {
       console.error("금융상품 불러오기 실패:", err);
+      if (category === "LOAN") {
+        setLoanResults({ ...INITIAL_LOAN_RESULTS });
+      }
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleLoanSubTabClick = (type) => {
+    setActiveLoanType(type);
+    setLoanPageByType((prev) => ({
+      ...prev,
+      [type]: 1,
+    }));
+  };
+
+  const handleLoanPageChange = (type, nextPage, totalPages) => {
+    setLoanPageByType((prev) => {
+      const current = prev[type] || 1;
+      const clamped = Math.max(1, Math.min(nextPage, totalPages));
+      if (clamped === current) {
+        return prev;
+      }
+      return {
+        ...prev,
+        [type]: clamped,
+      };
+    });
   };
 
   const handleBankToggle = (bank, checked) => {
@@ -189,14 +393,220 @@ export default function FinancePage() {
               </button>
             </div>
 
+            {isLoanCategory && (
+              <div style={styles.loanSubTabs}>
+                {LOAN_TYPE_CONFIG.map(({ type, title }) => (
+                  <button
+                    key={type}
+                    type="button"
+                    onClick={() => handleLoanSubTabClick(type)}
+                    style={{
+                      ...styles.loanSubTab,
+                      ...(activeLoanType === type
+                        ? styles.loanSubTabActive
+                        : {}),
+                    }}
+                  >
+                    {title}
+                  </button>
+                ))}
+              </div>
+            )}
+
             {/* 결과 수 */}
-            <p style={styles.resultCount}>총 {products.length}개</p>
+            <p style={styles.resultCount}>
+              총 {isLoanCategory ? displayedLoanCount : products.length}개
+            </p>
 
             {/* 리스트 */}
             {loading ? (
               <p style={{ textAlign: "center", color: "#777" }}>
                 불러오는 중...
               </p>
+            ) : isLoanCategory ? (
+              <div style={styles.loanWrapper}>
+                {visibleLoanConfigs.map(
+                  ({ type, title, groups, totalGroups, totalPages, page }) => {
+                    return (
+                      <section key={type} style={styles.loanSection}>
+                        <div style={styles.loanSectionHeader}>
+                          <h3 style={styles.loanSectionTitle}>{title}</h3>
+                        </div>
+                        {totalGroups === 0 ? (
+                          <p style={styles.loanEmpty}>
+                            등록된 상품이 없습니다.
+                          </p>
+                        ) : (
+                          <>
+                            <div style={styles.loanList}>
+                              {groups.map((group, groupIdx) => (
+                                <div
+                                  key={`${type}-${group.productName}-${group.companyName}-${groupIdx}`}
+                                  style={styles.loanItem}
+                                  onMouseEnter={(e) =>
+                                    (e.currentTarget.style.boxShadow =
+                                      "0 6px 16px rgba(0,0,0,0.1)")
+                                  }
+                                  onMouseLeave={(e) =>
+                                    (e.currentTarget.style.boxShadow =
+                                      "0 2px 8px rgba(0,0,0,0.04)")
+                                  }
+                                >
+                                  <div style={styles.loanItemHeader}>
+                                    <div>
+                                      <h4 style={styles.loanItemTitle}>
+                                        {group.productName}
+                                      </h4>
+                                      <span style={styles.loanProvider}>
+                                        {group.companyName}
+                                      </span>
+                                    </div>
+                                    <span style={styles.loanBadge}>
+                                      {title}
+                                    </span>
+                                  </div>
+                                  <div style={styles.loanVariantList}>
+                                    {group.variants.map(
+                                      (variant, variantIdx) => (
+                                        <div
+                                          key={`${type}-${groupIdx}-variant-${variantIdx}`}
+                                          style={
+                                            group.variants.length > 1
+                                              ? styles.loanVariant
+                                              : styles.loanVariantSingle
+                                          }
+                                        >
+                                          {group.variants.length > 1 && (
+                                            <div
+                                              style={styles.loanVariantHeader}
+                                            >
+                                              <span
+                                                style={styles.loanVariantBadge}
+                                              >
+                                                옵션 {variantIdx + 1}
+                                              </span>
+                                              {(variant.lendTypeName ||
+                                                variant.rpayTypeName ||
+                                                variant.crdtLendRateTypeNm) && (
+                                                <span
+                                                  style={
+                                                    styles.loanVariantSummary
+                                                  }
+                                                >
+                                                  {variant.lendTypeName ||
+                                                    variant.rpayTypeName ||
+                                                    variant.crdtLendRateTypeNm}
+                                                </span>
+                                              )}
+                                            </div>
+                                          )}
+                                          <div style={styles.loanFields}>
+                                            {buildLoanFields(type, variant).map(
+                                              (field, fieldIdx) => (
+                                                <div
+                                                  key={`${type}-${groupIdx}-variant-${variantIdx}-${field.label}-${fieldIdx}`}
+                                                  style={styles.loanFieldRow}
+                                                >
+                                                  <span
+                                                    style={
+                                                      styles.loanFieldLabel
+                                                    }
+                                                  >
+                                                    {field.label}
+                                                  </span>
+                                                  <span
+                                                    style={
+                                                      styles.loanFieldValue
+                                                    }
+                                                  >
+                                                    {field.value}
+                                                  </span>
+                                                </div>
+                                              )
+                                            )}
+                                          </div>
+                                        </div>
+                                      )
+                                    )}
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                            {totalPages > 1 && (
+                              <div style={styles.loanPagination}>
+                                <button
+                                  type="button"
+                                  onClick={() =>
+                                    handleLoanPageChange(
+                                      type,
+                                      page - 1,
+                                      totalPages
+                                    )
+                                  }
+                                  disabled={page === 1}
+                                  style={{
+                                    ...styles.loanPaginationButton,
+                                    ...(page === 1
+                                      ? styles.loanPaginationButtonDisabled
+                                      : {}),
+                                  }}
+                                >
+                                  이전
+                                </button>
+                                <div style={styles.loanPaginationPages}>
+                                  {Array.from(
+                                    { length: totalPages },
+                                    (_, idx) => idx + 1
+                                  ).map((pageNumber) => (
+                                    <button
+                                      key={pageNumber}
+                                      type="button"
+                                      onClick={() =>
+                                        handleLoanPageChange(
+                                          type,
+                                          pageNumber,
+                                          totalPages
+                                        )
+                                      }
+                                      style={{
+                                        ...styles.loanPaginationPage,
+                                        ...(pageNumber === page
+                                          ? styles.loanPaginationPageActive
+                                          : {}),
+                                      }}
+                                    >
+                                      {pageNumber}
+                                    </button>
+                                  ))}
+                                </div>
+                                <button
+                                  type="button"
+                                  onClick={() =>
+                                    handleLoanPageChange(
+                                      type,
+                                      page + 1,
+                                      totalPages
+                                    )
+                                  }
+                                  disabled={page === totalPages}
+                                  style={{
+                                    ...styles.loanPaginationButton,
+                                    ...(page === totalPages
+                                      ? styles.loanPaginationButtonDisabled
+                                      : {}),
+                                  }}
+                                >
+                                  다음
+                                </button>
+                              </div>
+                            )}
+                          </>
+                        )}
+                      </section>
+                    );
+                  }
+                )}
+              </div>
             ) : (
               <div style={styles.list}>
                 {products.length === 0 ? (
@@ -273,7 +683,7 @@ const styles = {
     padding: "80px 20px",
     background: "#fdfaf6",
     alignItems: "start",
-    transform: "translateX(-185px)", 
+    transform: "translateX(-185px)",
   },
   sidebar: {
     background: "#fff",
@@ -414,6 +824,202 @@ const styles = {
   resultCount: {
     color: "#555",
     marginBottom: "15px",
+  },
+  loanSubTabs: {
+    display: "flex",
+    gap: "10px",
+    marginBottom: "18px",
+    flexWrap: "wrap",
+  },
+  loanSubTab: {
+    flex: "0 1 auto",
+    padding: "8px 14px",
+    borderRadius: "8px",
+    border: "none",
+    background: "#f5f5f5",
+    color: "#555",
+    fontSize: "14px",
+    fontWeight: "500",
+    cursor: "pointer",
+  },
+  loanSubTabActive: {
+    background: "#9ed8b5",
+    color: "#fff",
+    fontWeight: "600",
+  },
+  loanWrapper: {
+    display: "flex",
+    flexDirection: "column",
+    gap: "24px",
+  },
+  loanSection: {
+    background: "#fff",
+    borderRadius: "12px",
+    border: "1px solid #eee",
+    padding: "22px 24px",
+    boxShadow: "0 2px 8px rgba(0,0,0,0.04)",
+  },
+  loanSectionHeader: {
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: "12px",
+  },
+  loanSectionTitle: {
+    fontSize: "18px",
+    fontWeight: "600",
+  },
+  loanEmpty: {
+    fontSize: "14px",
+    color: "#777",
+    textAlign: "center",
+    padding: "12px 0",
+  },
+  loanList: {
+    display: "flex",
+    flexDirection: "column",
+    gap: "16px",
+  },
+  loanPagination: {
+    display: "flex",
+    justifyContent: "center",
+    alignItems: "center",
+    gap: "10px",
+    marginTop: "18px",
+    flexWrap: "wrap",
+  },
+  loanPaginationButton: {
+    padding: "6px 12px",
+    borderRadius: "6px",
+    border: "1px solid #ddd",
+    background: "#fff",
+    color: "#555",
+    fontSize: "13px",
+    fontWeight: "500",
+    cursor: "pointer",
+    transition: "all 0.2s ease",
+  },
+  loanPaginationButtonDisabled: {
+    color: "#bbb",
+    border: "1px solid #ddd",
+    background: "#f9f9f9",
+    cursor: "not-allowed",
+  },
+  loanPaginationPages: {
+    display: "flex",
+    gap: "6px",
+    alignItems: "center",
+  },
+  loanPaginationPage: {
+    padding: "6px 10px",
+    borderRadius: "6px",
+    border: "1px solid #ddd",
+    background: "#fff",
+    color: "#555",
+    fontSize: "13px",
+    fontWeight: "500",
+    cursor: "pointer",
+    transition: "all 0.2s ease",
+  },
+  loanPaginationPageActive: {
+    background: "#9ed8b5",
+    border: "1px solid #ddd",
+    color: "#fff",
+  },
+  loanItem: {
+    border: "1px solid #f0f0f0",
+    borderRadius: "10px",
+    padding: "18px 20px",
+    background: "#fafafa",
+    boxShadow: "0 2px 8px rgba(0,0,0,0.04)",
+    transition: "box-shadow 0.2s ease",
+  },
+  loanItemHeader: {
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "flex-start",
+    gap: "12px",
+    marginBottom: "12px",
+  },
+  loanItemTitle: {
+    fontSize: "16px",
+    fontWeight: "600",
+    marginBottom: "4px",
+  },
+  loanProvider: {
+    fontSize: "13px",
+    color: "#666",
+  },
+  loanBadge: {
+    fontSize: "12px",
+    color: "#4a8f66",
+    background: "#e4f3eb",
+    borderRadius: "999px",
+    padding: "4px 10px",
+    fontWeight: "600",
+  },
+  loanFields: {
+    display: "grid",
+    gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))",
+    gap: "10px",
+  },
+  loanVariantList: {
+    display: "flex",
+    flexDirection: "column",
+    gap: "12px",
+  },
+  loanVariant: {
+    background: "#fff",
+    border: "1px solid #e8e8e8",
+    borderRadius: "10px",
+    padding: "12px 14px",
+    boxShadow: "0 1px 3px rgba(0,0,0,0.04)",
+  },
+  loanVariantSingle: {
+    background: "transparent",
+    padding: "0",
+    border: "none",
+    boxShadow: "none",
+  },
+  loanVariantHeader: {
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginBottom: "10px",
+  },
+  loanVariantBadge: {
+    display: "inline-flex",
+    alignItems: "center",
+    justifyContent: "center",
+    background: "#eef8f1",
+    color: "#4a8f66",
+    borderRadius: "999px",
+    padding: "4px 10px",
+    fontSize: "12px",
+    fontWeight: "600",
+  },
+  loanVariantSummary: {
+    fontSize: "13px",
+    color: "#666",
+    fontWeight: "500",
+  },
+  loanFieldRow: {
+    display: "flex",
+    flexDirection: "column",
+    background: "#fff",
+    borderRadius: "8px",
+    border: "1px solid #f2f2f2",
+    padding: "10px 12px",
+  },
+  loanFieldLabel: {
+    fontSize: "12px",
+    color: "#888",
+    marginBottom: "4px",
+  },
+  loanFieldValue: {
+    fontSize: "14px",
+    fontWeight: "600",
+    color: "#333",
   },
   list: {
     display: "flex",
