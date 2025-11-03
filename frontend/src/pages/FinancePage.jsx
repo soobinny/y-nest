@@ -10,6 +10,8 @@ const LOAN_TYPE_CONFIG = [
 ];
 
 const LOAN_PAGE_SIZE = 10;
+const PRODUCT_PAGE_SIZE = 10;
+const MAX_PAGE_BUTTONS = 9;
 
 const INITIAL_LOAN_RESULTS = LOAN_TYPE_CONFIG.reduce((acc, cur) => {
     acc[cur.type] = [];
@@ -88,8 +90,23 @@ const groupLoanItemsByProduct = (items = []) => {
     return Array.from(grouped.values());
 };
 
+const buildPageNumbers = (currentPage, totalPages) => {
+    const safeTotal = Math.max(1, totalPages || 1);
+    const safeCurrent = Math.max(1, Math.min(currentPage || 1, safeTotal));
+    if (safeTotal <= MAX_PAGE_BUTTONS) {
+        return Array.from({ length: safeTotal }, (_, idx) => idx + 1);
+    }
+    const blockIndex = Math.floor((safeCurrent - 1) / MAX_PAGE_BUTTONS);
+    const start = blockIndex * MAX_PAGE_BUTTONS + 1;
+    const end = Math.min(safeTotal, start + MAX_PAGE_BUTTONS - 1);
+    return Array.from({ length: end - start + 1 }, (_, idx) => start + idx);
+};
+
 export default function FinancePage() {
     const [products, setProducts] = useState([]);
+    const [productPage, setProductPage] = useState(1);
+    const [totalProductPages, setTotalProductPages] = useState(1);
+    const [totalProductCount, setTotalProductCount] = useState(0);
     const [loanResults, setLoanResults] = useState(() => ({
         ...INITIAL_LOAN_RESULTS,
     }));
@@ -214,7 +231,17 @@ export default function FinancePage() {
             : [];
 
     useEffect(() => {
-        fetchProducts();
+        if (isLoanCategory) return;
+        const maxPage = Math.max(1, totalProductPages || 1);
+        if (productPage > maxPage) {
+            fetchProducts(maxPage);
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [isLoanCategory, productPage, totalProductPages]);
+
+    useEffect(() => {
+        fetchProducts(1);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [category, sortOption]);
 
     useEffect(() => {
@@ -225,6 +252,8 @@ export default function FinancePage() {
                 }
                 return LOAN_TYPE_CONFIG[0].type;
             });
+        } else {
+            setProductPage(1);
         }
     }, [category]);
 
@@ -244,7 +273,7 @@ export default function FinancePage() {
         });
     }, [isLoanCategory, activeLoanType, totalLoanPages, activeLoanConfig]);
 
-    const fetchProducts = async () => {
+    const fetchProducts = async (requestedPage = productPage) => {
         try {
             setLoading(true);
 
@@ -269,8 +298,12 @@ export default function FinancePage() {
 
                 setLoanResults(nextLoanResults);
                 setProducts([]);
+                setTotalProductPages(1);
+                setTotalProductCount(0);
                 return;
             }
+
+            const safePage = Math.max(1, requestedPage || 1);
 
             const res = await api.get("/api/finance/products", {
                 params: {
@@ -279,11 +312,19 @@ export default function FinancePage() {
                     minRate,
                     maxRate,
                     sort: sortOption,
+                    page: safePage - 1,
+                    size: PRODUCT_PAGE_SIZE,
                 },
             });
 
             console.log("서버 응답:", res.data);
             setProducts(res.data.content || []);
+            setTotalProductPages(res.data.totalPages ?? 1);
+            setTotalProductCount(
+                res.data.totalElements ??
+                    (res.data.content ? res.data.content.length : 0)
+            );
+            setProductPage(safePage);
         } catch (err) {
             console.error("금융상품 불러오기 실패:", err);
             if (category === "LOAN") {
@@ -292,6 +333,12 @@ export default function FinancePage() {
         } finally {
             setLoading(false);
         }
+    };
+
+    const handleProductPageChange = (nextPage) => {
+        const clamped = Math.max(1, Math.min(nextPage, totalProductPages || 1));
+        if (clamped === productPage) return;
+        fetchProducts(clamped);
     };
 
     const handleLoanSubTabClick = (type) => {
@@ -406,7 +453,7 @@ export default function FinancePage() {
                         </div>
 
                         {/* 검색 버튼 */}
-                        <button onClick={fetchProducts} style={styles.filterButton}>
+                        <button onClick={() => fetchProducts(1)} style={styles.filterButton}>
                             선택된 조건 검색하기
                         </button>
                     </aside>
@@ -612,7 +659,7 @@ export default function FinancePage() {
                                 onChange={(e) => setKeyword(e.target.value)}
                                 style={styles.input}
                             />
-                            <button onClick={fetchProducts} style={styles.searchBtn}>
+                            <button onClick={() => fetchProducts(1)} style={styles.searchBtn}>
                                 검색
                             </button>
                         </div>
@@ -639,7 +686,7 @@ export default function FinancePage() {
 
                         {/* 결과 수 */}
                         <p style={styles.resultCount}>
-                            총 {isLoanCategory ? displayedLoanCount : products.length}개
+                            총 {isLoanCategory ? displayedLoanCount : totalProductCount}개
                         </p>
 
                         {/* 리스트 */}
@@ -778,30 +825,29 @@ export default function FinancePage() {
                                                                     이전
                                                                 </button>
                                                                 <div style={styles.loanPaginationPages}>
-                                                                    {Array.from(
-                                                                        { length: totalPages },
-                                                                        (_, idx) => idx + 1
-                                                                    ).map((pageNumber) => (
-                                                                        <button
-                                                                            key={pageNumber}
-                                                                            type="button"
-                                                                            onClick={() =>
-                                                                                handleLoanPageChange(
-                                                                                    type,
-                                                                                    pageNumber,
-                                                                                    totalPages
-                                                                                )
-                                                                            }
-                                                                            style={{
-                                                                                ...styles.loanPaginationPage,
-                                                                                ...(pageNumber === page
-                                                                                    ? styles.loanPaginationPageActive
-                                                                                    : {}),
-                                                                            }}
-                                                                        >
-                                                                            {pageNumber}
-                                                                        </button>
-                                                                    ))}
+                                                                    {buildPageNumbers(page, totalPages).map(
+                                                                        (pageNumber) => (
+                                                                            <button
+                                                                                key={pageNumber}
+                                                                                type="button"
+                                                                                onClick={() =>
+                                                                                    handleLoanPageChange(
+                                                                                        type,
+                                                                                        pageNumber,
+                                                                                        totalPages
+                                                                                    )
+                                                                                }
+                                                                                style={{
+                                                                                    ...styles.loanPaginationPage,
+                                                                                    ...(pageNumber === page
+                                                                                        ? styles.loanPaginationPageActive
+                                                                                        : {}),
+                                                                                }}
+                                                                            >
+                                                                                {pageNumber}
+                                                                            </button>
+                                                                        )
+                                                                    )}
                                                                 </div>
                                                                 <button
                                                                     type="button"
@@ -832,8 +878,9 @@ export default function FinancePage() {
                                 )}
                             </div>
                         ) : (
-                            <div style={styles.list}>
-                                {products.length === 0 ? (
+                            <div>
+                                <div style={styles.list}>
+                                    {products.length === 0 ? (
                                     <p style={{ textAlign: "center", color: "#888" }}>
                                         해당 조건의 상품이 없습니다.
                                     </p>
@@ -887,6 +934,63 @@ export default function FinancePage() {
                                             )}
                                         </div>
                                     ))
+                                )}
+                                </div>
+                                {totalProductPages > 1 && (
+                                    <div style={styles.loanPagination}>
+                                        <button
+                                            type="button"
+                                            onClick={() =>
+                                                handleProductPageChange(productPage - 1)
+                                            }
+                                            disabled={productPage === 1}
+                                            style={{
+                                                ...styles.loanPaginationButton,
+                                                ...(productPage === 1
+                                                    ? styles.loanPaginationButtonDisabled
+                                                    : {}),
+                                            }}
+                                        >
+                                            이전
+                                        </button>
+                                        <div style={styles.loanPaginationPages}>
+                                            {buildPageNumbers(
+                                                productPage,
+                                                totalProductPages
+                                            ).map((pageNumber) => (
+                                                <button
+                                                    key={pageNumber}
+                                                    type="button"
+                                                    onClick={() =>
+                                                        handleProductPageChange(pageNumber)
+                                                    }
+                                                    style={{
+                                                        ...styles.loanPaginationPage,
+                                                        ...(pageNumber === productPage
+                                                            ? styles.loanPaginationPageActive
+                                                            : {}),
+                                                    }}
+                                                >
+                                                    {pageNumber}
+                                                </button>
+                                            ))}
+                                        </div>
+                                        <button
+                                            type="button"
+                                            onClick={() =>
+                                                handleProductPageChange(productPage + 1)
+                                            }
+                                            disabled={productPage === totalProductPages}
+                                            style={{
+                                                ...styles.loanPaginationButton,
+                                                ...(productPage === totalProductPages
+                                                    ? styles.loanPaginationButtonDisabled
+                                                    : {}),
+                                            }}
+                                        >
+                                            다음
+                                        </button>
+                                    </div>
                                 )}
                             </div>
                         )}
