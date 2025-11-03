@@ -85,6 +85,9 @@ export default function FinancePage() {
   const [loanResults, setLoanResults] = useState(() => ({
     ...INITIAL_LOAN_RESULTS,
   }));
+  const [activeLoanType, setActiveLoanType] = useState(
+    LOAN_TYPE_CONFIG[0].type
+  );
   const [loading, setLoading] = useState(true);
   const [category, setCategory] = useState("DEPOSIT");
   const [keyword, setKeyword] = useState("");
@@ -96,14 +99,27 @@ export default function FinancePage() {
   const [minRate, setMinRate] = useState(0);
   const [maxRate, setMaxRate] = useState(10);
   const isLoanCategory = category === "LOAN";
-  const totalLoanCount = LOAN_TYPE_CONFIG.reduce(
-    (sum, { type }) => sum + (loanResults[type]?.length || 0),
-    0
-  );
+  const displayedLoanCount = isLoanCategory
+    ? loanResults[activeLoanType]?.length || 0
+    : 0;
+  const visibleLoanConfigs = isLoanCategory
+    ? LOAN_TYPE_CONFIG.filter(({ type }) => type === activeLoanType)
+    : [];
 
   useEffect(() => {
     fetchProducts();
   }, [category, sortOption]);
+
+  useEffect(() => {
+    if (category === "LOAN") {
+      setActiveLoanType((prev) => {
+        if (LOAN_TYPE_CONFIG.some(({ type }) => type === prev)) {
+          return prev;
+        }
+        return LOAN_TYPE_CONFIG[0].type;
+      });
+    }
+  }, [category]);
 
   const fetchProducts = async () => {
     try {
@@ -302,9 +318,29 @@ export default function FinancePage() {
               </button>
             </div>
 
+            {isLoanCategory && (
+              <div style={styles.loanSubTabs}>
+                {LOAN_TYPE_CONFIG.map(({ type, title }) => (
+                  <button
+                    key={type}
+                    type="button"
+                    onClick={() => setActiveLoanType(type)}
+                    style={{
+                      ...styles.loanSubTab,
+                      ...(activeLoanType === type
+                        ? styles.loanSubTabActive
+                        : {}),
+                    }}
+                  >
+                    {title}
+                  </button>
+                ))}
+              </div>
+            )}
+
             {/* 결과 수 */}
             <p style={styles.resultCount}>
-              총 {isLoanCategory ? totalLoanCount : products.length}개
+              총 {isLoanCategory ? displayedLoanCount : products.length}개
             </p>
 
             {/* 리스트 */}
@@ -314,7 +350,7 @@ export default function FinancePage() {
               </p>
             ) : isLoanCategory ? (
               <div style={styles.loanWrapper}>
-                {LOAN_TYPE_CONFIG.map(({ type, title }) => {
+                {visibleLoanConfigs.map(({ type, title }) => {
                   const items = loanResults[type] || [];
                   return (
                     <section key={type} style={styles.loanSection}>
@@ -615,6 +651,29 @@ const styles = {
   resultCount: {
     color: "#555",
     marginBottom: "15px",
+  },
+  loanSubTabs: {
+    display: "flex",
+    gap: "10px",
+    marginBottom: "18px",
+    flexWrap: "wrap",
+  },
+  loanSubTab: {
+    flex: "0 1 auto",
+    padding: "8px 14px",
+    borderRadius: "8px",
+    border: "none",
+    background: "#f5f5f5",
+    color: "#555",
+    fontSize: "14px",
+    fontWeight: "500",
+    cursor: "pointer",
+    transition: "all 0.2s ease",
+  },
+  loanSubTabActive: {
+    background: "#9ed8b5",
+    color: "#fff",
+    fontWeight: "600",
   },
   loanWrapper: {
     display: "flex",
