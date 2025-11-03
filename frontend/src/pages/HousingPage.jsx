@@ -260,7 +260,7 @@ export default function HousingPage() {
                         rel="noreferrer"
                         style={styles.link}
                       >
-                        상세 보기 →
+                        자세히 보기 →
                       </a>
                     )}
                   </li>
