@@ -62,6 +62,24 @@ const buildLoanFields = (type, item) => {
   }
 };
 
+const groupLoanItemsByProduct = (items = []) => {
+  const grouped = new Map();
+
+  items.forEach((item) => {
+    const key = `${item.productName || ""}::${item.companyName || ""}`;
+    if (!grouped.has(key)) {
+      grouped.set(key, {
+        productName: item.productName || "-",
+        companyName: item.companyName || "-",
+        variants: [],
+      });
+    }
+    grouped.get(key).variants.push(item);
+  });
+
+  return Array.from(grouped.values());
+};
+
 export default function FinancePage() {
   const [products, setProducts] = useState([]);
   const [loanResults, setLoanResults] = useState(() => ({
@@ -310,31 +328,65 @@ export default function FinancePage() {
                         <p style={styles.loanEmpty}>등록된 상품이 없습니다.</p>
                       ) : (
                         <div style={styles.loanList}>
-                          {items.map((item, index) => (
-                            <div key={`${type}-${index}`} style={styles.loanItem}>
+                          {groupLoanItemsByProduct(items).map((group, groupIdx) => (
+                            <div
+                              key={`${type}-${group.productName}-${group.companyName}-${groupIdx}`}
+                              style={styles.loanItem}
+                            >
                               <div style={styles.loanItemHeader}>
                                 <div>
                                   <h4 style={styles.loanItemTitle}>
-                                    {item.productName || "-"}
+                                    {group.productName}
                                   </h4>
                                   <span style={styles.loanProvider}>
-                                    {item.companyName || "-"}
+                                    {group.companyName}
                                   </span>
                                 </div>
                                 <span style={styles.loanBadge}>{title}</span>
                               </div>
-                              <div style={styles.loanFields}>
-                                {buildLoanFields(type, item).map((field, fieldIdx) => (
+                              <div style={styles.loanVariantList}>
+                                {group.variants.map((variant, variantIdx) => (
                                   <div
-                                    key={`${type}-${field.label}-${fieldIdx}`}
-                                    style={styles.loanFieldRow}
+                                    key={`${type}-${groupIdx}-variant-${variantIdx}`}
+                                    style={
+                                      group.variants.length > 1
+                                        ? styles.loanVariant
+                                        : styles.loanVariantSingle
+                                    }
                                   >
-                                    <span style={styles.loanFieldLabel}>
-                                      {field.label}
-                                    </span>
-                                    <span style={styles.loanFieldValue}>
-                                      {field.value}
-                                    </span>
+                                    {group.variants.length > 1 && (
+                                      <div style={styles.loanVariantHeader}>
+                                        <span style={styles.loanVariantBadge}>
+                                          옵션 {variantIdx + 1}
+                                        </span>
+                                        {(variant.lendTypeName ||
+                                          variant.rpayTypeName ||
+                                          variant.crdtLendRateTypeNm) && (
+                                          <span style={styles.loanVariantSummary}>
+                                            {variant.lendTypeName ||
+                                              variant.rpayTypeName ||
+                                              variant.crdtLendRateTypeNm}
+                                          </span>
+                                        )}
+                                      </div>
+                                    )}
+                                    <div style={styles.loanFields}>
+                                      {buildLoanFields(type, variant).map(
+                                        (field, fieldIdx) => (
+                                          <div
+                                            key={`${type}-${groupIdx}-variant-${variantIdx}-${field.label}-${fieldIdx}`}
+                                            style={styles.loanFieldRow}
+                                          >
+                                            <span style={styles.loanFieldLabel}>
+                                              {field.label}
+                                            </span>
+                                            <span style={styles.loanFieldValue}>
+                                              {field.value}
+                                            </span>
+                                          </div>
+                                        )
+                                      )}
+                                    </div>
                                   </div>
                                 ))}
                               </div>
@@ -636,6 +688,46 @@ const styles = {
     display: "grid",
     gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))",
     gap: "10px",
+  },
+  loanVariantList: {
+    display: "flex",
+    flexDirection: "column",
+    gap: "12px",
+  },
+  loanVariant: {
+    background: "#fff",
+    border: "1px solid #e8e8e8",
+    borderRadius: "10px",
+    padding: "12px 14px",
+    boxShadow: "0 1px 3px rgba(0,0,0,0.04)",
+  },
+  loanVariantSingle: {
+    background: "transparent",
+    padding: "0",
+    border: "none",
+    boxShadow: "none",
+  },
+  loanVariantHeader: {
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginBottom: "10px",
+  },
+  loanVariantBadge: {
+    display: "inline-flex",
+    alignItems: "center",
+    justifyContent: "center",
+    background: "#eef8f1",
+    color: "#4a8f66",
+    borderRadius: "999px",
+    padding: "4px 10px",
+    fontSize: "12px",
+    fontWeight: "600",
+  },
+  loanVariantSummary: {
+    fontSize: "13px",
+    color: "#666",
+    fontWeight: "500",
   },
   loanFieldRow: {
     display: "flex",
