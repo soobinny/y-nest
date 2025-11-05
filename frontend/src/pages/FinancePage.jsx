@@ -564,6 +564,13 @@ export default function FinancePage() {
                     "하나은행",
                     "농협은행",
                     "IBK기업은행",
+                    "부산은행",
+                    "대구은행",
+                    "경남은행",
+                    "전북은행",
+                    "광주은행",
+                    "제주은행",
+                    "그 외",
                   ].map((bank) => (
                     <label key={bank} style={styles.checkboxLabel}>
                       <input
@@ -757,23 +764,18 @@ export default function FinancePage() {
                       fontSize: "14px",
                     }}
                   >
-                                        {[
-                                            ["월 상환액: ", monthlyPayment],
-                                            ["총 상환금액: ", totalPayment],
-                                            ["총 이자액: ", totalInterest],
-                                        ].map(([label, value]) => (
-                                            <div
-                                                key={label}
-                                                style={styles.loanResultRow}
-                                            >
-                                                <strong style={styles.loanResultLabel}>
-                                                    {label}
-                                                </strong>
-                                                <span style={styles.loanResultValue}>
-                                                    {value.toLocaleString("ko-KR")}원
-                                                </span>
-                                            </div>
-                                        ))}
+                    {[
+                      ["월 상환액: ", monthlyPayment],
+                      ["총 상환금액: ", totalPayment],
+                      ["총 이자액: ", totalInterest],
+                    ].map(([label, value]) => (
+                      <div key={label} style={styles.loanResultRow}>
+                        <strong style={styles.loanResultLabel}>{label}</strong>
+                        <span style={styles.loanResultValue}>
+                          {value.toLocaleString("ko-KR")}원
+                        </span>
+                      </div>
+                    ))}
 
                     {/* 그래프 */}
                     <div
@@ -1638,11 +1640,11 @@ const styles = {
     gap: "25px",
     paddingRight: "6px",
   },
-    inputBox: {
-        width: "100%",
-        height: "32px",
-        border: "1px solid #ddd",
-        borderRadius: "6px",
+  inputBox: {
+    width: "100%",
+    height: "32px",
+    border: "1px solid #ddd",
+    borderRadius: "6px",
     padding: "6px 10px",
     fontSize: "14px",
     color: "#333",
@@ -1650,22 +1652,22 @@ const styles = {
     boxSizing: "border-box",
     marginTop: "6px",
     transition: "border-color 0.2s ease, box-shadow 0.2s ease",
-        fontFamily: "inherit",
-    },
-    loanResultRow: {
-        display: "flex",
-        alignItems: "center",
-        gap: "5px",
-        marginBottom: "4px",
-        textAlign: "left",
-    },
-    loanResultLabel: {
-        fontSize: "14px",
-        fontWeight: "600",
-        color: "#333",
-    },
-    loanResultValue: {
-        fontSize: "14px",
-        color: "#444",
-    },
+    fontFamily: "inherit",
+  },
+  loanResultRow: {
+    display: "flex",
+    alignItems: "center",
+    gap: "5px",
+    marginBottom: "4px",
+    textAlign: "left",
+  },
+  loanResultLabel: {
+    fontSize: "14px",
+    fontWeight: "600",
+    color: "#333",
+  },
+  loanResultValue: {
+    fontSize: "14px",
+    color: "#444",
+  },
 };
