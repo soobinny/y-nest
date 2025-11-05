@@ -92,7 +92,9 @@ const normalizeItem = (item, sourceType) => {
       status: item.status,
       region: item.regionName,
       provider: item.provider,
-      date: `${formatKoreanDate(item.noticeDate)} ~ ${formatKoreanDate(item.closeDate)}`,
+      date: `${formatKoreanDate(item.noticeDate)} ~ ${formatKoreanDate(
+        item.closeDate
+      )}`,
       link: item.detailUrl,
     };
   } else {
@@ -140,15 +142,21 @@ export default function HousingPage() {
         if (category !== "ALL") params.category = category;
         if (status !== "ALL") params.status = status;
         if (trimmedKeyword.length > 0) {
-          sourceType === "LH" ? (params.region = trimmedKeyword) : (params.keyword = trimmedKeyword);
+          sourceType === "LH"
+            ? (params.region = trimmedKeyword)
+            : (params.keyword = trimmedKeyword);
         }
 
         const endpoint =
           sourceType === "LH"
-            ? trimmedKeyword.length > 0 || category !== "ALL" || status !== "ALL"
+            ? trimmedKeyword.length > 0 ||
+              category !== "ALL" ||
+              status !== "ALL"
               ? "/api/housings/search"
               : "/api/housings"
-            : trimmedKeyword.length > 0 || category !== "ALL" || status !== "ALL"
+            : trimmedKeyword.length > 0 ||
+              category !== "ALL" ||
+              status !== "ALL"
             ? "/api/sh/housings/search"
             : "/api/sh/housings";
 
@@ -156,14 +164,17 @@ export default function HousingPage() {
         if (ignore) return;
 
         const pageData = res.data || {};
-        const normalized = (pageData.content || []).map((item) => normalizeItem(item, sourceType));
+        const normalized = (pageData.content || []).map((item) =>
+          normalizeItem(item, sourceType)
+        );
 
         setList(normalized);
         setTotalPages(pageData.totalPages || 0);
         setTotalElements(pageData.totalElements || 0);
       } catch (err) {
         console.error("주거공고 불러오기 실패:", err);
-        if (!ignore) setError("공고를 불러오지 못했습니다. 잠시 후 다시 시도해 주세요.");
+        if (!ignore)
+          setError("공고를 불러오지 못했습니다. 잠시 후 다시 시도해 주세요.");
       } finally {
         if (!ignore) setLoading(false);
       }
@@ -181,12 +192,20 @@ export default function HousingPage() {
         const [res1, res2] =
           sourceType === "LH"
             ? await Promise.all([
-                api.get("/api/housings/closing-soon", { params: { page: 0, size: 5 } }),
-                api.get("/api/housings/recent", { params: { page: 0, size: 5 } }),
+                api.get("/api/housings/closing-soon", {
+                  params: { page: 0, size: 5 },
+                }),
+                api.get("/api/housings/recent", {
+                  params: { page: 0, size: 5 },
+                }),
               ])
             : await Promise.all([
-                api.get("/api/sh/housings/recommend", { params: { page: 0, size: 5 } }),
-                api.get("/api/sh/housings/recent", { params: { page: 0, size: 5 } }),
+                api.get("/api/sh/housings/recommend", {
+                  params: { page: 0, size: 5 },
+                }),
+                api.get("/api/sh/housings/recent", {
+                  params: { page: 0, size: 5 },
+                }),
               ]);
 
         if (ignore) return;
@@ -219,46 +238,54 @@ export default function HousingPage() {
   const displayEnd = Math.min((page + 1) * PAGE_SIZE, totalElements);
 
   // 기관별 설정
-  const currentCategoryTabs = sourceType === "LH" ? LH_CATEGORY_TABS : SH_CATEGORY_TABS;
-  const currentStatusOptions = sourceType === "LH" ? LH_STATUS_OPTIONS : SH_STATUS_OPTIONS;
-  const currentSortOptions = sourceType === "LH" ? LH_SORT_OPTIONS : SH_SORT_OPTIONS;
+  const currentCategoryTabs =
+    sourceType === "LH" ? LH_CATEGORY_TABS : SH_CATEGORY_TABS;
+  const currentStatusOptions =
+    sourceType === "LH" ? LH_STATUS_OPTIONS : SH_STATUS_OPTIONS;
+  const currentSortOptions =
+    sourceType === "LH" ? LH_SORT_OPTIONS : SH_SORT_OPTIONS;
 
   return (
     <AppLayout>
       <div style={styles.page}>
-        {/* 기관 탭 */}<div style={styles.sourceTabs}>
-  {SOURCE_TABS.map((tab, idx) => (
-    <div key={tab.value} style={{ display: "flex", alignItems: "center" }}>
-      <button
-        onClick={() => {
-          setSourceType(tab.value);
-          setCategory("ALL");
-          setStatus("ALL");
-          setSort(tab.value === "LH" ? "noticeDate,desc" : "postDate,desc");
-          setPage(0);
-        }}
-        onMouseEnter={(e) =>
-          (e.currentTarget.style.color = "#4eb166b5")
-        }
-        onMouseLeave={(e) =>
-          (e.currentTarget.style.color =
-            sourceType === tab.value ? "#4eb166" : "#777")
-        }
-        style={{
-          ...styles.sourceTab,
-          ...(sourceType === tab.value ? styles.sourceTabActive : {}),
-        }}
-      >
-        {tab.label}
-      </button>
-      {idx === 0 && <div style={styles.sourceTabsDivider}></div>}
-    </div>
-  ))}
-</div>
-
-
         {/* 하이라이트 */}
         <section style={styles.highlightSection}>
+          {/* 기관 탭 */}
+          <div style={styles.sourceTabs}>
+            {SOURCE_TABS.map((tab, idx) => (
+              <div
+                key={tab.value}
+                style={{ display: "flex", alignItems: "center" }}
+              >
+                <button
+                  onClick={() => {
+                    setSourceType(tab.value);
+                    setCategory("ALL");
+                    setStatus("ALL");
+                    setSort(
+                      tab.value === "LH" ? "noticeDate,desc" : "postDate,desc"
+                    );
+                    setPage(0);
+                  }}
+                  onMouseEnter={(e) =>
+                    (e.currentTarget.style.color = "#4eb166b5")
+                  }
+                  onMouseLeave={(e) =>
+                    (e.currentTarget.style.color =
+                      sourceType === tab.value ? "#4eb166" : "#777")
+                  }
+                  style={{
+                    ...styles.sourceTab,
+                    ...(sourceType === tab.value ? styles.sourceTabActive : {}),
+                  }}
+                >
+                  {tab.label}
+                </button>
+                {idx === 0 && <div style={styles.sourceTabsDivider}></div>}
+              </div>
+            ))}
+          </div>
+
           <div style={styles.highlightGrid}>
             <HighlightCard
               title={sourceType === "LH" ? "💡 마감 임박 공고" : "💡 추천 공고"}
@@ -267,7 +294,9 @@ export default function HousingPage() {
               sourceType={sourceType}
             />
             <HighlightCard
-              title={sourceType === "LH" ? "💡 최근 등록 공고" : "💡 최근 등록 공고"}
+              title={
+                sourceType === "LH" ? "💡 최근 등록 공고" : "💡 최근 등록 공고"
+              }
               items={recent}
               loading={highlightLoading}
               sourceType={sourceType}
@@ -358,10 +387,12 @@ export default function HousingPage() {
                     key={item.id}
                     style={styles.card}
                     onMouseEnter={(e) =>
-                      (e.currentTarget.style.boxShadow = "0 6px 16px rgba(0,0,0,0.1)")
+                      (e.currentTarget.style.boxShadow =
+                        "0 6px 16px rgba(0,0,0,0.1)")
                     }
                     onMouseLeave={(e) =>
-                      (e.currentTarget.style.boxShadow = "0 2px 8px rgba(0,0,0,0.04)")
+                      (e.currentTarget.style.boxShadow =
+                        "0 2px 8px rgba(0,0,0,0.04)")
                     }
                   >
                     <div style={styles.cardHeader}>
@@ -369,7 +400,8 @@ export default function HousingPage() {
                       <span style={styles.status}>{item.status}</span>
                     </div>
                     <p style={styles.meta}>
-                      {item.region || "-"} {item.provider ? ` / ${item.provider}` : ""}
+                      {item.region || "-"}{" "}
+                      {item.provider ? ` / ${item.provider}` : ""}
                     </p>
                     <p style={styles.date}>
                       {item.date}
@@ -380,7 +412,12 @@ export default function HousingPage() {
                       )}
                     </p>
                     {item.link && (
-                      <a href={item.link} target="_blank" rel="noreferrer" style={styles.link}>
+                      <a
+                        href={item.link}
+                        target="_blank"
+                        rel="noreferrer"
+                        style={styles.link}
+                      >
                         자세히 보기 →
                       </a>
                     )}
@@ -411,7 +448,9 @@ export default function HousingPage() {
                     onClick={() => handlePageChange(pageNum)}
                     style={{
                       ...styles.paginationPage,
-                      ...(pageNum === currentPage ? styles.paginationPageActive : {}),
+                      ...(pageNum === currentPage
+                        ? styles.paginationPageActive
+                        : {}),
                     }}
                   >
                     {pageNum}
@@ -469,13 +508,15 @@ function HighlightCard({ title, items, loading, sourceType }) {
                 ...(hovered === item.id ? styles.highlightItemHover : {}),
               }}
             >
-              <strong>
-                {sourceType === "LH" ? item.name : item.title}
-              </strong>
+              <strong>{sourceType === "LH" ? item.name : item.title}</strong>
               <div style={styles.highlightMeta}>
                 {sourceType === "LH"
-                  ? `${item.regionName || "-"} / ${formatKoreanDate(item.noticeDate)}`
-                  : `${SH_STATUS_LABEL[item.recruitStatus] || "-"} / ${formatKoreanDate(item.postDate)}`}
+                  ? `${item.regionName || "-"} / ${formatKoreanDate(
+                      item.noticeDate
+                    )}`
+                  : `${
+                      SH_STATUS_LABEL[item.recruitStatus] || "-"
+                    } / ${formatKoreanDate(item.postDate)}`}
               </div>
             </li>
           ))}
@@ -485,7 +526,6 @@ function HighlightCard({ title, items, loading, sourceType }) {
   );
 }
 
-// 💅 스타일
 const styles = {
   page: {
     background: "#fdfaf6",
@@ -496,36 +536,37 @@ const styles = {
     alignItems: "center",
     gap: "40px",
   },
-sourceTabs: {
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "center",
-  gap: "0",
-  marginBottom: "28px",
-  position: "relative",
-},
+  sourceTabs: {
+    display: "flex",
+    alignItems: "center",
+    gap: "0",
+    marginBottom: "24px",
+    position: "relative",
+    alignSelf: "flex-start",
+    width: "30%",
+    maxWidth: "300px",
+  },
 
-sourceTab: {
-  padding: "10px 30px",
-  background: "none",
-  border: "none",
-  fontSize: "17px",
-  fontWeight: "600",
-  color: "#777",
-  cursor: "pointer",
-},
+  sourceTab: {
+    padding: "10px 30px",
+    background: "none",
+    border: "none",
+    fontSize: "17px",
+    fontWeight: "600",
+    color: "#777",
+    cursor: "pointer",
+  },
 
-sourceTabActive: {
-  color: "#4eb166",
-  fontWeight: "700",
-},
+  sourceTabActive: {
+    color: "#4eb166",
+    fontWeight: "700",
+  },
 
-sourceTabsDivider: {
-  width: "1px",
-  height: "20px",
-  background: "#ddd",
-  margin: "0 20px",
-},
+  sourceTabsDivider: {
+    width: "1px",
+    height: "20px",
+    background: "#ddd",
+  },
 
   highlightSection: { width: "98%", maxWidth: "1200px" },
   highlightGrid: {
@@ -559,8 +600,17 @@ sourceTabsDivider: {
     padding: "35px 40px",
   },
   title: { fontSize: "22px", fontWeight: "700", textAlign: "center" },
-  filters: { display: "flex", flexDirection: "column", gap: "16px", marginBottom: "24px" },
-  categoryHeader: { display: "flex", justifyContent: "space-between", alignItems: "center" },
+  filters: {
+    display: "flex",
+    flexDirection: "column",
+    gap: "16px",
+    marginBottom: "24px",
+  },
+  categoryHeader: {
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "center",
+  },
   categoryTabs: { display: "flex", gap: "10px" },
   tab: {
     background: "#f5f5f5",
@@ -605,8 +655,19 @@ sourceTabsDivider: {
   loading: { textAlign: "center", color: "#777" },
   error: { textAlign: "center", color: "#c00" },
   empty: { textAlign: "center", color: "#888" },
-  count: { fontSize: "13px", color: "#777", textAlign: "right", marginBottom: "10px" },
-  list: { listStyle: "none", padding: 0, display: "flex", flexDirection: "column", gap: "16px" },
+  count: {
+    fontSize: "13px",
+    color: "#777",
+    textAlign: "right",
+    marginBottom: "10px",
+  },
+  list: {
+    listStyle: "none",
+    padding: 0,
+    display: "flex",
+    flexDirection: "column",
+    gap: "16px",
+  },
   card: {
     border: "1px solid #eee",
     borderRadius: "12px",
@@ -615,10 +676,18 @@ sourceTabsDivider: {
     boxShadow: "0 2px 8px rgba(0,0,0,0.04)",
     transition: "box-shadow 0.2s ease",
   },
-  cardHeader: { display: "flex", justifyContent: "space-between", marginBottom: "8px" },
-  cardTitle: { fontSize: "17px", fontWeight: "600", 
-  marginRight: "100px", },
-  status: { color: "#4eb166e5", fontSize: "15px", fontWeight: "600",  whiteSpace: "nowrap"},
+  cardHeader: {
+    display: "flex",
+    justifyContent: "space-between",
+    marginBottom: "8px",
+  },
+  cardTitle: { fontSize: "17px", fontWeight: "600", marginRight: "100px" },
+  status: {
+    color: "#4eb166e5",
+    fontSize: "15px",
+    fontWeight: "600",
+    whiteSpace: "nowrap",
+  },
   meta: { fontSize: "14px", color: "#666" },
   date: { fontSize: "13px", color: "#777", marginTop: "4px" },
   link: { color: "#0077cc", fontSize: "13px", textDecoration: "none" },
@@ -639,7 +708,11 @@ sourceTabsDivider: {
     fontSize: "13px",
     cursor: "pointer",
   },
-  paginationButtonDisabled: { color: "#bbb", background: "#f9f9f9", cursor: "not-allowed" },
+  paginationButtonDisabled: {
+    color: "#bbb",
+    background: "#f9f9f9",
+    cursor: "not-allowed",
+  },
   paginationPages: { display: "flex", gap: "6px" },
   paginationPage: {
     padding: "6px 10px",
