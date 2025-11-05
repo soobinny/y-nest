@@ -7,7 +7,9 @@ import jakarta.persistence.criteria.JoinType;
 import org.springframework.data.jpa.domain.Specification;
 
 import java.math.BigDecimal;
+import java.util.List;
 import java.util.Objects;
+import java.util.stream.Collectors;
 
 /**
  * FinanceProductSpecs
@@ -64,6 +66,48 @@ public final class FinanceProductSpecs {
     }
 
     /**
+     * 금융기관(provider) 다중 선택 필터
+     * - includes: 선택한 은행 (IN)
+     * - excludes: "그 외" 선택 시 제외할 은행 (NOT IN)
+     * 두 조건은 OR 로 결합
+     */
+    public static Specification<FinanceProducts> providers(List<String> includes, List<String> excludes) {
+        return (root, q, cb) -> {
+            List<String> normalizedIncludes = normalize(includes);
+            List<String> normalizedExcludes = normalize(excludes);
+
+            boolean hasIncludes = !normalizedIncludes.isEmpty();
+            boolean hasExcludes = !normalizedExcludes.isEmpty();
+
+            if (!hasIncludes && !hasExcludes) {
+                return null;
+            }
+
+            Join<Object, Object> prod = root.join("product", JoinType.LEFT);
+            var providerExpr = cb.lower(prod.get("provider"));
+
+            Objects.requireNonNull(q).distinct(true);
+
+            if (hasIncludes && hasExcludes) {
+                return cb.or(
+                        providerExpr.in(normalizedIncludes),
+                        cb.not(providerExpr.in(normalizedExcludes))
+                );
+            }
+
+            if (hasIncludes) {
+                return providerExpr.in(normalizedIncludes);
+            }
+
+            // only excludes ("그 외") selected -> provider not in excludes or null
+            return cb.or(
+                    cb.not(providerExpr.in(normalizedExcludes)),
+                    cb.isNull(prod.get("provider"))
+            );
+        };
+    }
+
+    /**
      * 최소 금리 이상 검색
      */
     public static Specification<FinanceProducts> minRate(BigDecimal min) {
@@ -82,5 +126,18 @@ public final class FinanceProductSpecs {
             if (max == null) return null;
             return cb.lessThanOrEqualTo(root.get("interestRate"), max);
         };
+    }
+
+    private static List<String> normalize(List<String> source) {
+        if (source == null || source.isEmpty()) {
+            return List.of();
+        }
+        return source.stream()
+                .filter(Objects::nonNull)
+                .map(String::trim)
+                .filter(s -> !s.isEmpty())
+                .map(String::toLowerCase)
+                .distinct()
+                .collect(Collectors.toList());
     }
 }

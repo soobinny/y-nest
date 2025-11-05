@@ -21,6 +21,24 @@ const LOAN_PAGE_SIZE = 10;
 const PRODUCT_PAGE_SIZE = 10;
 const MAX_PAGE_BUTTONS = 9;
 
+const BANK_OPTIONS = [
+  "국민은행",
+  "신한은행",
+  "우리은행",
+  "하나은행",
+  "농협은행",
+  "IBK기업은행",
+  "부산은행",
+  "대구은행",
+  "광주은행",
+  "제주은행",
+  "전북은행",
+  "경남은행",
+  "그 외",
+];
+
+const ETC_BANK_LABEL = "그 외";
+
 const INITIAL_LOAN_RESULTS = LOAN_TYPE_CONFIG.reduce((acc, cur) => {
   acc[cur.type] = [];
   return acc;
@@ -472,16 +490,51 @@ export default function FinancePage() {
 
       const safePage = Math.max(1, requestedPage || 1);
 
+      const serializeParams = (query) => {
+        const searchParams = new URLSearchParams();
+        Object.entries(query).forEach(([key, value]) => {
+          if (value === undefined || value === null || value === "") return;
+          if (Array.isArray(value)) {
+            value.forEach((item) => {
+              if (item !== undefined && item !== null && item !== "") {
+                searchParams.append(key, item);
+              }
+            });
+          } else {
+            searchParams.append(key, value);
+          }
+        });
+        return searchParams.toString();
+      };
+
+      const params = {
+        productType: requestedCategory,
+        keyword,
+        minRate,
+        maxRate,
+        sort: sortOption,
+        page: safePage - 1,
+        size: PRODUCT_PAGE_SIZE,
+      };
+
+      const selectedNormalBanks = selectedBanks
+        .filter((bank) => bank !== ETC_BANK_LABEL)
+        .map((bank) => bank.trim())
+        .filter((bank) => bank.length > 0);
+
+      if (selectedNormalBanks.length > 0) {
+        params.providers = selectedNormalBanks;
+      }
+
+      if (selectedBanks.includes(ETC_BANK_LABEL)) {
+        params.excludeProviders = BANK_OPTIONS.filter(
+          (bank) => bank !== ETC_BANK_LABEL
+        ).map((bank) => bank.trim());
+      }
+
       const res = await api.get("/api/finance/products", {
-        params: {
-          productType: requestedCategory,
-          keyword,
-          minRate,
-          maxRate,
-          sort: sortOption,
-          page: safePage - 1,
-          size: PRODUCT_PAGE_SIZE,
-        },
+        params,
+        paramsSerializer: serializeParams,
       });
 
       if (latestCategoryRef.current !== requestedCategory) {
@@ -557,21 +610,7 @@ export default function FinancePage() {
 
               {dropdownOpen && (
                 <div style={styles.dropdownList}>
-                  {[
-                    "국민은행",
-                    "신한은행",
-                    "우리은행",
-                    "하나은행",
-                    "농협은행",
-                    "IBK기업은행",
-                    "부산은행",
-                    "대구은행",
-                    "경남은행",
-                    "전북은행",
-                    "광주은행",
-                    "제주은행",
-                    "그 외",
-                  ].map((bank) => (
+                  {BANK_OPTIONS.map((bank) => (
                     <label key={bank} style={styles.checkboxLabel}>
                       <input
                         type="checkbox"

@@ -113,6 +113,10 @@ public class FinanceProductQueryController {
             @RequestParam(required = false) String finCoNo,
             @Parameter(description = "키워드(상품명/회사명 like 검색)")
             @RequestParam(required = false) String keyword,
+            @Parameter(description = "금융기관(provider) 리스트")
+            @RequestParam(required = false) List<String> providers,
+            @Parameter(description = "제외할 금융기관 리스트 (\"그 외\" 선택 시 사용)")
+            @RequestParam(required = false) List<String> excludeProviders,
             @Parameter(description = "최소 금리(예: 3.0)")
             @RequestParam(required = false) BigDecimal minRate,
             @Parameter(description = "최대 금리(예: 6.0)")
@@ -124,6 +128,7 @@ public class FinanceProductQueryController {
                 FinanceProductSpecs.productType(productType),
                 FinanceProductSpecs.finCoNo(finCoNo),
                 FinanceProductSpecs.keyword(keyword),
+                FinanceProductSpecs.providers(providers, excludeProviders),
                 FinanceProductSpecs.minRate(minRate),
                 FinanceProductSpecs.maxRate(maxRate)
         );
