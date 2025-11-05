@@ -354,7 +354,16 @@ export default function HousingPage() {
               </p>
               <ul style={styles.list}>
                 {list.map((item) => (
-                  <li key={item.id} style={styles.card}>
+                  <li
+                    key={item.id}
+                    style={styles.card}
+                    onMouseEnter={(e) =>
+                      (e.currentTarget.style.boxShadow = "0 6px 16px rgba(0,0,0,0.1)")
+                    }
+                    onMouseLeave={(e) =>
+                      (e.currentTarget.style.boxShadow = "0 2px 8px rgba(0,0,0,0.04)")
+                    }
+                  >
                     <div style={styles.cardHeader}>
                       <h3 style={styles.cardTitle}>{item.title}</h3>
                       <span style={styles.status}>{item.status}</span>
@@ -604,6 +613,7 @@ sourceTabsDivider: {
     padding: "22px 26px",
     background: "#fff",
     boxShadow: "0 2px 8px rgba(0,0,0,0.04)",
+    transition: "box-shadow 0.2s ease",
   },
   cardHeader: { display: "flex", justifyContent: "space-between", marginBottom: "8px" },
   cardTitle: { fontSize: "17px", fontWeight: "600", 
