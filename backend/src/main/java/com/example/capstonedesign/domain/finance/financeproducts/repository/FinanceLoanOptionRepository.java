@@ -11,6 +11,7 @@ import org.springframework.data.repository.query.Param;
 
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.Optional;
 
 /**
  * FinanceLoanOptionRepository
@@ -89,4 +90,12 @@ public interface FinanceLoanOptionRepository extends JpaRepository<FinanceLoanOp
             ORDER BY MIN(o.lendRateAvg) ASC
             """)
     List<Object[]> findTopByLowestAvgRate(@Param("type") FinanceProductType type, Pageable pageable);
+
+    /** 기존 옵션과 동일한 “상품 + 상환방식 + 금리유형 + 담보유형” 조합을 찾아서 이전 금리값을 백업하는 데 사용 */
+    Optional<FinanceLoanOption> findTopByFinanceProductAndRpayTypeNameAndLendTypeNameAndMrtgTypeName(
+            FinanceProducts financeProduct,
+            String rpayTypeName,
+            String lendTypeName,
+            String mrtgTypeName
+    );
 }

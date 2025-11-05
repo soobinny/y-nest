@@ -46,6 +46,11 @@ public class FinanceLoanOption {
     private BigDecimal lendRateMax;   // 최고 금리
     private BigDecimal lendRateAvg;   // 평균 금리
 
+    /** 이전 평균 금리 (금리 변동 감지용) */
+    private BigDecimal prevLendRateMin;
+    private BigDecimal prevLendRateMax;
+    private BigDecimal prevLendRateAvg;
+
     /** 명칭 필드 (표시용) */
     private String rpayTypeName;      // 상환 유형명 (원리금균등/만기일시 등)
     private String lendTypeName;      // 금리 유형명 (고정/변동 등)
@@ -54,15 +59,33 @@ public class FinanceLoanOption {
     // 신용등급별 금리 필드
     private String crdtLendRateType;       // 금리구분 코드
     private String crdtLendRateTypeNm;     // 금리구분명 (고정/변동)
-    private BigDecimal crdtGrad1;          // 900점 초과
-    private BigDecimal crdtGrad4;          // 801~900점
-    private BigDecimal crdtGrad5;          // 701~800점
-    private BigDecimal crdtGrad6;          // 601~700점
-    private BigDecimal crdtGrad10;         // 501~600점
-    private BigDecimal crdtGrad11;         // 401~500점
-    private BigDecimal crdtGrad12;         // 301~400점
-    private BigDecimal crdtGrad13;         // 300점 이하
-    private BigDecimal crdtGradAvg;        // 평균금리
+
+    @Column(name = "crdt_grad_1")
+    private BigDecimal crdtGrad1;           // 900점 초과
+
+    @Column(name = "crdt_grad_4")
+    private BigDecimal crdtGrad4;           // 801~900점
+
+    @Column(name = "crdt_grad_5")
+    private BigDecimal crdtGrad5;           // 701~800점
+
+    @Column(name = "crdt_grad_6")
+    private BigDecimal crdtGrad6;           // 601~700점
+
+    @Column(name = "crdt_grad_10")
+    private BigDecimal crdtGrad10;          // 501~600점
+
+    @Column(name = "crdt_grad_11")
+    private BigDecimal crdtGrad11;          // 401~500점
+
+    @Column(name = "crdt_grad_12")
+    private BigDecimal crdtGrad12;          // 301~400점
+
+    @Column(name = "crdt_grad_13")
+    private BigDecimal crdtGrad13;          // 300점 이하
+
+    @Column(name = "crdt_grad_avg")
+    private BigDecimal crdtGradAvg;         // 평균금리
 
     /** 생성·수정 시각 */
     @Column(nullable = false, updatable = false)

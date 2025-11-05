@@ -16,4 +16,7 @@ public interface EmailSender {
      * @param content 메일 본문 내용
      */
     void send(String to, String subject, String content);
+
+    /** 메일 전송 시 HTML 추가*/
+    void sendHtml(String to, String subject, String htmlBody);
 }

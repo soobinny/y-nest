@@ -7,19 +7,21 @@ USE youth;
 -- =========================
 CREATE TABLE users
 (
-    role        ENUM ('USER','ADMIN') NOT NULL DEFAULT 'USER',
-    id          INT AUTO_INCREMENT PRIMARY KEY,
-    email       VARCHAR(255)          NOT NULL UNIQUE,
-    password    VARCHAR(255)          NOT NULL,
-    name        VARCHAR(255)          NOT NULL,
-    age         INT,
-    income_band VARCHAR(50),
-    region      VARCHAR(50),
-    is_homeless BOOLEAN                        DEFAULT FALSE,
-    deleted     BOOLEAN               NOT NULL DEFAULT FALSE,
-    deleted_at  TIMESTAMP             NULL     DEFAULT NULL,
-    created_at  TIMESTAMP             NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at  TIMESTAMP             NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+    role                 ENUM ('USER','ADMIN')        NOT NULL DEFAULT 'USER',
+    id                   INT AUTO_INCREMENT PRIMARY KEY,
+    email                VARCHAR(255)                 NOT NULL UNIQUE,
+    password             VARCHAR(255)                 NOT NULL,
+    name                 VARCHAR(255)                 NOT NULL,
+    age                  INT,
+    income_band          VARCHAR(50),
+    region               VARCHAR(50),
+    is_homeless          BOOLEAN                               DEFAULT FALSE,
+    deleted              BOOLEAN                      NOT NULL DEFAULT FALSE,
+    deleted_at           TIMESTAMP                    NULL     DEFAULT NULL,
+    created_at           TIMESTAMP                    NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at           TIMESTAMP                    NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    notification_enabled BOOLEAN                      NOT NULL DEFAULT TRUE,
+    notification_channel ENUM ('EMAIL','KAKAO','SMS') NOT NULL DEFAULT 'EMAIL'
 );
 
 -- =========================
@@ -74,6 +76,11 @@ CREATE TABLE finance_loan_options
     lend_rate_min          DECIMAL(5, 2) NULL,
     lend_rate_max          DECIMAL(5, 2) NULL,
     lend_rate_avg          DECIMAL(5, 2) NULL,
+
+    -- 이전 금리 이력 백업 컬럼
+    prev_lend_rate_min     DECIMAL(5, 2) NULL COMMENT '이전 최소 금리',
+    prev_lend_rate_max     DECIMAL(5, 2) NULL COMMENT '이전 최대 금리',
+    prev_lend_rate_avg     DECIMAL(5, 2) NULL COMMENT '이전 평균 금리',
 
     -- 대출 옵션 공통 필드
     rpay_type_name         VARCHAR(100)  NULL, -- 상환유형 이름 (예: 원리금균등, 만기일시)
@@ -157,19 +164,23 @@ CREATE TABLE lh_notices
 -- =========================
 CREATE TABLE sh_announcements
 (
-    id           BIGINT AUTO_INCREMENT PRIMARY KEY,
-    source       VARCHAR(100) NOT NULL,
-    external_id  VARCHAR(100) NOT NULL,
-    title        VARCHAR(500),
-    department   VARCHAR(255),
-    post_date    DATE,
-    views        INT,
-    content_html LONGTEXT,
-    attachments  JSON,
-    crawled_at   DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at   DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    UNIQUE KEY ux_sh_source_extid (source, external_id),
-    INDEX idx_post_date (post_date)
+    id             BIGINT AUTO_INCREMENT PRIMARY KEY,
+    source         VARCHAR(255) NOT NULL,
+    external_id    VARCHAR(255) NOT NULL,
+    title          VARCHAR(255),
+    department     VARCHAR(255),
+    post_date      DATE,
+    views          INT,
+    recruit_status VARCHAR(20),
+    supply_type    VARCHAR(255),
+    category       VARCHAR(50),
+    content_html   LONGTEXT,
+    attachments    JSON,
+    region         VARCHAR(50),
+    detail_url     VARCHAR(255),
+    crawled_at     DATETIME,
+    updated_at     DATETIME,
+    UNIQUE KEY uq_sh_source_external_id (source, external_id)
 );
 
 -- =========================
@@ -220,8 +231,8 @@ CREATE TABLE notifications
 (
     id         INT AUTO_INCREMENT PRIMARY KEY,
     user_id    INT NOT NULL,
-    product_id INT NOT NULL,
-    type       ENUM ('EMAIL', 'PUSH'),
+    product_id INT NULL,
+    type       ENUM ('EMAIL', 'KAKAO', 'SMS'),
     status     ENUM ('SENT', 'FAILED'),
     message    TEXT,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,

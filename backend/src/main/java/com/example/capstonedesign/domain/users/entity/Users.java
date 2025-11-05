@@ -1,5 +1,6 @@
 package com.example.capstonedesign.domain.users.entity;
 
+import com.example.capstonedesign.domain.notifications.entity.NotificationChannel;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -73,6 +74,15 @@ public class Users {
     /** 사용자 정보 수정 일시 (기본값 현재 시간) */
     @Column(nullable = false)
     private Instant updated_at = Instant.now();
+
+    /** 사용자 알림 수신 여부 */
+    @Column(nullable = false)
+    private Boolean notificationEnabled = true;  // 기본값 true
+
+    /** 사용자 알림 채널(이메일, 카카오톡, 문자) */
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private NotificationChannel notificationChannel = NotificationChannel.EMAIL; // 기본값 이메일
 
     /**
      * 엔티티 업데이트 시 updated_at 자동 갱신

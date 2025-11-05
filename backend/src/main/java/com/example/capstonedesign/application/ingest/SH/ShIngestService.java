@@ -1,5 +1,7 @@
 package com.example.capstonedesign.application.ingest.SH;
 
+import com.example.capstonedesign.domain.shannouncements.entity.RecruitStatus;
+import com.example.capstonedesign.domain.shannouncements.entity.SHHousingCategory;
 import com.example.capstonedesign.domain.shannouncements.entity.ShAnnouncement;
 import com.example.capstonedesign.domain.shannouncements.repository.ShAnnouncementRepository;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -100,7 +102,7 @@ public class ShIngestService {
                             .data("splyTy", splyTy)
                             .data("recrnotiState", STATUS)
                             .method(Connection.Method.POST)
-                            .post();
+                            .get();
 
                     Elements rows = doc.select("#listTb tbody tr");
                     if (rows.isEmpty()) break;
@@ -117,14 +119,17 @@ public class ShIngestService {
                         String postDate = tr.select("td.num").get(0).text();
                         String views = tr.select("td.num").get(1).text();
 
+                        // 상세 URL 생성
+                        String detailUrl = BASE + path.replace("list.do", "view.do")
+                                + "?seq=" + externalId
+                                + "&multi_itm_seq=" + multiSeq;
+
                         // 상세 페이지 요청
-                        Document detail = Jsoup.connect(BASE + path.replace("list.do", "view.do"))
+                        Document detail = Jsoup.connect(detailUrl)
                                 .timeout(15000)
                                 .userAgent("YouthCrawler/1.0")
-                                .data("seq", externalId)
-                                .data("multi_itm_seq", multiSeq)
-                                .method(Connection.Method.POST)
-                                .post();
+                                .method(Connection.Method.GET)
+                                .get();
 
                         // 본문 및 첨부파일 추출
                         Element content = detail.selectFirst(".board_view, .viewCont, #contents");
@@ -138,7 +143,6 @@ public class ShIngestService {
                             ));
                         }
 
-                        // 엔티티 생성
                         ShAnnouncement ann = ShAnnouncement.builder()
                                 .source("i-sh")
                                 .externalId(externalId)
@@ -146,19 +150,19 @@ public class ShIngestService {
                                 .department(dept)
                                 .postDate(parseDate(postDate))
                                 .views(parseInt(views))
-                                .recruitStatus(STATUS)
+                                .recruitStatus(RecruitStatus.now)
                                 .supplyType(supplyMap.get(splyTy))
-                                .category(category)
+                                .category(SHHousingCategory.valueOf(category))
                                 .region(extractRegion(title))
                                 .contentHtml(html)
                                 .attachments(toJson(files))
+                                .detailUrl(detailUrl)
                                 .crawledAt(LocalDateTime.now())
                                 .updatedAt(LocalDateTime.now())
                                 .build();
 
-                        // DB upsert
                         upsert(ann);
-                        Thread.sleep(700); // 요청 간 간격 (서버 부하 방지)
+                        Thread.sleep(700);
                     }
                 }
             } catch (Exception e) {
@@ -178,8 +182,10 @@ public class ShIngestService {
                     e.setRecruitStatus(a.getRecruitStatus());
                     e.setSupplyType(a.getSupplyType());
                     e.setCategory(a.getCategory());
+                    e.setRegion(a.getRegion());
                     e.setContentHtml(a.getContentHtml());
                     e.setAttachments(a.getAttachments());
+                    e.setDetailUrl(a.getDetailUrl());
                     e.setUpdatedAt(LocalDateTime.now());
                     repo.save(e);
                 }, () -> repo.save(a));

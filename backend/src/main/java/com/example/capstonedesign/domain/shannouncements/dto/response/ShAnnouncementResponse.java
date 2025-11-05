@@ -50,7 +50,9 @@ public class ShAnnouncementResponse {
                 .department(e.getDepartment())
                 .postDate(e.getPostDate())
                 .views(e.getViews())
-                .recruitStatus(e.getRecruitStatus())
+                .recruitStatus(
+                        e.getRecruitStatus() != null ? e.getRecruitStatus().name() : null
+                )
                 .supplyType(e.getSupplyType())
                 .attachments(attachments)
                 .build();

@@ -134,7 +134,7 @@ public class ShAnnouncementService {
                             .department(a.getDepartment())
                             .postDate(a.getPostDate())
                             .views(a.getViews())
-                            .recruitStatus(a.getRecruitStatus())
+                            .recruitStatus(a.getRecruitStatus() != null ? a.getRecruitStatus().name() : null)
                             .supplyType(a.getSupplyType())
                             .attachments(attachments)
                             .score(score)
