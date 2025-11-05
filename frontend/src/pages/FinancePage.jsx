@@ -303,16 +303,33 @@ export default function FinancePage() {
         );
 
         const nextLoanResults = { ...INITIAL_LOAN_RESULTS };
+        const normalizedKeyword = (keyword || "").trim().toLowerCase();
         responses.forEach((result, index) => {
           const { type } = LOAN_TYPE_CONFIG[index];
           if (result.status === "fulfilled") {
-            nextLoanResults[type] = result.value?.data || [];
+            const options = result.value?.data || [];
+            nextLoanResults[type] = normalizedKeyword
+              ? options.filter((item) => {
+                  const candidates = [
+                    item.productName,
+                    item.companyName,
+                    item.finPrdtNm,
+                    item.korCoNm,
+                  ];
+                  return candidates.some(
+                    (candidate) =>
+                      typeof candidate === "string" &&
+                      candidate.toLowerCase().includes(normalizedKeyword)
+                  );
+                })
+              : options;
           } else {
             console.error(`대출 정보 조회 실패(${type}):`, result.reason);
           }
         });
 
         setLoanResults(nextLoanResults);
+        setLoanPageByType({ ...INITIAL_LOAN_PAGES });
         setProducts([]);
         setTotalProductPages(1);
         setTotalProductCount(0);
@@ -724,6 +741,12 @@ export default function FinancePage() {
                 placeholder="상품명 검색"
                 value={keyword}
                 onChange={(e) => setKeyword(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    e.preventDefault();
+                    fetchProducts(1);
+                  }
+                }}
                 style={styles.input}
               />
               <button onClick={() => fetchProducts(1)} style={styles.searchBtn}>
