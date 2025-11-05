@@ -39,6 +39,9 @@ const BANK_OPTIONS = [
 
 const ETC_BANK_LABEL = "그 외";
 
+const DEFAULT_MIN_RATE = 0;
+const DEFAULT_MAX_RATE = 10;
+
 const INITIAL_LOAN_RESULTS = LOAN_TYPE_CONFIG.reduce((acc, cur) => {
   acc[cur.type] = [];
   return acc;
@@ -354,8 +357,8 @@ export default function FinancePage() {
   // 새 필터 상태
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [selectedBanks, setSelectedBanks] = useState([]);
-  const [minRate, setMinRate] = useState(0);
-  const [maxRate, setMaxRate] = useState(10);
+  const [minRate, setMinRate] = useState(DEFAULT_MIN_RATE);
+  const [maxRate, setMaxRate] = useState(DEFAULT_MAX_RATE);
   const isLoanCategory = category === "LOAN";
   const activeLoanGroups = useMemo(() => {
     if (!isLoanCategory) {
@@ -439,17 +442,65 @@ export default function FinancePage() {
     });
   }, [isLoanCategory, activeLoanType, totalLoanPages, activeLoanConfig]);
 
-  const fetchProducts = async (requestedPage = productPage) => {
+  const fetchProducts = async (requestedPage = productPage, overrides = {}) => {
     try {
       setLoading(true);
       const requestedCategory = category;
 
+      const effectiveMinRate =
+        overrides.minRate !== undefined ? overrides.minRate : minRate;
+      const effectiveMaxRate =
+        overrides.maxRate !== undefined ? overrides.maxRate : maxRate;
+      const effectiveSelectedBanks =
+        overrides.selectedBanks !== undefined
+          ? overrides.selectedBanks
+          : selectedBanks;
+
+      const selectedNormalBanks = effectiveSelectedBanks
+        .filter((bank) => bank !== ETC_BANK_LABEL)
+        .map((bank) => bank.trim())
+        .filter((bank) => bank.length > 0);
+
+      const excludeProviders = effectiveSelectedBanks.includes(ETC_BANK_LABEL)
+        ? BANK_OPTIONS.filter((bank) => bank !== ETC_BANK_LABEL).map((bank) =>
+            bank.trim()
+          )
+        : [];
+
+      const serializeParams = (query) => {
+        const searchParams = new URLSearchParams();
+        Object.entries(query).forEach(([key, value]) => {
+          if (value === undefined || value === null || value === "") return;
+          if (Array.isArray(value)) {
+            value.forEach((item) => {
+              if (item !== undefined && item !== null && item !== "") {
+                searchParams.append(key, item);
+              }
+            });
+          } else {
+            searchParams.append(key, value);
+          }
+        });
+        return searchParams.toString();
+      };
+
       if (requestedCategory === "LOAN") {
         setLoanResults({ ...INITIAL_LOAN_RESULTS });
 
+        const loanParams = {};
+        if (selectedNormalBanks.length > 0) {
+          loanParams.providers = selectedNormalBanks;
+        }
+        if (excludeProviders.length > 0) {
+          loanParams.excludeProviders = excludeProviders;
+        }
+
         const responses = await Promise.allSettled(
           LOAN_TYPE_CONFIG.map(({ type }) =>
-            api.get(`/api/finance/loans/options/type/${type}`)
+            api.get(`/api/finance/loans/options/type/${type}`, {
+              params: { ...loanParams },
+              paramsSerializer: serializeParams,
+            })
           )
         );
 
@@ -490,46 +541,22 @@ export default function FinancePage() {
 
       const safePage = Math.max(1, requestedPage || 1);
 
-      const serializeParams = (query) => {
-        const searchParams = new URLSearchParams();
-        Object.entries(query).forEach(([key, value]) => {
-          if (value === undefined || value === null || value === "") return;
-          if (Array.isArray(value)) {
-            value.forEach((item) => {
-              if (item !== undefined && item !== null && item !== "") {
-                searchParams.append(key, item);
-              }
-            });
-          } else {
-            searchParams.append(key, value);
-          }
-        });
-        return searchParams.toString();
-      };
-
       const params = {
         productType: requestedCategory,
         keyword,
-        minRate,
-        maxRate,
+        minRate: effectiveMinRate,
+        maxRate: effectiveMaxRate,
         sort: sortOption,
         page: safePage - 1,
         size: PRODUCT_PAGE_SIZE,
       };
 
-      const selectedNormalBanks = selectedBanks
-        .filter((bank) => bank !== ETC_BANK_LABEL)
-        .map((bank) => bank.trim())
-        .filter((bank) => bank.length > 0);
-
       if (selectedNormalBanks.length > 0) {
         params.providers = selectedNormalBanks;
       }
 
-      if (selectedBanks.includes(ETC_BANK_LABEL)) {
-        params.excludeProviders = BANK_OPTIONS.filter(
-          (bank) => bank !== ETC_BANK_LABEL
-        ).map((bank) => bank.trim());
+      if (excludeProviders.length > 0) {
+        params.excludeProviders = excludeProviders;
       }
 
       const res = await api.get("/api/finance/products", {
@@ -589,6 +616,20 @@ export default function FinancePage() {
     setSelectedBanks((prev) =>
       checked ? [...prev, bank] : prev.filter((b) => b !== bank)
     );
+  };
+
+  const handleResetFilters = () => {
+    setSelectedBanks([]);
+    setMinRate(DEFAULT_MIN_RATE);
+    setMaxRate(DEFAULT_MAX_RATE);
+    setDropdownOpen(false);
+    setProductPage(1);
+    setLoanPageByType({ ...INITIAL_LOAN_PAGES });
+    fetchProducts(1, {
+      selectedBanks: [],
+      minRate: DEFAULT_MIN_RATE,
+      maxRate: DEFAULT_MAX_RATE,
+    });
   };
 
   return (
@@ -677,6 +718,13 @@ export default function FinancePage() {
               style={styles.filterButton}
             >
               선택된 조건 검색하기
+            </button>
+            <button
+              type="button"
+              onClick={handleResetFilters}
+              style={styles.resetButton}
+            >
+              조건 초기화
             </button>
           </aside>
 
@@ -1340,6 +1388,18 @@ const styles = {
     cursor: "pointer",
     transition: "all 0.2s ease",
     marginTop: "12px",
+  },
+  resetButton: {
+    width: "100%",
+    background: "#eeeeeeff",
+    border: "1px solid #fff",
+    color: "#333",
+    borderRadius: "8px",
+    padding: "9px 0",
+    fontWeight: "600",
+    cursor: "pointer",
+    marginTop: "12px",
+    transition: "all 0.2s ease",
   },
   cardContainer: {
     flex: 1,
