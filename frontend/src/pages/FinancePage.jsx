@@ -1,6 +1,15 @@
-import { useEffect, useMemo, useState } from "react";
+﻿import { useEffect, useMemo, useRef, useState } from "react";
 import api from "../lib/axios";
 import AppLayout from "../components/AppLayout";
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  Tooltip,
+  Legend,
+  ResponsiveContainer,
+} from "recharts";
 
 const LOAN_TYPE_CONFIG = [
   { type: "MORTGAGE_LOAN", title: "주택담보대출" },
@@ -9,6 +18,29 @@ const LOAN_TYPE_CONFIG = [
 ];
 
 const LOAN_PAGE_SIZE = 10;
+const PRODUCT_PAGE_SIZE = 10;
+const MAX_PAGE_BUTTONS = 9;
+
+const BANK_OPTIONS = [
+  "국민은행",
+  "신한은행",
+  "우리은행",
+  "하나은행",
+  "농협은행",
+  "IBK기업은행",
+  "부산은행",
+  "대구은행",
+  "광주은행",
+  "제주은행",
+  "전북은행",
+  "경남은행",
+  "그 외",
+];
+
+const ETC_BANK_LABEL = "그 외";
+
+const DEFAULT_MIN_RATE = 0;
+const DEFAULT_MAX_RATE = 10;
 
 const INITIAL_LOAN_RESULTS = LOAN_TYPE_CONFIG.reduce((acc, cur) => {
   acc[cur.type] = [];
@@ -87,8 +119,149 @@ const groupLoanItemsByProduct = (items = []) => {
   return Array.from(grouped.values());
 };
 
+const buildPageNumbers = (currentPage, totalPages) => {
+  const safeTotal = Math.max(1, totalPages || 1);
+  const safeCurrent = Math.max(1, Math.min(currentPage || 1, safeTotal));
+  if (safeTotal <= MAX_PAGE_BUTTONS) {
+    return Array.from({ length: safeTotal }, (_, idx) => idx + 1);
+  }
+  const blockIndex = Math.floor((safeCurrent - 1) / MAX_PAGE_BUTTONS);
+  const start = blockIndex * MAX_PAGE_BUTTONS + 1;
+  const end = Math.min(safeTotal, start + MAX_PAGE_BUTTONS - 1);
+  return Array.from({ length: end - start + 1 }, (_, idx) => start + idx);
+};
+
+const toNumberOrNull = (value) => {
+  if (value === null || value === undefined) return null;
+  if (typeof value === "number") {
+    return Number.isFinite(value) ? value : null;
+  }
+  const str = String(value);
+  const match = str.match(/-?\d+(\.\d+)?/);
+  if (!match) return null;
+  const num = Number(match[0]);
+  return Number.isFinite(num) ? num : null;
+};
+
+const getLoanVariantComparableRate = (variant = {}) => {
+  const candidates = [
+    variant.lendRateAvg,
+    variant.crdtGradAvg,
+    variant.lendRateMin,
+    variant.lendRateMax,
+    variant.crdtGrad1,
+    variant.crdtGrad4,
+    variant.crdtGrad5,
+    variant.crdtGrad6,
+    variant.crdtGrad10,
+    variant.crdtGrad11,
+    variant.crdtGrad12,
+    variant.crdtGrad13,
+  ];
+
+  for (const candidate of candidates) {
+    const parsed = toNumberOrNull(candidate);
+    if (parsed !== null) {
+      return parsed;
+    }
+  }
+  return null;
+};
+
+const computeLoanGroupRate = (group) => {
+  if (!group || !Array.isArray(group.variants)) return null;
+  const rates = group.variants
+    .map(getLoanVariantComparableRate)
+    .filter((rate) => rate !== null);
+  if (!rates.length) return null;
+  return Math.min(...rates);
+};
+
+const sortLoanGroups = (groups = [], sortOption = "") => {
+  if (!Array.isArray(groups) || groups.length <= 1) {
+    return groups;
+  }
+
+  const [rawKey = "", rawDirection = "asc"] = sortOption.split(",");
+  const key = rawKey.trim();
+  const direction = rawDirection.trim().toLowerCase() === "desc" ? -1 : 1;
+  if (!key) {
+    return groups;
+  }
+
+  const normalized = [...groups];
+
+  if (key === "productName" || key === "product_name") {
+    normalized.sort((a, b) => {
+      const nameA = (a?.productName || "").toString().toLowerCase();
+      const nameB = (b?.productName || "").toString().toLowerCase();
+      if (nameA === nameB) return 0;
+      return nameA > nameB ? direction : -direction;
+    });
+    return normalized;
+  }
+
+  if (key === "interestRate" || key === "interest_rate") {
+    normalized.sort((a, b) => {
+      const rateA = computeLoanGroupRate(a);
+      const rateB = computeLoanGroupRate(b);
+      if (rateA === null && rateB === null) return 0;
+      if (rateA === null) return 1;
+      if (rateB === null) return -1;
+      if (rateA === rateB) return 0;
+      return rateA > rateB ? direction : -direction;
+    });
+    return normalized;
+  }
+
+  return groups;
+};
+
+const sortFinanceProducts = (items = [], sortOption = "") => {
+  if (!Array.isArray(items) || items.length <= 1) {
+    return items;
+  }
+
+  const [rawKey = "", rawDirection = "asc"] = sortOption.split(",");
+  const key = rawKey.trim();
+  const direction = rawDirection.trim().toLowerCase() === "desc" ? -1 : 1;
+  if (!key) {
+    return items;
+  }
+
+  const sorted = [...items];
+
+  if (key === "productName" || key === "product_name") {
+    sorted.sort((a, b) => {
+      const nameA = (a?.productName || "").toString().toLowerCase();
+      const nameB = (b?.productName || "").toString().toLowerCase();
+      if (nameA === nameB) return 0;
+      return nameA > nameB ? direction : -direction;
+    });
+    return sorted;
+  }
+
+  if (key === "interestRate" || key === "interest_rate") {
+    sorted.sort((a, b) => {
+      const rateA = toNumberOrNull(a?.interestRate);
+      const rateB = toNumberOrNull(b?.interestRate);
+      if (rateA === null && rateB === null) return 0;
+      if (rateA === null) return 1;
+      if (rateB === null) return -1;
+      if (rateA === rateB) return 0;
+      return rateA > rateB ? direction : -direction;
+    });
+    return sorted;
+  }
+
+  return sorted;
+};
+
 export default function FinancePage() {
   const [products, setProducts] = useState([]);
+  const [productPage, setProductPage] = useState(1);
+  const [totalProductPages, setTotalProductPages] = useState(1);
+  const [totalProductCount, setTotalProductCount] = useState(0);
   const [loanResults, setLoanResults] = useState(() => ({
     ...INITIAL_LOAN_RESULTS,
   }));
@@ -102,19 +275,98 @@ export default function FinancePage() {
   const [category, setCategory] = useState("DEPOSIT");
   const [keyword, setKeyword] = useState("");
   const [sortOption, setSortOption] = useState("id,desc");
+  const latestCategoryRef = useRef(category);
+
+  // 대출 계산용 상태
+  const [loanAmount, setLoanAmount] = useState("");
+  const [loanRate, setLoanRate] = useState("");
+  const [loanYears, setLoanYears] = useState("");
+  const [repayType, setRepayType] = useState("equal_principal_interest");
+  const [monthlyPayment, setMonthlyPayment] = useState(null);
+  const [totalPayment, setTotalPayment] = useState(null);
+  const [totalInterest, setTotalInterest] = useState(null);
+
+  // 월 상환액 계산 함수
+  const calculateLoan = () => {
+    // 문자열 → 숫자 변환
+    const amountNum = parseInt(loanAmount);
+    const rateNum = parseInt(loanRate);
+    const yearsNum = parseInt(loanYears);
+
+    // 입력 검증
+    if (
+      !loanAmount.trim() ||
+      !loanRate.trim() ||
+      !loanYears.trim() ||
+      isNaN(amountNum) ||
+      isNaN(rateNum) ||
+      isNaN(yearsNum) ||
+      amountNum <= 0 ||
+      rateNum <= 0 ||
+      yearsNum <= 0
+    ) {
+      alert("모든 값을 올바르게 입력해주세요.");
+      return;
+    }
+
+    const principal = amountNum * 10000; // 만원 → 원 단위
+    const months = yearsNum * 12;
+    const monthlyRate = rateNum / 100 / 12;
+
+    let monthlyPay = 0;
+    let totalPay = 0;
+    let totalInt = 0;
+
+    if (monthlyRate === 0) {
+      // 무이자일 경우 단순 분할
+      monthlyPay = principal / months;
+      totalPay = principal;
+      totalInt = 0;
+    } else if (repayType === "equal_principal_interest") {
+      // 원리금균등상환
+      monthlyPay =
+        (principal * monthlyRate * Math.pow(1 + monthlyRate, months)) /
+        (Math.pow(1 + monthlyRate, months) - 1);
+      totalPay = monthlyPay * months;
+      totalInt = totalPay - principal;
+    } else {
+      // 원금균등상환 — 매달 원금 일정, 이자는 남은 원금 기준
+      const monthlyPrincipal = principal / months;
+      let totalFirstMonth = 0;
+      let totalPaid = 0;
+      let totalInterestAcc = 0;
+
+      for (let i = 0; i < months; i++) {
+        const remainingPrincipal = principal - monthlyPrincipal * i;
+        const interest = remainingPrincipal * monthlyRate;
+        const payment = monthlyPrincipal + interest;
+        totalPaid += payment;
+        totalInterestAcc += interest;
+        if (i === 0) totalFirstMonth = payment; // 첫 달 상환액
+      }
+      monthlyPay = totalFirstMonth;
+      totalPay = totalPaid;
+      totalInt = totalInterestAcc;
+    }
+
+    setMonthlyPayment(Math.round(monthlyPay));
+    setTotalPayment(Math.round(totalPay));
+    setTotalInterest(Math.round(totalInt));
+  };
 
   // 새 필터 상태
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [selectedBanks, setSelectedBanks] = useState([]);
-  const [minRate, setMinRate] = useState(0);
-  const [maxRate, setMaxRate] = useState(10);
+  const [minRate, setMinRate] = useState(DEFAULT_MIN_RATE);
+  const [maxRate, setMaxRate] = useState(DEFAULT_MAX_RATE);
   const isLoanCategory = category === "LOAN";
   const activeLoanGroups = useMemo(() => {
     if (!isLoanCategory) {
       return [];
     }
-    return groupLoanItemsByProduct(loanResults[activeLoanType] || []);
-  }, [isLoanCategory, loanResults, activeLoanType]);
+    const groups = groupLoanItemsByProduct(loanResults[activeLoanType] || []);
+    return sortLoanGroups(groups, sortOption);
+  }, [isLoanCategory, loanResults, activeLoanType, sortOption]);
   const activeLoanPage = loanPageByType[activeLoanType] || 1;
   const totalLoanPages = Math.max(
     1,
@@ -144,8 +396,22 @@ export default function FinancePage() {
       : [];
 
   useEffect(() => {
-    fetchProducts();
+    if (isLoanCategory) return;
+    const maxPage = Math.max(1, totalProductPages || 1);
+    if (productPage > maxPage) {
+      fetchProducts(maxPage);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isLoanCategory, productPage, totalProductPages]);
+
+  useEffect(() => {
+    fetchProducts(1);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [category, sortOption]);
+
+  useEffect(() => {
+    latestCategoryRef.current = category;
+  }, [category]);
 
   useEffect(() => {
     if (category === "LOAN") {
@@ -155,6 +421,8 @@ export default function FinancePage() {
         }
         return LOAN_TYPE_CONFIG[0].type;
       });
+    } else {
+      setProductPage(1);
     }
   }, [category]);
 
@@ -174,54 +442,152 @@ export default function FinancePage() {
     });
   }, [isLoanCategory, activeLoanType, totalLoanPages, activeLoanConfig]);
 
-  const fetchProducts = async () => {
+  const fetchProducts = async (requestedPage = productPage, overrides = {}) => {
     try {
       setLoading(true);
+      const requestedCategory = category;
 
-      if (category === "LOAN") {
+      const effectiveMinRate =
+        overrides.minRate !== undefined ? overrides.minRate : minRate;
+      const effectiveMaxRate =
+        overrides.maxRate !== undefined ? overrides.maxRate : maxRate;
+      const effectiveSelectedBanks =
+        overrides.selectedBanks !== undefined
+          ? overrides.selectedBanks
+          : selectedBanks;
+
+      const selectedNormalBanks = effectiveSelectedBanks
+        .filter((bank) => bank !== ETC_BANK_LABEL)
+        .map((bank) => bank.trim())
+        .filter((bank) => bank.length > 0);
+
+      const excludeProviders = effectiveSelectedBanks.includes(ETC_BANK_LABEL)
+        ? BANK_OPTIONS.filter((bank) => bank !== ETC_BANK_LABEL).map((bank) =>
+            bank.trim()
+          )
+        : [];
+
+      const serializeParams = (query) => {
+        const searchParams = new URLSearchParams();
+        Object.entries(query).forEach(([key, value]) => {
+          if (value === undefined || value === null || value === "") return;
+          if (Array.isArray(value)) {
+            value.forEach((item) => {
+              if (item !== undefined && item !== null && item !== "") {
+                searchParams.append(key, item);
+              }
+            });
+          } else {
+            searchParams.append(key, value);
+          }
+        });
+        return searchParams.toString();
+      };
+
+      if (requestedCategory === "LOAN") {
         setLoanResults({ ...INITIAL_LOAN_RESULTS });
+
+        const loanParams = {};
+        if (selectedNormalBanks.length > 0) {
+          loanParams.providers = selectedNormalBanks;
+        }
+        if (excludeProviders.length > 0) {
+          loanParams.excludeProviders = excludeProviders;
+        }
 
         const responses = await Promise.allSettled(
           LOAN_TYPE_CONFIG.map(({ type }) =>
-            api.get(`/api/finance/loans/options/type/${type}`)
+            api.get(`/api/finance/loans/options/type/${type}`, {
+              params: { ...loanParams },
+              paramsSerializer: serializeParams,
+            })
           )
         );
 
         const nextLoanResults = { ...INITIAL_LOAN_RESULTS };
+        const normalizedKeyword = (keyword || "").trim().toLowerCase();
         responses.forEach((result, index) => {
           const { type } = LOAN_TYPE_CONFIG[index];
           if (result.status === "fulfilled") {
-            nextLoanResults[type] = result.value?.data || [];
+            const options = result.value?.data || [];
+            nextLoanResults[type] = normalizedKeyword
+              ? options.filter((item) => {
+                  const candidates = [
+                    item.productName,
+                    item.companyName,
+                    item.finPrdtNm,
+                    item.korCoNm,
+                  ];
+                  return candidates.some(
+                    (candidate) =>
+                      typeof candidate === "string" &&
+                      candidate.toLowerCase().includes(normalizedKeyword)
+                  );
+                })
+              : options;
           } else {
-            console.error(`대출 정보 조회 실패(${type}):`, result.reason);
+            console.error(`Loan option fetch failed (${type}):`, result.reason);
           }
         });
 
+        if (latestCategoryRef.current !== requestedCategory) {
+          return;
+        }
+
         setLoanResults(nextLoanResults);
-        setProducts([]);
+        setLoanPageByType({ ...INITIAL_LOAN_PAGES });
         return;
       }
 
+      const safePage = Math.max(1, requestedPage || 1);
+
+      const params = {
+        productType: requestedCategory,
+        keyword,
+        minRate: effectiveMinRate,
+        maxRate: effectiveMaxRate,
+        sort: sortOption,
+        page: safePage - 1,
+        size: PRODUCT_PAGE_SIZE,
+      };
+
+      if (selectedNormalBanks.length > 0) {
+        params.providers = selectedNormalBanks;
+      }
+
+      if (excludeProviders.length > 0) {
+        params.excludeProviders = excludeProviders;
+      }
+
       const res = await api.get("/api/finance/products", {
-        params: {
-          productType: category,
-          keyword,
-          minRate,
-          maxRate,
-          sort: sortOption,
-        },
+        params,
+        paramsSerializer: serializeParams,
       });
 
-      console.log("서버 응답:", res.data);
-      setProducts(res.data.content || []);
+      if (latestCategoryRef.current !== requestedCategory) {
+        return;
+      }
+
+      const rawProducts = res.data.content || [];
+      const sortedProducts = sortFinanceProducts(rawProducts, sortOption);
+      setProducts(sortedProducts);
+      setTotalProductPages(res.data.totalPages ?? 1);
+      setTotalProductCount(res.data.totalElements ?? rawProducts.length);
+      setProductPage(safePage);
     } catch (err) {
-      console.error("금융상품 불러오기 실패:", err);
-      if (category === "LOAN") {
+      console.error("Failed to fetch finance products:", err);
+      if (requestedCategory === "LOAN") {
         setLoanResults({ ...INITIAL_LOAN_RESULTS });
       }
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleProductPageChange = (nextPage) => {
+    const clamped = Math.max(1, Math.min(nextPage, totalProductPages || 1));
+    if (clamped === productPage) return;
+    fetchProducts(clamped);
   };
 
   const handleLoanSubTabClick = (type) => {
@@ -252,93 +618,307 @@ export default function FinancePage() {
     );
   };
 
+  const handleResetFilters = () => {
+    setSelectedBanks([]);
+    setMinRate(DEFAULT_MIN_RATE);
+    setMaxRate(DEFAULT_MAX_RATE);
+    setDropdownOpen(false);
+    setProductPage(1);
+    setLoanPageByType({ ...INITIAL_LOAN_PAGES });
+    fetchProducts(1, {
+      selectedBanks: [],
+      minRate: DEFAULT_MIN_RATE,
+      maxRate: DEFAULT_MAX_RATE,
+    });
+  };
+
   return (
     <AppLayout>
       <div style={styles.page}>
-        {/* 🔹 왼쪽 필터 사이드바 */}
-        <aside style={styles.sidebar}>
-          <h3 style={styles.filterTitle}>조건 검색</h3>
+        <div style={styles.sidebarContainer}>
+          {/* 왼쪽 필터 사이드바 */}
+          <aside style={styles.sidebar}>
+            <h3 style={styles.filterTitle}>조건 검색</h3>
 
-          {/* 은행 선택 */}
-          <div style={styles.filterGroup}>
-            <div
-              style={{ ...styles.filterLabel, cursor: "pointer" }}
-              onClick={() => setDropdownOpen(!dropdownOpen)}
-            >
-              은행 선택 ▾
-            </div>
-
-            {dropdownOpen && (
-              <div style={styles.dropdownList}>
-                {[
-                  "국민은행",
-                  "신한은행",
-                  "우리은행",
-                  "하나은행",
-                  "농협은행",
-                  "IBK기업은행",
-                ].map((bank) => (
-                  <label key={bank} style={styles.checkboxLabel}>
-                    <input
-                      type="checkbox"
-                      checked={selectedBanks.includes(bank)}
-                      onChange={(e) => handleBankToggle(bank, e.target.checked)}
-                    />
-                    {bank}
-                  </label>
-                ))}
+            {/* 은행 선택 */}
+            <div style={styles.filterGroup}>
+              <div
+                style={{ ...styles.filterLabel, cursor: "pointer" }}
+                onClick={() => setDropdownOpen(!dropdownOpen)}
+              >
+                은행 선택 ▾
               </div>
-            )}
-          </div>
 
-          <div style={styles.filterGroup}>
-            <label style={styles.filterLabel}>금리 범위</label>
-            <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-              <input
-                type="number"
-                value={minRate}
-                onChange={(e) => setMinRate(parseFloat(e.target.value) || 0)}
-                min={0}
-                max={maxRate}
-                step={0.1}
-                style={{
-                  width: "50px",
-                  height: "20px",
-                  padding: "0 0px 0 13px",
-                  border: "1px solid #ddd",
-                  borderRadius: "6px",
-                  textAlign: "center",
-                }}
-              />
-              <span>~</span>
-              <input
-                type="number"
-                value={maxRate}
-                onChange={(e) => setMaxRate(parseFloat(e.target.value) || 0)}
-                min={minRate}
-                max={10}
-                step={0.1}
-                style={{
-                  width: "50px",
-                  height: "20px",
-                  padding: "0 0px 0 13px",
-                  border: "1px solid #ddd",
-                  borderRadius: "6px",
-                  textAlign: "center",
-                }}
-              />
-              <span>%</span>
+              {dropdownOpen && (
+                <div style={styles.dropdownList}>
+                  {BANK_OPTIONS.map((bank) => (
+                    <label key={bank} style={styles.checkboxLabel}>
+                      <input
+                        type="checkbox"
+                        checked={selectedBanks.includes(bank)}
+                        onChange={(e) =>
+                          handleBankToggle(bank, e.target.checked)
+                        }
+                      />
+                      {bank}
+                    </label>
+                  ))}
+                </div>
+              )}
             </div>
-            <p style={styles.rateText}>
-              금리 {minRate}% ~ {maxRate}% 사이 상품 보기
-            </p>
-          </div>
 
-          {/* 검색 버튼 */}
-          <button onClick={fetchProducts} style={styles.filterButton}>
-            선택된 조건 검색하기
-          </button>
-        </aside>
+            <div style={styles.filterGroup}>
+              <label style={styles.filterLabel}>금리 범위</label>
+              <div
+                style={{ display: "flex", alignItems: "center", gap: "10px" }}
+              >
+                <input
+                  type="number"
+                  value={minRate}
+                  onChange={(e) => setMinRate(parseFloat(e.target.value) || 0)}
+                  min={0}
+                  max={maxRate}
+                  step={0.1}
+                  style={{
+                    width: "50px",
+                    height: "20px",
+                    padding: "0 0px 0 13px",
+                    border: "1px solid #ddd",
+                    borderRadius: "6px",
+                    textAlign: "center",
+                  }}
+                />
+                <span>~</span>
+                <input
+                  type="number"
+                  value={maxRate}
+                  onChange={(e) => setMaxRate(parseFloat(e.target.value) || 0)}
+                  min={minRate}
+                  max={10}
+                  step={0.1}
+                  style={{
+                    width: "50px",
+                    height: "20px",
+                    padding: "0 0px 0 13px",
+                    border: "1px solid #ddd",
+                    borderRadius: "6px",
+                    textAlign: "center",
+                  }}
+                />
+                <span>%</span>
+              </div>
+              <p style={styles.rateText}>
+                금리 {minRate}% ~ {maxRate}% 사이 상품 보기
+              </p>
+            </div>
+
+            {/* 검색 버튼 */}
+            <button
+              onClick={() => fetchProducts(1)}
+              style={styles.filterButton}
+            >
+              선택된 조건 검색하기
+            </button>
+            <button
+              type="button"
+              onClick={handleResetFilters}
+              style={styles.resetButton}
+            >
+              조건 초기화
+            </button>
+          </aside>
+
+          {/* 대출 금리 계산 박스 (대출 탭에서만 표시) */}
+          {isLoanCategory && (
+            <div style={styles.sidebar}>
+              <h3 style={styles.filterTitle}>대출 금리 계산</h3>
+
+              <div
+                style={{
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: "10px",
+                }}
+              >
+                <label style={styles.filterLabel}>
+                  대출 금액 (만원)
+                  <input
+                    type="text"
+                    value={loanAmount}
+                    onChange={(e) => {
+                      const v = e.target.value.replace(/[^0-9]/g, "");
+                      setLoanAmount(v);
+                    }}
+                    style={styles.inputBox}
+                  />
+                </label>
+
+                <label style={styles.filterLabel}>
+                  연 이자율 (%)
+                  <input
+                    type="text"
+                    value={loanRate}
+                    onChange={(e) => {
+                      const v = e.target.value.replace(/[^0-9.]/g, "");
+                      if ((v.match(/\./g) || []).length > 1) return; // 소수점 2개 방지
+                      setLoanRate(v);
+                    }}
+                    style={styles.inputBox}
+                  />
+                </label>
+
+                <label style={styles.filterLabel}>
+                  상환 기간 (년)
+                  <input
+                    type="text"
+                    value={loanYears}
+                    onChange={(e) => {
+                      const v = e.target.value.replace(/[^0-9]/g, "");
+                      setLoanYears(v);
+                    }}
+                    style={styles.inputBox}
+                  />
+                </label>
+
+                <div
+                  style={{
+                    display: "flex",
+                    flexWrap: "wrap",
+                    gap: "8px 10px",
+                    marginTop: "6px",
+                    width: "100%",
+                    overflow: "hidden",
+                  }}
+                >
+                  <label
+                    style={{
+                      whiteSpace: "nowrap",
+                      flex: "1 1 45%",
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "6px",
+                      fontSize: "14px",
+                      fontWeight: "600",
+                      color: "#333",
+                    }}
+                  >
+                    <input
+                      type="radio"
+                      name="repayType"
+                      value="equal_principal_interest"
+                      checked={repayType === "equal_principal_interest"}
+                      onChange={(e) => setRepayType(e.target.value)}
+                    />
+                    원리금균등상환
+                  </label>
+                  <label
+                    style={{
+                      whiteSpace: "nowrap",
+                      flex: "1 1 45%",
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "6px",
+                      fontSize: "14px",
+                      fontWeight: "600",
+                      color: "#333",
+                    }}
+                  >
+                    <input
+                      type="radio"
+                      name="repayType"
+                      value="principal_only"
+                      checked={repayType === "principal_only"}
+                      onChange={(e) => setRepayType(e.target.value)}
+                    />
+                    원금균등상환
+                  </label>
+                </div>
+
+                <button onClick={calculateLoan} style={styles.filterButton}>
+                  월 상환액 계산하기
+                </button>
+
+                {monthlyPayment !== null && (
+                  <div
+                    style={{
+                      marginTop: "12px",
+                      padding: "12px",
+                      background: "#f9f9f9",
+                      border: "1px solid #ddd",
+                      borderRadius: "8px",
+                      textAlign: "left",
+                      lineHeight: "1.8",
+                      fontSize: "14px",
+                    }}
+                  >
+                    {[
+                      ["월 상환액: ", monthlyPayment],
+                      ["총 상환금액: ", totalPayment],
+                      ["총 이자액: ", totalInterest],
+                    ].map(([label, value]) => (
+                      <div key={label} style={styles.loanResultRow}>
+                        <strong style={styles.loanResultLabel}>{label}</strong>
+                        <span style={styles.loanResultValue}>
+                          {value.toLocaleString("ko-KR")}원
+                        </span>
+                      </div>
+                    ))}
+
+                    {/* 그래프 */}
+                    <div
+                      style={{
+                        width: "100%",
+                        height: "200px",
+                        marginTop: "20px",
+                      }}
+                    >
+                      <ResponsiveContainer>
+                        <BarChart
+                          data={[
+                            {
+                              name: "원금",
+                              금액: totalPayment - totalInterest,
+                            },
+                            { name: "이자", 금액: totalInterest },
+                          ]}
+                          margin={{ top: 10, right: 20, left: 0, bottom: 5 }}
+                        >
+                          <XAxis dataKey="name" />
+                          <YAxis
+                            domain={[
+                              0,
+                              (dataMax) =>
+                                Math.ceil(dataMax / 10000000) * 10000000 * 1.2,
+                            ]} // ✅ 20% 여유
+                            tickCount={6} // 등간격 6개 눈금 (0~최대)
+                            tickFormatter={(v) =>
+                              v >= 100000000
+                                ? `${(v / 100000000).toFixed(1)}억`
+                                : `${(v / 10000).toFixed(0)}만`
+                            }
+                            tick={{ fontSize: 12 }}
+                            width={55}
+                          />
+                          <Tooltip
+                            formatter={(value) =>
+                              `${value.toLocaleString("ko-KR")}원`
+                            }
+                          />
+                          <Legend />
+                          <Bar
+                            dataKey="금액"
+                            fill="#3b82f6"
+                            radius={[6, 6, 0, 0]}
+                          />
+                        </BarChart>
+                      </ResponsiveContainer>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+        </div>
 
         {/* 오른쪽 금융상품 카드 영역 */}
         <div style={styles.cardContainer}>
@@ -386,9 +966,15 @@ export default function FinancePage() {
                 placeholder="상품명 검색"
                 value={keyword}
                 onChange={(e) => setKeyword(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    e.preventDefault();
+                    fetchProducts(1);
+                  }
+                }}
                 style={styles.input}
               />
-              <button onClick={fetchProducts} style={styles.searchBtn}>
+              <button onClick={() => fetchProducts(1)} style={styles.searchBtn}>
                 검색
               </button>
             </div>
@@ -415,7 +1001,7 @@ export default function FinancePage() {
 
             {/* 결과 수 */}
             <p style={styles.resultCount}>
-              총 {isLoanCategory ? displayedLoanCount : products.length}개
+              총 {isLoanCategory ? displayedLoanCount : totalProductCount}개
             </p>
 
             {/* 리스트 */}
@@ -554,30 +1140,29 @@ export default function FinancePage() {
                                   이전
                                 </button>
                                 <div style={styles.loanPaginationPages}>
-                                  {Array.from(
-                                    { length: totalPages },
-                                    (_, idx) => idx + 1
-                                  ).map((pageNumber) => (
-                                    <button
-                                      key={pageNumber}
-                                      type="button"
-                                      onClick={() =>
-                                        handleLoanPageChange(
-                                          type,
-                                          pageNumber,
-                                          totalPages
-                                        )
-                                      }
-                                      style={{
-                                        ...styles.loanPaginationPage,
-                                        ...(pageNumber === page
-                                          ? styles.loanPaginationPageActive
-                                          : {}),
-                                      }}
-                                    >
-                                      {pageNumber}
-                                    </button>
-                                  ))}
+                                  {buildPageNumbers(page, totalPages).map(
+                                    (pageNumber) => (
+                                      <button
+                                        key={pageNumber}
+                                        type="button"
+                                        onClick={() =>
+                                          handleLoanPageChange(
+                                            type,
+                                            pageNumber,
+                                            totalPages
+                                          )
+                                        }
+                                        style={{
+                                          ...styles.loanPaginationPage,
+                                          ...(pageNumber === page
+                                            ? styles.loanPaginationPageActive
+                                            : {}),
+                                        }}
+                                      >
+                                        {pageNumber}
+                                      </button>
+                                    )
+                                  )}
                                 </div>
                                 <button
                                   type="button"
@@ -608,61 +1193,106 @@ export default function FinancePage() {
                 )}
               </div>
             ) : (
-              <div style={styles.list}>
-                {products.length === 0 ? (
-                  <p style={{ textAlign: "center", color: "#888" }}>
-                    해당 조건의 상품이 없습니다.
-                  </p>
-                ) : (
-                  products.map((item) => (
-                    <div
-                      key={item.id}
-                      style={styles.item}
-                      onMouseEnter={(e) =>
-                        (e.currentTarget.style.boxShadow =
-                          "0 6px 16px rgba(0,0,0,0.1)")
-                      }
-                      onMouseLeave={(e) =>
-                        (e.currentTarget.style.boxShadow =
-                          "0 2px 8px rgba(0,0,0,0.04)")
-                      }
+              <div>
+                <div style={styles.list}>
+                  {products.length === 0 ? (
+                    <p style={{ textAlign: "center", color: "#888" }}>
+                      해당 조건의 상품이 없습니다.
+                    </p>
+                  ) : (
+                    products.map((item) => (
+                      <div
+                        key={item.id}
+                        style={styles.item}
+                        onMouseEnter={(e) =>
+                          (e.currentTarget.style.boxShadow =
+                            "0 6px 16px rgba(0,0,0,0.1)")
+                        }
+                        onMouseLeave={(e) =>
+                          (e.currentTarget.style.boxShadow =
+                            "0 2px 8px rgba(0,0,0,0.04)")
+                        }
+                      >
+                        <div style={styles.itemHeader}>
+                          <h3 style={styles.itemTitle}>{item.productName}</h3>
+                          <span style={styles.provider}>{item.provider}</span>
+                        </div>
+                        <pre
+                          style={styles.condition}
+                          dangerouslySetInnerHTML={{
+                            __html: (item.joinCondition || "가입 조건 없음")
+                              .replace(/:/g, "")
+                              .replace(/\*/g, "")
+                              .replace(/(가입 방법)/g, "<strong>$1</strong>")
+                              .replace(/(가입 대상)/g, "<strong>$1</strong>")
+                              .replace(/(비고)/g, "<strong>$1</strong>"),
+                          }}
+                        />
+                        <div style={styles.infoRow}>
+                          <span>금리: {item.interestRate ?? "-"}%</span>
+                        </div>
+                        {item.detailUrl && (
+                          <a
+                            href={item.detailUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            style={styles.link}
+                          >
+                            자세히 보기 →
+                          </a>
+                        )}
+                      </div>
+                    ))
+                  )}
+                </div>
+                {totalProductPages > 1 && (
+                  <div style={styles.loanPagination}>
+                    <button
+                      type="button"
+                      onClick={() => handleProductPageChange(productPage - 1)}
+                      disabled={productPage === 1}
+                      style={{
+                        ...styles.loanPaginationButton,
+                        ...(productPage === 1
+                          ? styles.loanPaginationButtonDisabled
+                          : {}),
+                      }}
                     >
-                      <div style={styles.itemHeader}>
-                        <h3 style={styles.itemTitle}>{item.productName}</h3>
-                        <span style={styles.provider}>{item.provider}</span>
-                      </div>
-                      <pre
-                        style={styles.condition}
-                        dangerouslySetInnerHTML={{
-                          __html: (item.joinCondition || "가입 조건 없음")
-                            .replace(/:/g, "")
-                            .replace(/\*/g, "")
-                            .replace(/(가입 방법)/g, "<strong>$1</strong>")
-                            .replace(/(가입 대상)/g, "<strong>$1</strong>")
-                            .replace(/(비고)/g, "<strong>$1</strong>"),
-                        }}
-                      />
-                      <div style={styles.infoRow}>
-                        <span>금리: {item.interestRate ?? "-"}%</span>
-                        <span>
-                          최소 예치금:{" "}
-                          {item.minDeposit
-                            ? item.minDeposit.toLocaleString() + "원"
-                            : "-"}
-                        </span>
-                      </div>
-                      {item.detailUrl && (
-                        <a
-                          href={item.detailUrl}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          style={styles.link}
-                        >
-                          자세히 보기 →
-                        </a>
+                      이전
+                    </button>
+                    <div style={styles.loanPaginationPages}>
+                      {buildPageNumbers(productPage, totalProductPages).map(
+                        (pageNumber) => (
+                          <button
+                            key={pageNumber}
+                            type="button"
+                            onClick={() => handleProductPageChange(pageNumber)}
+                            style={{
+                              ...styles.loanPaginationPage,
+                              ...(pageNumber === productPage
+                                ? styles.loanPaginationPageActive
+                                : {}),
+                            }}
+                          >
+                            {pageNumber}
+                          </button>
+                        )
                       )}
                     </div>
-                  ))
+                    <button
+                      type="button"
+                      onClick={() => handleProductPageChange(productPage + 1)}
+                      disabled={productPage === totalProductPages}
+                      style={{
+                        ...styles.loanPaginationButton,
+                        ...(productPage === totalProductPages
+                          ? styles.loanPaginationButtonDisabled
+                          : {}),
+                      }}
+                    >
+                      다음
+                    </button>
+                  </div>
                 )}
               </div>
             )}
@@ -691,7 +1321,7 @@ const styles = {
     boxShadow: "0 4px 14px rgba(0,0,0,0.08)",
     padding: "25px 20px",
     height: "fit-content",
-    position: "sticky",
+    position: "static",
     top: "100px",
   },
   filterTitle: {
@@ -750,6 +1380,19 @@ const styles = {
     padding: "10px 0",
     fontWeight: "600",
     cursor: "pointer",
+    transition: "all 0.2s ease",
+    marginTop: "12px",
+  },
+  resetButton: {
+    width: "100%",
+    background: "#eeeeeeff",
+    border: "1px solid #fff",
+    color: "#333",
+    borderRadius: "8px",
+    padding: "10px 0",
+    fontWeight: "600",
+    cursor: "pointer",
+    marginTop: "12px",
     transition: "all 0.2s ease",
   },
   cardContainer: {
@@ -1083,5 +1726,41 @@ const styles = {
     padding: "8px 4px",
     borderRadius: "8px",
     background: "#fff",
+  },
+  sidebarContainer: {
+    display: "flex",
+    flexDirection: "column",
+    gap: "25px",
+    paddingRight: "6px",
+  },
+  inputBox: {
+    width: "100%",
+    height: "32px",
+    border: "1px solid #ddd",
+    borderRadius: "6px",
+    padding: "6px 10px",
+    fontSize: "14px",
+    color: "#333",
+    outline: "none",
+    boxSizing: "border-box",
+    marginTop: "6px",
+    transition: "border-color 0.2s ease, box-shadow 0.2s ease",
+    fontFamily: "inherit",
+  },
+  loanResultRow: {
+    display: "flex",
+    alignItems: "center",
+    gap: "5px",
+    marginBottom: "4px",
+    textAlign: "left",
+  },
+  loanResultLabel: {
+    fontSize: "14px",
+    fontWeight: "600",
+    color: "#333",
+  },
+  loanResultValue: {
+    fontSize: "14px",
+    color: "#444",
   },
 };
