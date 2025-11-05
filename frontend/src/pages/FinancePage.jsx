@@ -42,6 +42,40 @@ const ETC_BANK_LABEL = "그 외";
 const DEFAULT_MIN_RATE = 0;
 const DEFAULT_MAX_RATE = 10;
 
+const normalizeComparableText = (value) =>
+  typeof value === "string" ? value.replace(/\s+/g, "").toLowerCase() : "";
+
+const NORMALIZED_KNOWN_BANKS = BANK_OPTIONS.filter(
+  (bank) => bank !== ETC_BANK_LABEL
+).map((bank) => normalizeComparableText(bank));
+
+const collectLoanProviderCandidates = (item = {}) => {
+  const candidates = [
+    item.companyName,
+    item.korCoNm,
+    item.bankName,
+    item.bank,
+    item.provider,
+    item.providerName,
+    item.finCoNm,
+    item.finCoName,
+    item.finInstNm,
+    item.finInstName,
+    item.kor_co_nm,
+    item.fin_co_nm,
+  ];
+  const unique = new Set();
+  candidates.forEach((candidate) => {
+    if (typeof candidate === "string") {
+      const trimmed = candidate.trim();
+      if (trimmed) {
+        unique.add(trimmed);
+      }
+    }
+  });
+  return Array.from(unique);
+};
+
 const INITIAL_LOAN_RESULTS = LOAN_TYPE_CONFIG.reduce((acc, cur) => {
   acc[cur.type] = [];
   return acc;
@@ -487,44 +521,104 @@ export default function FinancePage() {
       if (requestedCategory === "LOAN") {
         setLoanResults({ ...INITIAL_LOAN_RESULTS });
 
-        const loanParams = {};
-        if (selectedNormalBanks.length > 0) {
-          loanParams.providers = selectedNormalBanks;
-        }
-        if (excludeProviders.length > 0) {
-          loanParams.excludeProviders = excludeProviders;
-        }
+        const includeEtc = effectiveSelectedBanks.includes(ETC_BANK_LABEL);
+        const normalizedSelectedBanks = selectedNormalBanks.map((bank) =>
+          normalizeComparableText(bank)
+        );
+        const normalizedKeyword = (keyword || "").trim().toLowerCase();
+
+        const safeMinRate = Number.isFinite(Number(effectiveMinRate))
+          ? Number(effectiveMinRate)
+          : DEFAULT_MIN_RATE;
+        const safeMaxRate = Number.isFinite(Number(effectiveMaxRate))
+          ? Number(effectiveMaxRate)
+          : DEFAULT_MAX_RATE;
+        const minRateBound = Math.min(safeMinRate, safeMaxRate);
+        const maxRateBound = Math.max(safeMinRate, safeMaxRate);
+        const hasCustomRateRange =
+          minRateBound > DEFAULT_MIN_RATE || maxRateBound < DEFAULT_MAX_RATE;
 
         const responses = await Promise.allSettled(
           LOAN_TYPE_CONFIG.map(({ type }) =>
-            api.get(`/api/finance/loans/options/type/${type}`, {
-              params: { ...loanParams },
-              paramsSerializer: serializeParams,
-            })
+            api.get(`/api/finance/loans/options/type/${type}`)
           )
         );
 
+        const matchesKeyword = (item) => {
+          if (!normalizedKeyword) return true;
+          const candidates = [
+            item.productName,
+            item.companyName,
+            item.finPrdtNm,
+            item.korCoNm,
+          ];
+          return candidates.some(
+            (candidate) =>
+              typeof candidate === "string" &&
+              candidate.toLowerCase().includes(normalizedKeyword)
+          );
+        };
+
+        const matchesBankSelection = (item) => {
+          if (
+            normalizedSelectedBanks.length === 0 &&
+            !includeEtc
+          ) {
+            return true;
+          }
+
+          const providerCandidates = collectLoanProviderCandidates(item);
+          const normalizedProviders = providerCandidates
+            .map((value) => normalizeComparableText(value))
+            .filter(Boolean);
+
+          const matchesExplicitBanks = normalizedSelectedBanks.length
+            ? normalizedSelectedBanks.some((bank) =>
+                normalizedProviders.some((provider) =>
+                  provider.includes(bank)
+                )
+              )
+            : true;
+
+          if (!includeEtc) {
+            return matchesExplicitBanks;
+          }
+
+          const isKnownBank = normalizedProviders.some((provider) =>
+            NORMALIZED_KNOWN_BANKS.some((known) => provider.includes(known))
+          );
+
+          if (normalizedSelectedBanks.length === 0) {
+            return !isKnownBank;
+          }
+
+          // Union of explicit selections and "기타" providers
+          if (!isKnownBank) {
+            return true;
+          }
+
+          return matchesExplicitBanks;
+        };
+
+        const matchesRateRange = (item) => {
+          const rate = getLoanVariantComparableRate(item);
+          if (rate === null) {
+            return !hasCustomRateRange;
+          }
+          return rate >= minRateBound && rate <= maxRateBound;
+        };
+
         const nextLoanResults = { ...INITIAL_LOAN_RESULTS };
-        const normalizedKeyword = (keyword || "").trim().toLowerCase();
         responses.forEach((result, index) => {
           const { type } = LOAN_TYPE_CONFIG[index];
           if (result.status === "fulfilled") {
             const options = result.value?.data || [];
-            nextLoanResults[type] = normalizedKeyword
-              ? options.filter((item) => {
-                  const candidates = [
-                    item.productName,
-                    item.companyName,
-                    item.finPrdtNm,
-                    item.korCoNm,
-                  ];
-                  return candidates.some(
-                    (candidate) =>
-                      typeof candidate === "string" &&
-                      candidate.toLowerCase().includes(normalizedKeyword)
-                  );
-                })
-              : options;
+            nextLoanResults[type] = options.filter(
+              (item) =>
+                matchesKeyword(item) &&
+                matchesBankSelection(item) &&
+                matchesRateRange(item)
+            );
           } else {
             console.error(`Loan option fetch failed (${type}):`, result.reason);
           }
