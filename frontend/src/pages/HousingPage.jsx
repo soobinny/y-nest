@@ -226,27 +226,36 @@ export default function HousingPage() {
   return (
     <AppLayout>
       <div style={styles.page}>
-        {/* 기관 탭 */}
-        <div style={styles.sourceTabs}>
-          {SOURCE_TABS.map((tab) => (
-            <button
-              key={tab.value}
-              onClick={() => {
-                setSourceType(tab.value);
-                setCategory("ALL");
-                setStatus("ALL");
-                setSort(tab.value === "LH" ? "noticeDate,desc" : "postDate,desc");
-                setPage(0);
-              }}
-              style={{
-                ...styles.sourceTab,
-                ...(sourceType === tab.value ? styles.sourceTabActive : {}),
-              }}
-            >
-              {tab.label}
-            </button>
-          ))}
-        </div>
+        {/* 기관 탭 */}<div style={styles.sourceTabs}>
+  {SOURCE_TABS.map((tab, idx) => (
+    <div key={tab.value} style={{ display: "flex", alignItems: "center" }}>
+      <button
+        onClick={() => {
+          setSourceType(tab.value);
+          setCategory("ALL");
+          setStatus("ALL");
+          setSort(tab.value === "LH" ? "noticeDate,desc" : "postDate,desc");
+          setPage(0);
+        }}
+        onMouseEnter={(e) =>
+          (e.currentTarget.style.color = "#4eb166b5")
+        }
+        onMouseLeave={(e) =>
+          (e.currentTarget.style.color =
+            sourceType === tab.value ? "#4eb166" : "#777")
+        }
+        style={{
+          ...styles.sourceTab,
+          ...(sourceType === tab.value ? styles.sourceTabActive : {}),
+        }}
+      >
+        {tab.label}
+      </button>
+      {idx === 0 && <div style={styles.sourceTabsDivider}></div>}
+    </div>
+  ))}
+</div>
+
 
         {/* 하이라이트 */}
         <section style={styles.highlightSection}>
@@ -478,24 +487,37 @@ const styles = {
     alignItems: "center",
     gap: "40px",
   },
-  sourceTabs: {
-    display: "flex",
-    gap: "12px",
-    marginBottom: "12px",
-  },
-  sourceTab: {
-    padding: "10px 18px",
-    borderRadius: "10px",
-    background: "#f5f5f5",
-    border: "none",
-    cursor: "pointer",
-    fontWeight: "600",
-    color: "#555",
-  },
-  sourceTabActive: {
-    background: "#9ed8b5",
-    color: "#fff",
-  },
+sourceTabs: {
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  gap: "0",
+  marginBottom: "28px",
+  position: "relative",
+},
+
+sourceTab: {
+  padding: "10px 30px",
+  background: "none",
+  border: "none",
+  fontSize: "17px",
+  fontWeight: "600",
+  color: "#777",
+  cursor: "pointer",
+},
+
+sourceTabActive: {
+  color: "#4eb166",
+  fontWeight: "700",
+},
+
+sourceTabsDivider: {
+  width: "1px",
+  height: "20px",
+  background: "#ddd",
+  margin: "0 20px",
+},
+
   highlightSection: { width: "98%", maxWidth: "1200px" },
   highlightGrid: {
     display: "grid",
