@@ -3,6 +3,7 @@ import AppLayout from "../components/AppLayout";
 import api from "../lib/axios";
 
 const PAGE_SIZE = 10;
+const MAX_PAGE_BUTTONS = 9;
 
 const CATEGORY_TABS = [
   { label: "전체", value: "ALL" },
@@ -32,6 +33,19 @@ const formatKoreanDate = (value) => {
   } catch {
     return value;
   }
+};
+
+const buildPageNumbers = (currentPage, totalPages) => {
+  const safeTotal = Math.max(1, totalPages || 1);
+  const safeCurrent = Math.max(1, Math.min(currentPage || 1, safeTotal));
+  if (safeTotal <= MAX_PAGE_BUTTONS) {
+    return Array.from({ length: safeTotal }, (_, idx) => idx + 1);
+  }
+  const blockIndex = Math.floor((safeCurrent - 1) / MAX_PAGE_BUTTONS);
+  const blockStart = blockIndex * MAX_PAGE_BUTTONS + 1;
+  const remainingPages = safeTotal - blockStart + 1;
+  const blockLength = Math.min(MAX_PAGE_BUTTONS, remainingPages);
+  return Array.from({ length: blockLength }, (_, idx) => blockStart + idx);
 };
 
 export default function HousingPage() {
@@ -132,6 +146,18 @@ export default function HousingPage() {
     setAppliedRegion(regionInput.trim());
     setPage(0);
   };
+
+  const handlePageChange = (nextPage) => {
+    setPage((prev) => {
+      const safeTotal = Math.max(1, totalPages || 1);
+      const clamped = Math.max(1, Math.min(nextPage, safeTotal));
+      const nextIndex = clamped - 1;
+      return nextIndex === prev ? prev : nextIndex;
+    });
+  };
+
+  const currentPage = page + 1;
+  const hasMultiplePages = totalPages > 1;
 
   const displayStart = totalElements === 0 ? 0 : page * PAGE_SIZE + 1;
   const displayEnd = Math.min((page + 1) * PAGE_SIZE, totalElements);
@@ -269,27 +295,53 @@ export default function HousingPage() {
             </>
           )}
 
-          <div style={styles.pagination}>
-            <button
-              onClick={() => setPage((p) => Math.max(p - 1, 0))}
-              disabled={page === 0}
-              style={styles.pageButton}
-            >
-              이전
-            </button>
+          {hasMultiplePages && (
+            <div style={styles.pagination}>
+              <button
+                type="button"
+                onClick={() => handlePageChange(currentPage - 1)}
+                disabled={currentPage === 1}
+                style={{
+                  ...styles.paginationButton,
+                  ...(currentPage === 1 ? styles.paginationButtonDisabled : {}),
+                }}
+              >
+                이전
+              </button>
 
-            <span style={styles.pageInfo}>
-              {page + 1} / {totalPages} 페이지
-            </span>
+              <div style={styles.paginationPages}>
+                {buildPageNumbers(currentPage, totalPages).map((pageNumber) => (
+                  <button
+                    key={pageNumber}
+                    type="button"
+                    onClick={() => handlePageChange(pageNumber)}
+                    style={{
+                      ...styles.paginationPage,
+                      ...(pageNumber === currentPage
+                        ? styles.paginationPageActive
+                        : {}),
+                    }}
+                  >
+                    {pageNumber}
+                  </button>
+                ))}
+              </div>
 
-            <button
-              onClick={() => setPage((p) => (p + 1 < totalPages ? p + 1 : p))}
-              disabled={page + 1 >= totalPages}
-              style={styles.pageButton}
-            >
-              다음
-            </button>
-          </div>
+              <button
+                type="button"
+                onClick={() => handlePageChange(currentPage + 1)}
+                disabled={currentPage === totalPages}
+                style={{
+                  ...styles.paginationButton,
+                  ...(currentPage === totalPages
+                    ? styles.paginationButtonDisabled
+                    : {}),
+                }}
+              >
+                다음
+              </button>
+            </div>
+          )}
         </section>
       </div>
     </AppLayout>
@@ -512,21 +564,46 @@ const styles = {
     display: "flex",
     justifyContent: "center",
     alignItems: "center",
-    gap: "12px",
+    gap: "10px",
     marginTop: "20px",
+    flexWrap: "wrap",
   },
-  pageButton: {
-    background: "#9ed8b5",
-    border: "none",
-    color: "#fff",
-    borderRadius: "8px",
-    padding: "8px 16px",
-    fontWeight: "600",
-    cursor: "pointer",
-    transition: "opacity 0.2s",
-  },
-  pageInfo: {
-    fontSize: "14px",
+  paginationButton: {
+    padding: "6px 12px",
+    borderRadius: "6px",
+    border: "1px solid #ddd",
+    background: "#fff",
     color: "#555",
+    fontSize: "13px",
+    fontWeight: "500",
+    cursor: "pointer",
+    transition: "all 0.2s ease",
+  },
+  paginationButtonDisabled: {
+    color: "#bbb",
+    border: "1px solid #ddd",
+    background: "#f9f9f9",
+    cursor: "not-allowed",
+  },
+  paginationPages: {
+    display: "flex",
+    gap: "6px",
+    alignItems: "center",
+  },
+  paginationPage: {
+    padding: "6px 10px",
+    borderRadius: "6px",
+    border: "1px solid #ddd",
+    background: "#fff",
+    color: "#555",
+    fontSize: "13px",
+    fontWeight: "500",
+    cursor: "pointer",
+    transition: "all 0.2s ease",
+  },
+  paginationPageActive: {
+    background: "#9ed8b5",
+    border: "1px solid #ddd",
+    color: "#fff",
   },
 };
