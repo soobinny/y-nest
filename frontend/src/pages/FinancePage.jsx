@@ -1,4 +1,4 @@
-﻿import { useEffect, useMemo, useState } from "react";
+﻿import { useEffect, useMemo, useRef, useState } from "react";
 import api from "../lib/axios";
 import AppLayout from "../components/AppLayout";
 import {
@@ -110,6 +110,132 @@ const buildPageNumbers = (currentPage, totalPages) => {
   return Array.from({ length: end - start + 1 }, (_, idx) => start + idx);
 };
 
+const toNumberOrNull = (value) => {
+  if (value === null || value === undefined) return null;
+  if (typeof value === "number") {
+    return Number.isFinite(value) ? value : null;
+  }
+  const str = String(value);
+  const match = str.match(/-?\d+(\.\d+)?/);
+  if (!match) return null;
+  const num = Number(match[0]);
+  return Number.isFinite(num) ? num : null;
+};
+
+const getLoanVariantComparableRate = (variant = {}) => {
+  const candidates = [
+    variant.lendRateAvg,
+    variant.crdtGradAvg,
+    variant.lendRateMin,
+    variant.lendRateMax,
+    variant.crdtGrad1,
+    variant.crdtGrad4,
+    variant.crdtGrad5,
+    variant.crdtGrad6,
+    variant.crdtGrad10,
+    variant.crdtGrad11,
+    variant.crdtGrad12,
+    variant.crdtGrad13,
+  ];
+
+  for (const candidate of candidates) {
+    const parsed = toNumberOrNull(candidate);
+    if (parsed !== null) {
+      return parsed;
+    }
+  }
+  return null;
+};
+
+const computeLoanGroupRate = (group) => {
+  if (!group || !Array.isArray(group.variants)) return null;
+  const rates = group.variants
+    .map(getLoanVariantComparableRate)
+    .filter((rate) => rate !== null);
+  if (!rates.length) return null;
+  return Math.min(...rates);
+};
+
+const sortLoanGroups = (groups = [], sortOption = "") => {
+  if (!Array.isArray(groups) || groups.length <= 1) {
+    return groups;
+  }
+
+  const [rawKey = "", rawDirection = "asc"] = sortOption.split(",");
+  const key = rawKey.trim();
+  const direction = rawDirection.trim().toLowerCase() === "desc" ? -1 : 1;
+  if (!key) {
+    return groups;
+  }
+
+  const normalized = [...groups];
+
+  if (key === "productName" || key === "product_name") {
+    normalized.sort((a, b) => {
+      const nameA = (a?.productName || "").toString().toLowerCase();
+      const nameB = (b?.productName || "").toString().toLowerCase();
+      if (nameA === nameB) return 0;
+      return nameA > nameB ? direction : -direction;
+    });
+    return normalized;
+  }
+
+  if (key === "interestRate" || key === "interest_rate") {
+    normalized.sort((a, b) => {
+      const rateA = computeLoanGroupRate(a);
+      const rateB = computeLoanGroupRate(b);
+      if (rateA === null && rateB === null) return 0;
+      if (rateA === null) return 1;
+      if (rateB === null) return -1;
+      if (rateA === rateB) return 0;
+      return rateA > rateB ? direction : -direction;
+    });
+    return normalized;
+  }
+
+  return groups;
+};
+
+const sortFinanceProducts = (items = [], sortOption = "") => {
+  if (!Array.isArray(items) || items.length <= 1) {
+    return items;
+  }
+
+  const [rawKey = "", rawDirection = "asc"] = sortOption.split(",");
+  const key = rawKey.trim();
+  const direction = rawDirection.trim().toLowerCase() === "desc" ? -1 : 1;
+  if (!key) {
+    return items;
+  }
+
+  const sorted = [...items];
+
+  if (key === "productName" || key === "product_name") {
+    sorted.sort((a, b) => {
+      const nameA = (a?.productName || "").toString().toLowerCase();
+      const nameB = (b?.productName || "").toString().toLowerCase();
+      if (nameA === nameB) return 0;
+      return nameA > nameB ? direction : -direction;
+    });
+    return sorted;
+  }
+
+  if (key === "interestRate" || key === "interest_rate") {
+    sorted.sort((a, b) => {
+      const rateA = toNumberOrNull(a?.interestRate);
+      const rateB = toNumberOrNull(b?.interestRate);
+      if (rateA === null && rateB === null) return 0;
+      if (rateA === null) return 1;
+      if (rateB === null) return -1;
+      if (rateA === rateB) return 0;
+      return rateA > rateB ? direction : -direction;
+    });
+    return sorted;
+  }
+
+  return sorted;
+};
+
 export default function FinancePage() {
   const [products, setProducts] = useState([]);
   const [productPage, setProductPage] = useState(1);
@@ -128,6 +254,7 @@ export default function FinancePage() {
   const [category, setCategory] = useState("DEPOSIT");
   const [keyword, setKeyword] = useState("");
   const [sortOption, setSortOption] = useState("id,desc");
+  const latestCategoryRef = useRef(category);
 
   // 대출 계산용 상태
   const [loanAmount, setLoanAmount] = useState("");
@@ -216,8 +343,9 @@ export default function FinancePage() {
     if (!isLoanCategory) {
       return [];
     }
-    return groupLoanItemsByProduct(loanResults[activeLoanType] || []);
-  }, [isLoanCategory, loanResults, activeLoanType]);
+    const groups = groupLoanItemsByProduct(loanResults[activeLoanType] || []);
+    return sortLoanGroups(groups, sortOption);
+  }, [isLoanCategory, loanResults, activeLoanType, sortOption]);
   const activeLoanPage = loanPageByType[activeLoanType] || 1;
   const totalLoanPages = Math.max(
     1,
@@ -261,6 +389,10 @@ export default function FinancePage() {
   }, [category, sortOption]);
 
   useEffect(() => {
+    latestCategoryRef.current = category;
+  }, [category]);
+
+  useEffect(() => {
     if (category === "LOAN") {
       setActiveLoanType((prev) => {
         if (LOAN_TYPE_CONFIG.some(({ type }) => type === prev)) {
@@ -292,8 +424,9 @@ export default function FinancePage() {
   const fetchProducts = async (requestedPage = productPage) => {
     try {
       setLoading(true);
+      const requestedCategory = category;
 
-      if (category === "LOAN") {
+      if (requestedCategory === "LOAN") {
         setLoanResults({ ...INITIAL_LOAN_RESULTS });
 
         const responses = await Promise.allSettled(
@@ -324,15 +457,16 @@ export default function FinancePage() {
                 })
               : options;
           } else {
-            console.error(`대출 정보 조회 실패(${type}):`, result.reason);
+            console.error(`Loan option fetch failed (${type}):`, result.reason);
           }
         });
 
+        if (latestCategoryRef.current !== requestedCategory) {
+          return;
+        }
+
         setLoanResults(nextLoanResults);
         setLoanPageByType({ ...INITIAL_LOAN_PAGES });
-        setProducts([]);
-        setTotalProductPages(1);
-        setTotalProductCount(0);
         return;
       }
 
@@ -340,7 +474,7 @@ export default function FinancePage() {
 
       const res = await api.get("/api/finance/products", {
         params: {
-          productType: category,
+          productType: requestedCategory,
           keyword,
           minRate,
           maxRate,
@@ -350,17 +484,19 @@ export default function FinancePage() {
         },
       });
 
-      console.log("서버 응답:", res.data);
-      setProducts(res.data.content || []);
+      if (latestCategoryRef.current !== requestedCategory) {
+        return;
+      }
+
+      const rawProducts = res.data.content || [];
+      const sortedProducts = sortFinanceProducts(rawProducts, sortOption);
+      setProducts(sortedProducts);
       setTotalProductPages(res.data.totalPages ?? 1);
-      setTotalProductCount(
-        res.data.totalElements ??
-          (res.data.content ? res.data.content.length : 0)
-      );
+      setTotalProductCount(res.data.totalElements ?? rawProducts.length);
       setProductPage(safePage);
     } catch (err) {
-      console.error("금융상품 불러오기 실패:", err);
-      if (category === "LOAN") {
+      console.error("Failed to fetch finance products:", err);
+      if (requestedCategory === "LOAN") {
         setLoanResults({ ...INITIAL_LOAN_RESULTS });
       }
     } finally {

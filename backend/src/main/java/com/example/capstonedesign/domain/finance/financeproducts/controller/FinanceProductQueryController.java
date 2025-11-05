@@ -50,14 +50,16 @@ public class FinanceProductQueryController {
     static {
         Map<String, String> m = new LinkedHashMap<>();
         m.put("id", "id");
-        m.put("interestRate", "interest_rate");
-        m.put("interest_rate", "interest_rate");
-        m.put("minDeposit", "min_deposit");
-        m.put("min_deposit", "min_deposit");
+        m.put("interestRate", "interestRate");
+        m.put("interest_rate", "interestRate");
+        m.put("minDeposit", "minDeposit");
+        m.put("min_deposit", "minDeposit");
+        m.put("productName", "product.name");
+        m.put("product_name", "product.name");
         m.put("productType", "productType");
-        m.put("product_type", "product_type");
+        m.put("product_type", "productType");
         m.put("finCoNo", "finCoNo");
-        m.put("fin_co_no", "fin_co_no");
+        m.put("fin_co_no", "finCoNo");
         SORT_MAP = Collections.unmodifiableMap(m);
     }
 
