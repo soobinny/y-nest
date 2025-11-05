@@ -32,18 +32,27 @@ public class ShAnnouncement {
     private LocalDate postDate;   // 게시일
     private Integer views;        // 조회수
 
-    private String recruitStatus; // 진행 상태 (now: 진행중 / suc: 완료)
+    @Enumerated(EnumType.STRING)
+    @Column(length = 20)
+    private RecruitStatus recruitStatus; // 진행 상태 (now: 진행중 / suc: 완료)
+
     private String supplyType;    // 공급유형 (행복주택, 청년안심주택 등)
-    private String category;      // 카테고리 (임대 / 분양)
+
+    @Enumerated(EnumType.STRING)
+    @Column(length = 50)
+    private SHHousingCategory category; // 카테고리 (주택임대 / 주택분양)
 
     @Lob
     private String contentHtml;   // 본문 HTML
 
     @Column(columnDefinition = "json")
-    private String attachments;   // 첨부파일 목록(JSON)
+    private String attachments;  // 첨부파일 목록(JSON)
 
     @Column(length = 50)
-    private String region;        // 지역명 (서울, 강남, 송파 등)
+    private String region;       // 지역명 (서울, 강남, 송파 등)
+
+    @Column(length = 255)
+    private String detailUrl;    // 상세 URL
 
     private LocalDateTime crawledAt; // 크롤링 시각
     private LocalDateTime updatedAt; // 업데이트 시각

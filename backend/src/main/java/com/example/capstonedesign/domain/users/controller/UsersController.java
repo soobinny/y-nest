@@ -2,6 +2,7 @@ package com.example.capstonedesign.domain.users.controller;
 
 import com.example.capstonedesign.common.exception.ApiException;
 import com.example.capstonedesign.common.exception.ErrorCode;
+import com.example.capstonedesign.domain.notifications.entity.NotificationChannel;
 import com.example.capstonedesign.domain.users.config.JwtTokenProvider;
 import com.example.capstonedesign.domain.users.config.PasswordEncoder;
 import com.example.capstonedesign.domain.users.dto.request.*;
@@ -133,6 +134,66 @@ public class UsersController {
         // UsersService에 id 기반 업데이트가 없다면 email 기반 메서드 사용
         UsersResponse updated = usersService.updateProfile(me.getEmail(), req);
         return ResponseEntity.ok(updated);
+    }
+
+    @PatchMapping("/{id}/notification")
+    @Operation(
+            summary = "알림 수신 설정 변경",
+            description = "사용자가 이메일 알림을 받을지 여부를 설정합니다. "
+                    + "이 설정이 해제되면 주거공고, 금리, 청년정책 등 일일 요약 메일이 발송되지 않습니다.",
+            security = @SecurityRequirement(name = "bearerAuth"),
+            responses = {
+                    @ApiResponse(
+                            responseCode = "200",
+                            description = "알림 수신 설정 변경 성공",
+                            content = @Content(schema = @Schema(implementation = String.class))
+                    ),
+                    @ApiResponse(
+                            responseCode = "401",
+                            description = "인증 실패 또는 권한 없음",
+                            content = @Content(schema = @Schema(implementation = ApiError.class))
+                    ),
+                    @ApiResponse(
+                            responseCode = "404",
+                            description = "해당 사용자를 찾을 수 없음",
+                            content = @Content(schema = @Schema(implementation = ApiError.class))
+                    )
+            }
+    )
+    public ResponseEntity<String> updateNotificationPreference(
+            @PathVariable Integer id,
+            @RequestParam boolean enabled
+    ) {
+        usersService.updateNotificationPreference(id, enabled);
+        return ResponseEntity.ok(enabled ? "알림 수신이 활성화되었습니다." : "알림 수신이 해제되었습니다.");
+    }
+
+    @PutMapping("/notification-channel")
+    @Operation(
+            summary = "알림 채널 변경",
+            description = "사용자가 받을 공고 마감 알림 채널(이메일, 카카오톡, 문자)을 변경합니다.",
+            security = @SecurityRequirement(name = "bearerAuth"),
+            responses = {
+                    @ApiResponse(
+                            responseCode = "200",
+                            description = "변경 성공",
+                            content = @Content(schema = @Schema(implementation = String.class))
+                    ),
+                    @ApiResponse(
+                            responseCode = "401",
+                            description = "인증 실패",
+                            content = @Content(schema = @Schema(implementation = ApiError.class))
+                    )
+            }
+    )
+    public ResponseEntity<String> updateNotificationChannel(
+            @RequestParam NotificationChannel channel
+    ) {
+        Object principal = SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        Users me = resolveUserFromPrincipal(principal);
+
+        usersService.updateNotificationChannel(me.getId(), channel);
+        return ResponseEntity.ok("알림 채널이 " + channel + "(으)로 변경되었습니다.");
     }
 
     // ---------------------------------------------------------

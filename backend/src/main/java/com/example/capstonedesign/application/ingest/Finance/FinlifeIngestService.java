@@ -229,8 +229,8 @@ public class FinlifeIngestService {
                     financeProductsRepository.save(fp);
 
                     // 옵션 저장
+                    // 옵션 저장
                     if (options != null) {
-                        loanOptionRepository.deleteByFinanceProductId(fp.getId());
                         for (var opt : options) {
                             if (!opt.getFinPrdtCd().equals(base.getFinPrdtCd())) continue;
                             FinanceLoanOption flo = FinanceLoanOption.builder()
@@ -242,7 +242,7 @@ public class FinlifeIngestService {
                                     .lendTypeName(opt.getLendRateTypeNm())
                                     .mrtgTypeName(opt.getMrtgTypeNm())
                                     .build();
-                            loanOptionRepository.save(flo);
+                            saveOrUpdateLoanOption(flo);
                         }
                     }
                     saved++;
@@ -274,7 +274,6 @@ public class FinlifeIngestService {
                     financeProductsRepository.save(fp);
 
                     if (options != null) {
-                        loanOptionRepository.deleteByFinanceProductId(fp.getId());
                         for (var opt : options) {
                             if (!opt.getFinPrdtCd().equals(base.getFinPrdtCd())) continue;
                             FinanceLoanOption flo = FinanceLoanOption.builder()
@@ -284,8 +283,9 @@ public class FinlifeIngestService {
                                     .lendRateAvg(opt.getLendRateAvg())
                                     .rpayTypeName(opt.getRpayTypeNm())
                                     .lendTypeName(opt.getLendRateTypeNm())
+                                    .mrtgTypeName(null) // 전세자금대출은 담보유형이 별도로 없을 수도 있음
                                     .build();
-                            loanOptionRepository.save(flo);
+                            saveOrUpdateLoanOption(flo);
                         }
                     }
                     saved++;
@@ -326,9 +326,6 @@ public class FinlifeIngestService {
 
                     // 옵션(creditLoanOption) 저장
                     if (options != null) {
-                        // 기존 옵션 제거 후 새로 삽입 (upsert 역할)
-                        loanOptionRepository.deleteByFinanceProductId(fp.getId());
-
                         for (var opt : options) {
                             if (!opt.getFinPrdtCd().equals(base.getFinPrdtCd())) continue;
 
@@ -340,7 +337,6 @@ public class FinlifeIngestService {
                                     .rpayTypeName(opt.getRpayTypeNm())
                                     .lendTypeName(opt.getLendRateTypeNm())
                                     .mrtgTypeName(null) // 신용대출은 담보유형 없음
-                                    // 신용등급별 금리 정보
                                     .crdtLendRateType(opt.getCrdtLendRateType())
                                     .crdtLendRateTypeNm(opt.getCrdtLendRateTypeNm())
                                     .crdtGrad1(opt.getCrdtGrad1())
@@ -354,10 +350,9 @@ public class FinlifeIngestService {
                                     .crdtGradAvg(opt.getCrdtGradAvg())
                                     .build();
 
-                            loanOptionRepository.save(flo);
+                            saveOrUpdateLoanOption(flo);
                         }
                     }
-
                     saved++;
                 }
             }
@@ -460,5 +455,40 @@ public class FinlifeIngestService {
     /** Null-safe 문자열 합치기 (라인 구성용) */
     private static String safeLine(String label, String val) {
         return (val == null || val.isBlank()) ? "" : (label + val);
+    }
+
+    /**
+     * 금리 옵션 저장 시 이전 금리 백업 처리
+     * - 동일 상품 옵션이 있으면 기존 금리를 prev 컬럼에 백업하고 새 값으로 갱신
+     */
+    private void saveOrUpdateLoanOption(FinanceLoanOption newOpt) {
+        FinanceLoanOption existing = loanOptionRepository
+                .findTopByFinanceProductAndRpayTypeNameAndLendTypeNameAndMrtgTypeName(
+                        newOpt.getFinanceProduct(),
+                        newOpt.getRpayTypeName(),
+                        newOpt.getLendTypeName(),
+                        newOpt.getMrtgTypeName()
+                ).orElse(null);
+
+        if (existing != null) {
+            // 이전 금리 백업
+            existing.setPrevLendRateMin(existing.getLendRateMin());
+            existing.setPrevLendRateMax(existing.getLendRateMax());
+            existing.setPrevLendRateAvg(existing.getLendRateAvg());
+
+            // 새 금리 반영
+            existing.setLendRateMin(newOpt.getLendRateMin());
+            existing.setLendRateMax(newOpt.getLendRateMax());
+            existing.setLendRateAvg(newOpt.getLendRateAvg());
+            existing.setRpayTypeName(newOpt.getRpayTypeName());
+            existing.setLendTypeName(newOpt.getLendTypeName());
+            existing.setMrtgTypeName(newOpt.getMrtgTypeName());
+            existing.setUpdatedAt(java.time.LocalDateTime.now());
+
+            loanOptionRepository.save(existing);
+        } else {
+            // 신규 옵션은 prev값 없이 저장
+            loanOptionRepository.save(newOpt);
+        }
     }
 }

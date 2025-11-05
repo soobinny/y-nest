@@ -2,7 +2,6 @@ package com.example.capstonedesign.application.ingest.Finance;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
@@ -12,9 +11,6 @@ import org.springframework.stereotype.Component;
 public class FinlifeIngestScheduler {
 
     private final FinlifeIngestService service;
-
-    @Value("${finlife.ingest.cron}")
-    private String cron; // 문서화용(실제 사용은 @Scheduled)
 
     /** 실제 운영 시: 06시 / 18시 실행
      *  cron 예시 → "0 0 6,18 * * *"

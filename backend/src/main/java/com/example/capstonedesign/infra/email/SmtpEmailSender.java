@@ -60,4 +60,20 @@ public class SmtpEmailSender implements EmailSender {
             throw new RuntimeException("메일 전송 중 오류 발생", e);
         }
     }
+
+    /** 메일 전송 시 HTML 추가*/
+    @Override
+    public void sendHtml(String to, String subject, String htmlBody) {
+        try {
+            var mime = mailSender.createMimeMessage();
+            var helper = new MimeMessageHelper(mime, "UTF-8");
+            helper.setTo(to);
+            helper.setSubject(subject);
+            helper.setText(htmlBody, true); // ✅ HTML
+            mailSender.send(mime);
+        } catch (Exception e) {
+            log.error("❌ HTML 메일 발송 실패 → {}: {}", to, e.getMessage(), e);
+            throw new RuntimeException(e);
+        }
+    }
 }

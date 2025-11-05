@@ -2,6 +2,7 @@ package com.example.capstonedesign.domain.users.service;
 
 import com.example.capstonedesign.common.exception.ApiException;
 import com.example.capstonedesign.common.exception.ErrorCode;
+import com.example.capstonedesign.domain.notifications.entity.NotificationChannel;
 import com.example.capstonedesign.domain.users.config.PasswordEncoder;
 import com.example.capstonedesign.domain.users.dto.request.SignupRequest;
 import com.example.capstonedesign.domain.users.dto.request.UpdateUserRequest;
@@ -185,6 +186,22 @@ public class UsersService {
 
         Users saved = usersRepository.save(u);
         return toResponse(saved);
+    }
+
+    @Transactional
+    public void updateNotificationPreference(Integer userId, boolean enabled) {
+        Users user = usersRepository.findById(userId)
+                .orElseThrow(() -> new ApiException(ErrorCode.NOT_FOUND, "사용자를 찾을 수 없습니다."));
+        user.setNotificationEnabled(enabled);
+        usersRepository.save(user);
+    }
+
+    @Transactional
+    public void updateNotificationChannel(Integer userId, NotificationChannel channel) {
+        Users user = usersRepository.findById(userId)
+                .orElseThrow(() -> new ApiException(ErrorCode.NOT_FOUND, "사용자를 찾을 수 없습니다."));
+        user.setNotificationChannel(channel);
+        usersRepository.save(user);
     }
 
     // --------------------------------------------------------------------------
