@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
+import java.util.Map;
 
 /**
  * RecentNoticeController
@@ -33,8 +34,8 @@ public class RecentNoticeController {
      * - 정렬 기준: createdAt (최신순)
      */
     @GetMapping("/recent")
-    @Operation(summary = "최근 게시물 조회", description = "주거, 정책의 최신 게시물을 통합 조회")
-    public List<RecentNoticeDto> getRecentNotices() {
+    @Operation(summary = "최근 게시물 조회", description = "주거, 정책, 전체 데이터를 각각 반환")
+    public Map<String, List<RecentNoticeDto>> getRecentNotices() {
         return recentNoticeService.getRecentNotices();
     }
 }

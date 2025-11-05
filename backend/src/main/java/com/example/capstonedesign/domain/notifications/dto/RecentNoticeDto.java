@@ -52,7 +52,7 @@ public class RecentNoticeDto {
                 .title(entity.getPanNm())
                 .region(entity.getCnpCdNm())
                 .createdAt(createdAt != null ? createdAt : LocalDateTime.now())
-                .link("/housing")
+                .link(entity.getDtlUrl())
                 .build();
     }
 
@@ -71,7 +71,7 @@ public class RecentNoticeDto {
                 .title(entity.getTitle())
                 .region(entity.getRegion())
                 .createdAt(createdAt)
-                .link("/housing")
+                .link(entity.getDetailUrl())
                 .build();
     }
 
@@ -129,7 +129,7 @@ public class RecentNoticeDto {
                 .title(entity.getPolicyName())
                 .region(readableRegion)
                 .createdAt(start.atStartOfDay())
-                .link("/policy")
+                .link(entity.getApplyUrl())
                 .build();
     }
 }
