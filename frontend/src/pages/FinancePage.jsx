@@ -1230,12 +1230,6 @@ export default function FinancePage() {
                         />
                         <div style={styles.infoRow}>
                           <span>금리: {item.interestRate ?? "-"}%</span>
-                          <span>
-                            최소 예치금:{" "}
-                            {item.minDeposit
-                              ? item.minDeposit.toLocaleString() + "원"
-                              : "-"}
-                          </span>
                         </div>
                         {item.detailUrl && (
                           <a
