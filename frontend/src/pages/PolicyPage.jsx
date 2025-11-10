@@ -31,15 +31,7 @@ const SORT_OPTIONS = [
   { label: "마감일 늦은 순", value: "endDate,desc" },
 ];
 
-const QUICK_KEYWORDS = [
-  "주거",
-  "취업",
-  "창업",
-  "금융",
-  "생활",
-  "교육",
-  "교통",
-];
+const QUICK_KEYWORDS = ["주거", "취업", "창업", "금융", "생활", "교육", "교통"];
 
 const formatDate = (value) => {
   if (!value || value === "00000000") return "-"; // 빈값 또는 잘못된 포맷 방지
@@ -74,42 +66,40 @@ const normalizePagePayload = (payload) => {
   if (!payload) {
     return { content: [], totalPages: 0, totalElements: 0 };
 
-const parseDateValue = (value) => {
-  if (!value || value === "00000000") return null;
-  let normalized = value;
-  if (/^\d{8}$/.test(value)) {
-    normalized = value.replace(/(\d{4})(\d{2})(\d{2})/, "$1-$2-$3");
-  }
-  const date = new Date(normalized);
-  return Number.isNaN(date.getTime()) ? null : date;
-};
+    const parseDateValue = (value) => {
+      if (!value || value === "00000000") return null;
+      let normalized = value;
+      if (/^\d{8}$/.test(value)) {
+        normalized = value.replace(/(\d{4})(\d{2})(\d{2})/, "$1-$2-$3");
+      }
+      const date = new Date(normalized);
+      return Number.isNaN(date.getTime()) ? null : date;
+    };
 
-const isOngoingAnnouncement = (value) => {
-  if (!value) return true;
-  const trimmed = value.trim();
-  if (!trimmed || trimmed === "00000000") return true;
-  return trimmed.includes("상시");
-};
+    const isOngoingAnnouncement = (value) => {
+      if (!value) return true;
+      const trimmed = value.trim();
+      if (!trimmed || trimmed === "00000000") return true;
+      return trimmed.includes("상시");
+    };
 
-const filterRecentPolicies = (list = []) => {
-  const today = new Date();
-  const thirtyDaysAgo = new Date();
-  thirtyDaysAgo.setDate(today.getDate() - 30);
+    const filterRecentPolicies = (list = []) => {
+      const today = new Date();
+      const thirtyDaysAgo = new Date();
+      thirtyDaysAgo.setDate(today.getDate() - 30);
 
-  return list.filter((policy) => {
-    const start = parseDateValue(policy?.startDate);
-    if (!start) return false;
-    if (start < thirtyDaysAgo) return false;
+      return list.filter((policy) => {
+        const start = parseDateValue(policy?.startDate);
+        if (!start) return false;
+        if (start < thirtyDaysAgo) return false;
 
-    const end = parseDateValue(policy?.endDate);
-    if (end && end < today && !isOngoingAnnouncement(policy?.endDate)) {
-      return false;
-    }
-    return true;
-  });
-};
-
-
+        const end = parseDateValue(policy?.endDate);
+        if (end && end < today && !isOngoingAnnouncement(policy?.endDate)) {
+          return false;
+        }
+        return true;
+      });
+    };
   }
   const nested = payload?.data ?? payload?.result ?? payload;
   if (Array.isArray(nested)) {
@@ -166,7 +156,6 @@ const filterRecentPolicies = (list = []) => {
     return true;
   });
 };
-
 
 export default function PolicyPage() {
   const [keywordInput, setKeywordInput] = useState("");
@@ -368,7 +357,9 @@ export default function PolicyPage() {
                     onClick={() => handleQuickKeyword(item)}
                     style={{
                       ...styles.keywordChip,
-                      ...(quickKeyword === item ? styles.keywordChipActive : {}),
+                      ...(quickKeyword === item
+                        ? styles.keywordChipActive
+                        : {}),
                     }}
                   >
                     {item}
@@ -780,20 +771,21 @@ const styles = {
     lineHeight: 1.5,
     marginBottom: "12px",
     whiteSpace: "pre-line",
+    marginTop: "15px",
   },
   metaRow: {
     display: "flex",
     justifyContent: "space-between",
     fontSize: "13px",
     color: "#666",
-    marginTop: "6px",
+    marginTop: "15px",
     flexWrap: "wrap",
     gap: "8px",
   },
   metaRowEnd: {
     display: "flex",
     justifyContent: "flex-end",
-    marginTop: "6px",
+    marginTop: "20px",
   },
   keyword: {
     color: "#4d8e6f",
@@ -841,11 +833,9 @@ const styles = {
     borderColor: "#9ed8b5",
   },
   dateText: {
-  fontWeight: 600,
-  marginTop: "6px",
-  display: "inline-block",
-  color: "#294d3bff",
-},
+    fontWeight: 600,
+    marginTop: "6px",
+    display: "inline-block",
+    color: "#294d3bff",
+  },
 };
-
-
