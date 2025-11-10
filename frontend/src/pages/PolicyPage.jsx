@@ -26,25 +26,21 @@ const REGION_OPTIONS = [
 ];
 
 const formatDate = (value) => {
-  if (!value) return "-";
+  if (!value || value === "00000000") return "-"; // 빈값 또는 잘못된 포맷 방지
+
   try {
-    const date = new Date(value);
-    if (Number.isNaN(date.getTime())) {
-      const normalized = value.replace(
-        /(\d{4})(\d{2})(\d{2})/,
-        (_, y, m, d) => `${y}-${m}-${d}`
-      );
-      return new Date(normalized).toLocaleDateString("ko-KR");
+    // 8자리 숫자 형태면 YYYY-MM-DD로 변환
+    if (/^\d{8}$/.test(value)) {
+      value = value.replace(/(\d{4})(\d{2})(\d{2})/, "$1-$2-$3");
     }
+
+    const date = new Date(value);
+    if (isNaN(date.getTime())) return "-"; // Invalid Date 방지
+
     return date.toLocaleDateString("ko-KR");
   } catch {
-    return value;
+    return "-";
   }
-};
-
-const truncate = (text = "", length = 130) => {
-  if (text.length <= length) return text;
-  return `${text.slice(0, length)}…`;
 };
 
 const buildPageNumbers = (currentPage, totalPages) => {
@@ -140,7 +136,9 @@ export default function PolicyPage() {
       } catch (err) {
         console.error("청년 정책 목록 조회 실패:", err);
         if (!ignore) {
-          setError("정책 정보를 불러오지 못했습니다. 잠시 후 다시 시도해주세요.");
+          setError(
+            "정책 정보를 불러오지 못했습니다. 잠시 후 다시 시도해주세요."
+          );
           setPolicies([]);
         }
       } finally {
@@ -229,17 +227,14 @@ export default function PolicyPage() {
 
         <section style={styles.mainSection}>
           <div style={styles.headerRow}>
-            <h2 style={styles.sectionTitle}>정책 검색</h2>
-            <p style={styles.subtitle}>
-              키워드와 지역을 선택해 필요한 지원 정책을 빠르게 찾아보세요.
-            </p>
+            <h2 style={styles.sectionTitle}>정책</h2>
           </div>
 
           <div style={styles.filters}>
             <div style={styles.filterRow}>
               <input
                 type="text"
-                placeholder="정책명 또는 시행기관 검색"
+                placeholder="정책명 또는 키워드 검색"
                 value={keywordInput}
                 onChange={(e) => setKeywordInput(e.target.value)}
                 onKeyDown={(e) => {
@@ -278,7 +273,10 @@ export default function PolicyPage() {
               </p>
               <ul style={styles.policyList}>
                 {policies.map((policy) => (
-                  <li key={policy.policyNo || policy.policyName} style={styles.policyCard}>
+                  <li
+                    key={policy.policyNo || policy.policyName}
+                    style={styles.policyCard}
+                  >
                     <div style={styles.cardHeader}>
                       <div>
                         <h3 style={styles.policyTitle}>{policy.policyName}</h3>
@@ -289,26 +287,38 @@ export default function PolicyPage() {
                           {policy.categoryLarge || "기타"}
                         </span>
                         {policy.categoryMiddle && (
-                          <span style={styles.badgeMuted}>
+                          <span style={styles.badge}>
                             {policy.categoryMiddle}
                           </span>
                         )}
                       </div>
                     </div>
                     <p style={styles.summary}>
-                      {truncate(policy.supportContent || "지원 내용을 확인해 주세요.")}
+                      {policy.supportContent || "지원 내용을 확인해 주세요."}
                     </p>
                     <div style={styles.metaRow}>
-                      <span>
-                        접수 {formatDate(policy.startDate)} ~{" "}
-                        {formatDate(policy.endDate)}
-                      </span>
+                      {(() => {
+                        const start = formatDate(policy.startDate);
+                        const end = formatDate(policy.endDate);
+                        const hasValidDate = start !== "-" || end !== "-";
+                        return hasValidDate ? (
+                          <span>
+                            접수 {start} ~ {end}
+                          </span>
+                        ) : null;
+                      })()}
+                      <div
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          gap: "10px",
+                        }}
+                      ></div>
                       {policy.keyword && (
                         <span style={styles.keyword}>#{policy.keyword}</span>
                       )}
                     </div>
-                    <div style={styles.metaRow}>
-                      <span>지역 코드: {policy.regionCode || "-"}</span>
+                    <div style={styles.metaRowEnd}>
                       {policy.applyUrl && (
                         <a
                           href={policy.applyUrl}
@@ -341,7 +351,9 @@ export default function PolicyPage() {
                       key={num}
                       style={{
                         ...styles.paginationPage,
-                        ...(num === page + 1 ? styles.paginationPageActive : {}),
+                        ...(num === page + 1
+                          ? styles.paginationPageActive
+                          : {}),
                       }}
                       onClick={() => handlePageChange(num)}
                     >
@@ -426,11 +438,8 @@ const styles = {
     fontSize: "22px",
     fontWeight: 700,
     marginBottom: "12px",
-  },
-  subtitle: {
-    color: "#777",
-    fontSize: "14px",
-    margin: 0,
+    textAlign: "center",
+    width: "100%",
   },
   highlightSection: { width: "101%", maxWidth: "1200px" },
   highlightGrid: {
@@ -561,18 +570,12 @@ const styles = {
     fontSize: "12px",
     fontWeight: 600,
   },
-  badgeMuted: {
-    background: "#f3f3f3",
-    color: "#666",
-    borderRadius: "999px",
-    padding: "6px 12px",
-    fontSize: "12px",
-  },
   summary: {
     fontSize: "14px",
     color: "#555",
     lineHeight: 1.5,
     marginBottom: "12px",
+    whiteSpace: "pre-line"
   },
   metaRow: {
     display: "flex",
@@ -583,14 +586,20 @@ const styles = {
     flexWrap: "wrap",
     gap: "8px",
   },
+  metaRowEnd: {
+    display: "flex",
+    justifyContent: "flex-end",
+    marginTop: "6px",
+  },
   keyword: {
     color: "#4d8e6f",
     fontWeight: 600,
   },
   link: {
-    color: "#0f62fe",
+    color: "#0077cc",
     textDecoration: "none",
     fontWeight: 600,
+    fontSize: "13px",
   },
   pagination: {
     display: "flex",
