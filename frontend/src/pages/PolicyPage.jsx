@@ -25,6 +25,12 @@ const REGION_OPTIONS = [
   { label: "제주", value: "50000" },
 ];
 
+const SORT_OPTIONS = [
+  { label: "최근 공고순", value: "startDate,desc" },
+  { label: "마감일 임박순", value: "endDate,asc" },
+  { label: "마감일 늦은 순", value: "endDate,desc" },
+];
+
 const formatDate = (value) => {
   if (!value || value === "00000000") return "-"; // 빈값 또는 잘못된 포맷 방지
 
@@ -84,6 +90,7 @@ export default function PolicyPage() {
   const [keywordInput, setKeywordInput] = useState("");
   const [appliedKeyword, setAppliedKeyword] = useState("");
   const [regionCode, setRegionCode] = useState("ALL");
+  const [sort, setSort] = useState("startDate,desc");
   const [policies, setPolicies] = useState([]);
   const [page, setPage] = useState(0);
   const [totalPages, setTotalPages] = useState(0);
@@ -133,6 +140,9 @@ export default function PolicyPage() {
         if (regionCode !== "ALL") {
           params.regionCode = regionCode;
         }
+        if (sort) {
+          params.sort = sort;
+        }
 
         const res = await api.get("/api/youth-policies", { params });
         if (ignore) return;
@@ -158,7 +168,7 @@ export default function PolicyPage() {
     return () => {
       ignore = true;
     };
-  }, [page, appliedKeyword, regionCode]);
+  }, [page, appliedKeyword, regionCode, sort]);
 
   useEffect(() => {
     let ignore = false;
@@ -208,6 +218,11 @@ export default function PolicyPage() {
     setPage(0);
   };
 
+  const handleSortChange = (value) => {
+    setSort(value);
+    setPage(0);
+  };
+
   const handlePageChange = (next) => {
     setPage((prev) => {
       const clamped = Math.max(0, Math.min(next - 1, (totalPages || 1) - 1));
@@ -236,6 +251,17 @@ export default function PolicyPage() {
         <section style={styles.mainSection}>
           <div style={styles.headerRow}>
             <h2 style={styles.sectionTitle}>정책</h2>
+            <select
+              style={styles.sortSelect}
+              value={sort}
+              onChange={(e) => handleSortChange(e.target.value)}
+            >
+              {SORT_OPTIONS.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
           </div>
 
           <div style={styles.filters}>
@@ -505,6 +531,13 @@ const styles = {
     display: "flex",
     flexWrap: "wrap",
     gap: "12px",
+  },
+  sortSelect: {
+    border: "1px solid #ddd",
+    borderRadius: "8px",
+    padding: "8px 12px",
+    fontSize: "14px",
+    minWidth: "160px",
   },
   input: {
     flex: 1,

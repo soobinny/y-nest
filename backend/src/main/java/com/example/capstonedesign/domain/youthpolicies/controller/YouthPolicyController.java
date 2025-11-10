@@ -42,16 +42,43 @@ return ResponseEntity.ok().build();
     @Operation(summary = "청년정책 목록 조회", description = "DB에 저장된 청년정책 목록을 조회합니다.")
     @GetMapping
     public Page<YouthPolicyResponse> getPolicies(
-            @Parameter(description = "검색 키워드 (정책명 또는 기관명)")
+            @Parameter(description = "??? ????? (????? ??? ?????)")
             @RequestParam(required = false) String keyword,
-            @Parameter(description = "지역코드 (예: 11000)")
+            @Parameter(description = "??????? (??: 11000)")
             @RequestParam(required = false) String regionCode,
+            @Parameter(description = "???? (??: startDate,desc)")
+            @RequestParam(required = false) String sort,
             @ParameterObject Pageable pageable
     ) {
-        if (pageable == null || pageable.isUnpaged()) {
-            pageable = PageRequest.of(0, 10, Sort.by(Sort.Direction.DESC, "createdAt"));
+        Pageable resolved = (pageable == null || pageable.isUnpaged())
+                ? PageRequest.of(0, 10)
+                : PageRequest.of(pageable.getPageNumber(), pageable.getPageSize());
+
+        Sort sortSpec = resolveSort(sort);
+        if (sortSpec.isUnsorted() && pageable != null && pageable.getSort().isSorted()) {
+            sortSpec = pageable.getSort();
         }
-        return queryService.getPaged(keyword, regionCode, pageable);
+        if (sortSpec.isUnsorted()) {
+            sortSpec = Sort.by(Sort.Direction.DESC, "createdAt");
+        }
+
+        return queryService.getPaged(keyword, regionCode, resolved, sortSpec);
+    }
+
+    private Sort resolveSort(String sortParam) {
+        if (sortParam == null || sortParam.isBlank()) {
+            return Sort.unsorted();
+        }
+        try {
+            String[] parts = sortParam.split(",");
+            String property = parts[0].trim();
+            Sort.Direction direction = (parts.length > 1 && "asc".equalsIgnoreCase(parts[1].trim()))
+                    ? Sort.Direction.ASC
+                    : Sort.Direction.DESC;
+            return Sort.by(direction, property);
+        } catch (Exception e) {
+            return Sort.unsorted();
+        }
     }
 
     /** 최근 30일 내 등록된 정책 조회 */
