@@ -52,5 +52,11 @@ public class LhNotice {
     private String dtlUrl;
 
     /** 데이터 생성 시각 */
-    private LocalDateTime createdAt = LocalDateTime.now();
+    private LocalDateTime createdAt;
+
+    /** 자동 타임스탬프 처리 */
+    @PrePersist
+    void onCreate() {
+        this.createdAt = LocalDateTime.now();
+    }
 }

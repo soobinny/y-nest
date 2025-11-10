@@ -7,6 +7,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import java.util.List;
 import java.util.Optional;
 
 /**
@@ -52,4 +53,7 @@ public interface LhNoticeRepository extends JpaRepository<LhNotice, Long> {
             @Param("keyword") String keyword,
             Pageable pageable
     );
+
+    /** 게시일(panNtStDt) 기준 최신순 상위 20건 조회 */
+    List<LhNotice> findTop20ByOrderByPanNtStDtDesc();
 }

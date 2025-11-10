@@ -4,6 +4,7 @@ import com.example.capstonedesign.domain.shannouncements.entity.ShAnnouncement;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 
+import java.util.List;
 import java.util.Optional;
 
 /**
@@ -17,4 +18,7 @@ public interface ShAnnouncementRepository extends
 
     /** 출처와 외부 ID로 단일 공고 조회 (중복 방지용) */
     Optional<ShAnnouncement> findBySourceAndExternalId(String source, String externalId);
+
+    /** 게시일(postDate) 기준 최신순 상위 20건 조회 */
+    List<ShAnnouncement> findTop20ByOrderByPostDateDesc();
 }
