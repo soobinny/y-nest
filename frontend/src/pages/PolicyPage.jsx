@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+﻿import { useEffect, useMemo, useState } from "react";
 import AppLayout from "../components/AppLayout";
 import api from "../lib/axios";
 
@@ -73,6 +73,43 @@ const buildPageNumbers = (currentPage, totalPages) => {
 const normalizePagePayload = (payload) => {
   if (!payload) {
     return { content: [], totalPages: 0, totalElements: 0 };
+
+const parseDateValue = (value) => {
+  if (!value || value === "00000000") return null;
+  let normalized = value;
+  if (/^\d{8}$/.test(value)) {
+    normalized = value.replace(/(\d{4})(\d{2})(\d{2})/, "$1-$2-$3");
+  }
+  const date = new Date(normalized);
+  return Number.isNaN(date.getTime()) ? null : date;
+};
+
+const isOngoingAnnouncement = (value) => {
+  if (!value) return true;
+  const trimmed = value.trim();
+  if (!trimmed || trimmed === "00000000") return true;
+  return trimmed.includes("상시");
+};
+
+const filterRecentPolicies = (list = []) => {
+  const today = new Date();
+  const thirtyDaysAgo = new Date();
+  thirtyDaysAgo.setDate(today.getDate() - 30);
+
+  return list.filter((policy) => {
+    const start = parseDateValue(policy?.startDate);
+    if (!start) return false;
+    if (start < thirtyDaysAgo) return false;
+
+    const end = parseDateValue(policy?.endDate);
+    if (end && end < today && !isOngoingAnnouncement(policy?.endDate)) {
+      return false;
+    }
+    return true;
+  });
+};
+
+
   }
   const nested = payload?.data ?? payload?.result ?? payload;
   if (Array.isArray(nested)) {
@@ -95,6 +132,41 @@ const normalizePagePayload = (payload) => {
       : content.length;
   return { content, totalPages, totalElements };
 };
+const parseDateValue = (value) => {
+  if (!value || value === "00000000") return null;
+  let normalized = value;
+  if (/^\d{8}$/.test(value)) {
+    normalized = value.replace(/(\d{4})(\d{2})(\d{2})/, "$1-$2-$3");
+  }
+  const date = new Date(normalized);
+  return Number.isNaN(date.getTime()) ? null : date;
+};
+
+const isOngoingAnnouncement = (value) => {
+  if (!value) return true;
+  const trimmed = value.trim();
+  if (!trimmed || trimmed === "00000000") return true;
+  return trimmed.includes("상시");
+};
+
+const filterRecentPolicies = (list = []) => {
+  const today = new Date();
+  const thirtyDaysAgo = new Date();
+  thirtyDaysAgo.setDate(today.getDate() - 30);
+
+  return list.filter((policy) => {
+    const start = parseDateValue(policy?.startDate);
+    if (!start) return false;
+    if (start < thirtyDaysAgo) return false;
+
+    const end = parseDateValue(policy?.endDate);
+    if (end && end < today && !isOngoingAnnouncement(policy?.endDate)) {
+      return false;
+    }
+    return true;
+  });
+};
+
 
 export default function PolicyPage() {
   const [keywordInput, setKeywordInput] = useState("");
@@ -119,18 +191,27 @@ export default function PolicyPage() {
       return formattedEnd && formattedEnd !== "-";
     });
 
+  const sanitizedRecentPolicies = useMemo(
+    () => filterRecentPolicies(recentPolicies),
+    [recentPolicies]
+  );
+  const fallbackRecentPolicies = useMemo(
+    () => filterRecentPolicies(fallbackPolicies),
+    [fallbackPolicies]
+  );
+
   const closingHighlightItems = useMemo(() => {
     const closingWithDeadline = filterWithDeadline(closingSoonPolicies);
     if (closingWithDeadline.length > 0) return closingWithDeadline;
     return filterWithDeadline(fallbackPolicies).slice(0, 4);
   }, [closingSoonPolicies, fallbackPolicies]);
   const recentHighlightItems = useMemo(() => {
-    if (recentPolicies.length > 0) return recentPolicies;
-    if (fallbackPolicies.length > 0) {
-      return fallbackPolicies.slice(-4);
+    if (sanitizedRecentPolicies.length > 0) return sanitizedRecentPolicies;
+    if (fallbackRecentPolicies.length > 0) {
+      return fallbackRecentPolicies.slice(0, 4);
     }
     return [];
-  }, [recentPolicies, fallbackPolicies]);
+  }, [sanitizedRecentPolicies, fallbackRecentPolicies]);
 
   useEffect(() => {
     let ignore = false;
@@ -766,4 +847,5 @@ const styles = {
   color: "#294d3bff",
 },
 };
+
 
