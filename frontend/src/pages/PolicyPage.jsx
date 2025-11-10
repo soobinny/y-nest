@@ -31,6 +31,16 @@ const SORT_OPTIONS = [
   { label: "마감일 늦은 순", value: "endDate,desc" },
 ];
 
+const QUICK_KEYWORDS = [
+  "주거",
+  "취업",
+  "창업",
+  "금융",
+  "생활",
+  "교육",
+  "교통",
+];
+
 const formatDate = (value) => {
   if (!value || value === "00000000") return "-"; // 빈값 또는 잘못된 포맷 방지
 
@@ -91,6 +101,7 @@ export default function PolicyPage() {
   const [appliedKeyword, setAppliedKeyword] = useState("");
   const [regionCode, setRegionCode] = useState("ALL");
   const [sort, setSort] = useState("startDate,desc");
+  const [quickKeyword, setQuickKeyword] = useState("");
   const [policies, setPolicies] = useState([]);
   const [page, setPage] = useState(0);
   const [totalPages, setTotalPages] = useState(0);
@@ -99,6 +110,7 @@ export default function PolicyPage() {
   const [error, setError] = useState("");
 
   const [highlightLoading, setHighlightLoading] = useState(false);
+  const [fallbackPolicies, setFallbackPolicies] = useState([]);
   const [recentPolicies, setRecentPolicies] = useState([]);
   const [closingSoonPolicies, setClosingSoonPolicies] = useState([]);
   const filterWithDeadline = (list = []) =>
@@ -110,19 +122,15 @@ export default function PolicyPage() {
   const closingHighlightItems = useMemo(() => {
     const closingWithDeadline = filterWithDeadline(closingSoonPolicies);
     if (closingWithDeadline.length > 0) return closingWithDeadline;
-
-    if (!highlightLoading && policies.length > 0) {
-      return filterWithDeadline(policies).slice(0, 4);
-    }
-    return [];
-  }, [closingSoonPolicies, highlightLoading, policies]);
+    return filterWithDeadline(fallbackPolicies).slice(0, 4);
+  }, [closingSoonPolicies, fallbackPolicies]);
   const recentHighlightItems = useMemo(() => {
     if (recentPolicies.length > 0) return recentPolicies;
-    if (!highlightLoading && policies.length > 0) {
-      return policies.slice(-4);
+    if (fallbackPolicies.length > 0) {
+      return fallbackPolicies.slice(-4);
     }
     return [];
-  }, [recentPolicies, highlightLoading, policies]);
+  }, [recentPolicies, fallbackPolicies]);
 
   useEffect(() => {
     let ignore = false;
@@ -149,6 +157,14 @@ export default function PolicyPage() {
 
         const pageData = normalizePagePayload(res.data);
         setPolicies(pageData.content);
+        if (
+          !appliedKeyword &&
+          regionCode === "ALL" &&
+          page === 0 &&
+          pageData.content.length > 0
+        ) {
+          setFallbackPolicies(pageData.content);
+        }
         setTotalPages(pageData.totalPages);
         setTotalElements(pageData.totalElements);
       } catch (err) {
@@ -210,6 +226,7 @@ export default function PolicyPage() {
 
   const handleSearch = () => {
     setAppliedKeyword(keywordInput.trim());
+    setQuickKeyword("");
     setPage(0);
   };
 
@@ -220,6 +237,14 @@ export default function PolicyPage() {
 
   const handleSortChange = (value) => {
     setSort(value);
+    setPage(0);
+  };
+
+  const handleQuickKeyword = (value) => {
+    const nextValue = quickKeyword === value ? "" : value;
+    setQuickKeyword(nextValue);
+    setKeywordInput(nextValue);
+    setAppliedKeyword(nextValue);
     setPage(0);
   };
 
@@ -251,20 +276,37 @@ export default function PolicyPage() {
         <section style={styles.mainSection}>
           <div style={styles.headerRow}>
             <h2 style={styles.sectionTitle}>정책</h2>
-            <select
-              style={styles.sortSelect}
-              value={sort}
-              onChange={(e) => handleSortChange(e.target.value)}
-            >
-              {SORT_OPTIONS.map((option) => (
-                <option key={option.value} value={option.value}>
-                  {option.label}
-                </option>
-              ))}
-            </select>
           </div>
 
           <div style={styles.filters}>
+            <div style={styles.keywordSortRow}>
+              <div style={styles.keywordChips}>
+                {QUICK_KEYWORDS.map((item) => (
+                  <button
+                    key={item}
+                    onClick={() => handleQuickKeyword(item)}
+                    style={{
+                      ...styles.keywordChip,
+                      ...(quickKeyword === item ? styles.keywordChipActive : {}),
+                    }}
+                  >
+                    {item}
+                  </button>
+                ))}
+              </div>
+              <select
+                style={styles.sortSelect}
+                value={sort}
+                onChange={(e) => handleSortChange(e.target.value)}
+              >
+                {SORT_OPTIONS.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+
             <div style={styles.filterRow}>
               <input
                 type="text"
@@ -521,16 +563,25 @@ const styles = {
     justifyContent: "space-between",
     alignItems: "flex-end",
     flexWrap: "wrap",
-    gap: "10px",
+    gap: "12px",
     marginBottom: "20px",
   },
   filters: {
     marginBottom: "18px",
+    display: "flex",
+    flexDirection: "column",
+    gap: "12px",
   },
   filterRow: {
     display: "flex",
     flexWrap: "wrap",
     gap: "12px",
+  },
+  keywordSortRow: {
+    display: "flex",
+    gap: "12px",
+    flexWrap: "wrap",
+    alignItems: "center",
   },
   sortSelect: {
     border: "1px solid #ddd",
@@ -538,6 +589,27 @@ const styles = {
     padding: "8px 12px",
     fontSize: "14px",
     minWidth: "160px",
+    marginLeft: "auto",
+  },
+  keywordChips: {
+    display: "flex",
+    gap: "8px",
+    flexWrap: "wrap",
+  },
+  keywordChip: {
+    borderRadius: "999px",
+    border: "1px solid #d9d9d9",
+    background: "#fff",
+    padding: "6px 14px",
+    fontSize: "13px",
+    color: "#555",
+    cursor: "pointer",
+    transition: "all 0.2s ease",
+  },
+  keywordChipActive: {
+    background: "#9ed8b5",
+    color: "#fff",
+    borderColor: "#9ed8b5",
   },
   input: {
     flex: 1,
