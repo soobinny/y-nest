@@ -598,18 +598,17 @@ const styles = {
   },
   keywordChip: {
     borderRadius: "999px",
-    border: "1px solid #d9d9d9",
-    background: "#fff",
-    padding: "6px 14px",
-    fontSize: "13px",
+    border: "none",
+    background: "#f5f5f5",
+    padding: "8px 18px",
+    fontSize: "14px",
     color: "#555",
+    fontWeight: 500,
     cursor: "pointer",
-    transition: "all 0.2s ease",
   },
   keywordChipActive: {
     background: "#9ed8b5",
     color: "#fff",
-    borderColor: "#9ed8b5",
   },
   input: {
     flex: 1,
