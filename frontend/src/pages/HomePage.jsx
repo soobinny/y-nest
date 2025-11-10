@@ -1,35 +1,65 @@
-import React, { useState } from "react";
+import React, {  useState, useEffect } from "react";
 import AppLayout from "../components/AppLayout";
+import api from "../lib/axios";
 
 export default function HomePage() {
-  const [activeTab, setActiveTab] = useState("전체");
-  const [hoveredNotice, setHoveredNotice] = useState(null);
+    const [activeTab, setActiveTab] = useState("전체");
+    const [hoveredNotice, setHoveredNotice] = useState(null);
+    const [noticeList, setNoticeList] = useState({
+        all: [],
+        housing: [],
+        policy: [],
+    }); // 카테고리별 객체 구조
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
 
-  const noticeList = [
-    {
-      type: "금융",
-      title: "청년도약적금 금리 5.5%로 상향 조정",
-      link: "/finance",
-    },
-    {
-      type: "주거",
-      title: "행복주택 4차 모집이 시작되었습니다",
-      link: "/housing",
-    },
-    {
-      type: "정책",
-      title: "청년월세지원 2025년 1차 신청 일정 안내",
-      link: "/housing",
-    },
-    { type: "주거", title: "청년 전세임대 접수 마감 D-2", link: "/housing" },
-  ];
+    /** 최근 게시물 API 호출 */
+    useEffect(() => {
+        const fetchRecentNotices = async () => {
+            try {
+                setLoading(true);
+                const res = await api.get("/api/notices/recent");
+                setNoticeList(res.data || { all: [], housing: [], policy: [] });
+            } catch (err) {
+                console.error("❌ 최근 게시물 불러오기 실패:", err);
+                setError("데이터를 불러오는 중 오류가 발생했습니다.");
+            } finally {
+                setLoading(false);
+            }
+        };
+        fetchRecentNotices();
+    }, []);
 
-  const filteredList =
-    activeTab === "전체"
-      ? noticeList
-      : noticeList.filter((item) => item.type === activeTab);
+    /** 탭별 리스트 선택 */
+    const filteredList =
+        activeTab === "전체"
+            ? noticeList.all
+            : activeTab === "주거"
+                ? noticeList.housing
+                : noticeList.policy;
 
-  return (
+    /** 로딩 / 에러 표시 */
+    if (loading) {
+        return (
+            <AppLayout>
+                <div style={{ textAlign: "center", marginTop: "80px" }}>
+                    <p>⏳ 최근 게시물을 불러오는 중...</p>
+                </div>
+            </AppLayout>
+        );
+    }
+
+    if (error) {
+        return (
+            <AppLayout>
+                <div style={{ textAlign: "center", marginTop: "80px", color: "red" }}>
+                    <p>{error}</p>
+                </div>
+            </AppLayout>
+        );
+    }
+
+    return (
     <AppLayout>
       <div style={styles.page}>
         {/* 로고 */}
@@ -92,7 +122,7 @@ export default function HomePage() {
           <div style={styles.noticeHeader}>
             <h2 style={styles.noticeTitle}>📢 최근 게시물</h2>
             <div style={styles.tabs}>
-              {["전체", "주거", "금융", "정책"].map((tab) => (
+              {["전체", "주거", "정책"].map((tab) => (
                 <span
                   key={tab}
                   style={{
