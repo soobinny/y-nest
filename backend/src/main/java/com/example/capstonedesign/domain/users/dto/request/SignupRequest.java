@@ -54,6 +54,9 @@ public record SignupRequest(
         //  무주택 여부 (nullable, 기본 false)
         Boolean is_homeless,
 
+        //  이메일 공고 수신 동의 여부 (nullable, 기본 true)
+        Boolean notificationEnabled,
+
         //  사용자 역할 (USER 또는 ADMIN, null 허용 안됨)
         @NotNull
         UserRole role,

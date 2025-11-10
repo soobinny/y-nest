@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+﻿import { useEffect, useMemo, useState } from "react";
 import AppLayout from "../components/AppLayout";
 import api from "../lib/axios";
 
@@ -24,6 +24,14 @@ const REGION_OPTIONS = [
   { label: "경남", value: "48000" },
   { label: "제주", value: "50000" },
 ];
+
+const SORT_OPTIONS = [
+  { label: "최근 공고순", value: "startDate,desc" },
+  { label: "마감일 임박순", value: "endDate,asc" },
+  { label: "마감일 늦은 순", value: "endDate,desc" },
+];
+
+const QUICK_KEYWORDS = ["주거", "취업", "창업", "금융", "생활", "교육", "교통"];
 
 const formatDate = (value) => {
   if (!value || value === "00000000") return "-"; // 빈값 또는 잘못된 포맷 방지
@@ -57,6 +65,41 @@ const buildPageNumbers = (currentPage, totalPages) => {
 const normalizePagePayload = (payload) => {
   if (!payload) {
     return { content: [], totalPages: 0, totalElements: 0 };
+
+    const parseDateValue = (value) => {
+      if (!value || value === "00000000") return null;
+      let normalized = value;
+      if (/^\d{8}$/.test(value)) {
+        normalized = value.replace(/(\d{4})(\d{2})(\d{2})/, "$1-$2-$3");
+      }
+      const date = new Date(normalized);
+      return Number.isNaN(date.getTime()) ? null : date;
+    };
+
+    const isOngoingAnnouncement = (value) => {
+      if (!value) return true;
+      const trimmed = value.trim();
+      if (!trimmed || trimmed === "00000000") return true;
+      return trimmed.includes("상시");
+    };
+
+    const filterRecentPolicies = (list = []) => {
+      const today = new Date();
+      const thirtyDaysAgo = new Date();
+      thirtyDaysAgo.setDate(today.getDate() - 30);
+
+      return list.filter((policy) => {
+        const start = parseDateValue(policy?.startDate);
+        if (!start) return false;
+        if (start < thirtyDaysAgo) return false;
+
+        const end = parseDateValue(policy?.endDate);
+        if (end && end < today && !isOngoingAnnouncement(policy?.endDate)) {
+          return false;
+        }
+        return true;
+      });
+    };
   }
   const nested = payload?.data ?? payload?.result ?? payload;
   if (Array.isArray(nested)) {
@@ -79,11 +122,47 @@ const normalizePagePayload = (payload) => {
       : content.length;
   return { content, totalPages, totalElements };
 };
+const parseDateValue = (value) => {
+  if (!value || value === "00000000") return null;
+  let normalized = value;
+  if (/^\d{8}$/.test(value)) {
+    normalized = value.replace(/(\d{4})(\d{2})(\d{2})/, "$1-$2-$3");
+  }
+  const date = new Date(normalized);
+  return Number.isNaN(date.getTime()) ? null : date;
+};
+
+const isOngoingAnnouncement = (value) => {
+  if (!value) return true;
+  const trimmed = value.trim();
+  if (!trimmed || trimmed === "00000000") return true;
+  return trimmed.includes("상시");
+};
+
+const filterRecentPolicies = (list = []) => {
+  const today = new Date();
+  const thirtyDaysAgo = new Date();
+  thirtyDaysAgo.setDate(today.getDate() - 30);
+
+  return list.filter((policy) => {
+    const start = parseDateValue(policy?.startDate);
+    if (!start) return false;
+    if (start < thirtyDaysAgo) return false;
+
+    const end = parseDateValue(policy?.endDate);
+    if (end && end < today && !isOngoingAnnouncement(policy?.endDate)) {
+      return false;
+    }
+    return true;
+  });
+};
 
 export default function PolicyPage() {
   const [keywordInput, setKeywordInput] = useState("");
   const [appliedKeyword, setAppliedKeyword] = useState("");
   const [regionCode, setRegionCode] = useState("ALL");
+  const [sort, setSort] = useState("startDate,desc");
+  const [quickKeyword, setQuickKeyword] = useState("");
   const [policies, setPolicies] = useState([]);
   const [page, setPage] = useState(0);
   const [totalPages, setTotalPages] = useState(0);
@@ -92,22 +171,36 @@ export default function PolicyPage() {
   const [error, setError] = useState("");
 
   const [highlightLoading, setHighlightLoading] = useState(false);
+  const [fallbackPolicies, setFallbackPolicies] = useState([]);
   const [recentPolicies, setRecentPolicies] = useState([]);
   const [closingSoonPolicies, setClosingSoonPolicies] = useState([]);
+  const filterWithDeadline = (list = []) =>
+    list.filter((policy) => {
+      const formattedEnd = formatDate(policy?.endDate);
+      return formattedEnd && formattedEnd !== "-";
+    });
+
+  const sanitizedRecentPolicies = useMemo(
+    () => filterRecentPolicies(recentPolicies),
+    [recentPolicies]
+  );
+  const fallbackRecentPolicies = useMemo(
+    () => filterRecentPolicies(fallbackPolicies),
+    [fallbackPolicies]
+  );
+
   const closingHighlightItems = useMemo(() => {
-    if (closingSoonPolicies.length > 0) return closingSoonPolicies;
-    if (!highlightLoading && policies.length > 0) {
-      return policies.slice(0, 4);
-    }
-    return [];
-  }, [closingSoonPolicies, highlightLoading, policies]);
+    const closingWithDeadline = filterWithDeadline(closingSoonPolicies);
+    if (closingWithDeadline.length > 0) return closingWithDeadline;
+    return filterWithDeadline(fallbackPolicies).slice(0, 4);
+  }, [closingSoonPolicies, fallbackPolicies]);
   const recentHighlightItems = useMemo(() => {
-    if (recentPolicies.length > 0) return recentPolicies;
-    if (!highlightLoading && policies.length > 0) {
-      return policies.slice(-4);
+    if (sanitizedRecentPolicies.length > 0) return sanitizedRecentPolicies;
+    if (fallbackRecentPolicies.length > 0) {
+      return fallbackRecentPolicies.slice(0, 4);
     }
     return [];
-  }, [recentPolicies, highlightLoading, policies]);
+  }, [sanitizedRecentPolicies, fallbackRecentPolicies]);
 
   useEffect(() => {
     let ignore = false;
@@ -125,12 +218,23 @@ export default function PolicyPage() {
         if (regionCode !== "ALL") {
           params.regionCode = regionCode;
         }
+        if (sort) {
+          params.sort = sort;
+        }
 
         const res = await api.get("/api/youth-policies", { params });
         if (ignore) return;
 
         const pageData = normalizePagePayload(res.data);
         setPolicies(pageData.content);
+        if (
+          !appliedKeyword &&
+          regionCode === "ALL" &&
+          page === 0 &&
+          pageData.content.length > 0
+        ) {
+          setFallbackPolicies(pageData.content);
+        }
         setTotalPages(pageData.totalPages);
         setTotalElements(pageData.totalElements);
       } catch (err) {
@@ -150,7 +254,7 @@ export default function PolicyPage() {
     return () => {
       ignore = true;
     };
-  }, [page, appliedKeyword, regionCode]);
+  }, [page, appliedKeyword, regionCode, sort]);
 
   useEffect(() => {
     let ignore = false;
@@ -192,11 +296,25 @@ export default function PolicyPage() {
 
   const handleSearch = () => {
     setAppliedKeyword(keywordInput.trim());
+    setQuickKeyword("");
     setPage(0);
   };
 
   const handleRegionChange = (value) => {
     setRegionCode(value);
+    setPage(0);
+  };
+
+  const handleSortChange = (value) => {
+    setSort(value);
+    setPage(0);
+  };
+
+  const handleQuickKeyword = (value) => {
+    const nextValue = quickKeyword === value ? "" : value;
+    setQuickKeyword(nextValue);
+    setKeywordInput(nextValue);
+    setAppliedKeyword(nextValue);
     setPage(0);
   };
 
@@ -231,6 +349,36 @@ export default function PolicyPage() {
           </div>
 
           <div style={styles.filters}>
+            <div style={styles.keywordSortRow}>
+              <div style={styles.keywordChips}>
+                {QUICK_KEYWORDS.map((item) => (
+                  <button
+                    key={item}
+                    onClick={() => handleQuickKeyword(item)}
+                    style={{
+                      ...styles.keywordChip,
+                      ...(quickKeyword === item
+                        ? styles.keywordChipActive
+                        : {}),
+                    }}
+                  >
+                    {item}
+                  </button>
+                ))}
+              </div>
+              <select
+                style={styles.sortSelect}
+                value={sort}
+                onChange={(e) => handleSortChange(e.target.value)}
+              >
+                {SORT_OPTIONS.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+
             <div style={styles.filterRow}>
               <input
                 type="text"
@@ -276,6 +424,14 @@ export default function PolicyPage() {
                   <li
                     key={policy.policyNo || policy.policyName}
                     style={styles.policyCard}
+                    onMouseEnter={(e) =>
+                      (e.currentTarget.style.boxShadow =
+                        "0 6px 20px rgba(0,0,0,0.12)")
+                    }
+                    onMouseLeave={(e) =>
+                      (e.currentTarget.style.boxShadow =
+                        "0 3px 12px rgba(0,0,0,0.05)")
+                    }
                   >
                     <div style={styles.cardHeader}>
                       <div>
@@ -302,10 +458,12 @@ export default function PolicyPage() {
                         const end = formatDate(policy.endDate);
                         const hasValidDate = start !== "-" || end !== "-";
                         return hasValidDate ? (
-                          <span>
+                          <span style={styles.dateText}>
                             접수 {start} ~ {end}
                           </span>
-                        ) : null;
+                        ) : (
+                          <span style={styles.dateText}>상시공고</span>
+                        );
                       })()}
                       <div
                         style={{
@@ -477,16 +635,52 @@ const styles = {
     justifyContent: "space-between",
     alignItems: "flex-end",
     flexWrap: "wrap",
-    gap: "10px",
+    gap: "12px",
     marginBottom: "20px",
   },
   filters: {
     marginBottom: "18px",
+    display: "flex",
+    flexDirection: "column",
+    gap: "12px",
   },
   filterRow: {
     display: "flex",
     flexWrap: "wrap",
     gap: "12px",
+  },
+  keywordSortRow: {
+    display: "flex",
+    gap: "12px",
+    flexWrap: "wrap",
+    alignItems: "center",
+  },
+  sortSelect: {
+    border: "1px solid #ddd",
+    borderRadius: "8px",
+    padding: "8px 12px",
+    fontSize: "14px",
+    minWidth: "160px",
+    marginLeft: "auto",
+  },
+  keywordChips: {
+    display: "flex",
+    gap: "8px",
+    flexWrap: "wrap",
+  },
+  keywordChip: {
+    borderRadius: "999px",
+    border: "none",
+    background: "#f5f5f5",
+    padding: "8px 18px",
+    fontSize: "14px",
+    color: "#555",
+    fontWeight: 500,
+    cursor: "pointer",
+  },
+  keywordChipActive: {
+    background: "#9ed8b5",
+    color: "#fff",
   },
   input: {
     flex: 1,
@@ -535,9 +729,10 @@ const styles = {
   policyCard: {
     border: "1px solid #eee",
     borderRadius: "16px",
-    padding: "22px 26px",
+    padding: "35px 35px",
     boxShadow: "0 3px 12px rgba(0,0,0,0.05)",
     background: "#fff",
+    transition: "box-shadow 0.25s ease",
   },
   cardHeader: {
     display: "flex",
@@ -566,7 +761,7 @@ const styles = {
     background: "#e4f4ea",
     color: "#3a7f5c",
     borderRadius: "999px",
-    padding: "6px 12px",
+    padding: "6px 10px",
     fontSize: "12px",
     fontWeight: 600,
   },
@@ -575,21 +770,22 @@ const styles = {
     color: "#555",
     lineHeight: 1.5,
     marginBottom: "12px",
-    whiteSpace: "pre-line"
+    whiteSpace: "pre-line",
+    marginTop: "15px",
   },
   metaRow: {
     display: "flex",
     justifyContent: "space-between",
     fontSize: "13px",
     color: "#666",
-    marginTop: "6px",
+    marginTop: "15px",
     flexWrap: "wrap",
     gap: "8px",
   },
   metaRowEnd: {
     display: "flex",
     justifyContent: "flex-end",
-    marginTop: "6px",
+    marginTop: "20px",
   },
   keyword: {
     color: "#4d8e6f",
@@ -635,5 +831,11 @@ const styles = {
     background: "#9ed8b5",
     color: "#fff",
     borderColor: "#9ed8b5",
+  },
+  dateText: {
+    fontWeight: 600,
+    marginTop: "6px",
+    display: "inline-block",
+    color: "#294d3bff",
   },
 };

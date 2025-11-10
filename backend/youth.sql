@@ -22,6 +22,7 @@ CREATE TABLE users
     updated_at           TIMESTAMP                    NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     notification_enabled BOOLEAN                      NOT NULL DEFAULT TRUE,
     notification_channel ENUM ('EMAIL','KAKAO','SMS') NOT NULL DEFAULT 'EMAIL'
+    birthdate DATE NOT NULL;
 );
 
 -- =========================

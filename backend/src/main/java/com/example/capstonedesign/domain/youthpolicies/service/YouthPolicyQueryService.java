@@ -9,13 +9,17 @@ import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Comparator;
 import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * YouthPolicyQueryService
@@ -34,16 +38,20 @@ public class YouthPolicyQueryService {
     private static final DateTimeFormatter FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd");
 
     /** 기본 정책 목록 조회 (검색 + 페이징) */
-    public Page<YouthPolicyResponse> getPaged(String keyword, String regionCode, Pageable pageable) {
+    public Page<YouthPolicyResponse> getPaged(String keyword, String regionCode, Pageable pageable, Sort sort) {
+        Comparator<YouthPolicy> comparator = buildComparator(sort == null ? Sort.unsorted() : sort);
+
         List<YouthPolicy> list = repository.findAll().stream()
                 .filter(p -> (keyword == null || p.getPolicyName().contains(keyword) ||
                         (p.getAgency() != null && p.getAgency().contains(keyword))))
                 .filter(p -> (regionCode == null || p.getRegionCode().equals(regionCode)))
-                .toList();
+                .sorted(comparator)
+                .collect(Collectors.toList());
 
-        int start = (int) pageable.getOffset();
-        int end = Math.min(start + pageable.getPageSize(), list.size());
-        Page<YouthPolicy> page = new PageImpl<>(list.subList(start, end), pageable, list.size());
+        Pageable safePageable = (pageable == null) ? PageRequest.of(0, 10) : pageable;
+        int start = (int) safePageable.getOffset();
+        int end = Math.min(start + safePageable.getPageSize(), list.size());
+        Page<YouthPolicy> page = new PageImpl<>(list.subList(start, end), safePageable, list.size());
         return page.map(YouthPolicyResponse::fromEntity);
     }
 
@@ -265,5 +273,95 @@ public class YouthPolicyQueryService {
         YouthPolicy entity = repository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("해당 정책을 찾을 수 없습니다. ID=" + id));
         return YouthPolicyResponse.fromEntity(entity);
+    }
+
+    private Comparator<YouthPolicy> buildComparator(Sort sort) {
+        Comparator<YouthPolicy> defaultComparator = Comparator
+                .comparing(YouthPolicy::getCreatedAt, Comparator.nullsLast(Comparator.naturalOrder()))
+                .reversed();
+
+        if (sort == null || sort.isUnsorted()) {
+            return defaultComparator;
+        }
+
+        Comparator<YouthPolicy> chained = null;
+        for (Sort.Order order : sort) {
+            Comparator<YouthPolicy> orderComparator = createComparatorForOrder(order);
+            if (orderComparator == null) continue;
+            chained = (chained == null) ? orderComparator : chained.thenComparing(orderComparator);
+        }
+
+        if (chained == null) {
+            return defaultComparator;
+        }
+        return chained.thenComparing(defaultComparator);
+    }
+
+    private Comparator<YouthPolicy> createComparatorForOrder(Sort.Order order) {
+        return switch (order.getProperty()) {
+            case "startDate" -> (p1, p2) -> compareDates(parseDate(p1.getStartDate()), parseDate(p2.getStartDate()), order.isDescending());
+            case "endDate" -> (p1, p2) -> compareEndDates(p1.getEndDate(), p2.getEndDate(), order.isDescending());
+            case "createdAt" -> (p1, p2) -> compareDateTimes(p1.getCreatedAt(), p2.getCreatedAt(), order.isDescending());
+            default -> null;
+        };
+    }
+
+    private static int compareDateTimes(LocalDateTime first, LocalDateTime second, boolean descending) {
+        if (first == null && second == null) {
+            return 0;
+        }
+        if (first == null) {
+            return 1; // null always last
+        }
+        if (second == null) {
+            return -1;
+        }
+        return descending ? second.compareTo(first) : first.compareTo(second);
+    }
+
+    private static int compareDates(LocalDate first, LocalDate second, boolean descending) {
+        if (first == null && second == null) {
+            return 0;
+        }
+        if (first == null) {
+            return 1; // null always last
+        }
+        if (second == null) {
+            return -1;
+        }
+        return descending ? second.compareTo(first) : first.compareTo(second);
+    }
+
+    private int compareEndDates(String first, String second, boolean descending) {
+        boolean firstOngoing = isOngoing(first);
+        boolean secondOngoing = isOngoing(second);
+
+        if (firstOngoing && !secondOngoing) return 1;
+        if (!firstOngoing && secondOngoing) return -1;
+
+        LocalDate firstDate = parseDate(first);
+        LocalDate secondDate = parseDate(second);
+        return compareDates(firstDate, secondDate, descending);
+    }
+
+    private static boolean isOngoing(String value) {
+        if (value == null) return true;
+        String trimmed = value.trim();
+        if (trimmed.isEmpty()) return true;
+        if ("00000000".equals(trimmed)) return true;
+        return trimmed.contains("상시");
+    }
+
+    private static LocalDate parseDate(String value) {
+        if (value == null || value.isBlank()) return null;
+        String normalized = value;
+        if (value.matches("\\d{8}")) {
+            normalized = value.replaceAll("(\\d{4})(\\d{2})(\\d{2})", "$1-$2-$3");
+        }
+        try {
+            return LocalDate.parse(normalized, FORMATTER);
+        } catch (Exception e) {
+            return null;
+        }
     }
 }
