@@ -1,5 +1,6 @@
 package com.example.capstonedesign.domain.youthpolicies.controller;
 
+import com.example.capstonedesign.application.ingest.Youth.YouthPolicyIngestService;
 import com.example.capstonedesign.domain.youthpolicies.dto.response.YouthPolicyResponse;
 import com.example.capstonedesign.domain.youthpolicies.service.YouthPolicyQueryService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -11,6 +12,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -28,6 +30,13 @@ import java.util.List;
 public class YouthPolicyController {
 
     private final YouthPolicyQueryService queryService;
+     private final YouthPolicyIngestService ingestService;
+
+    @PostMapping("/sync") // 임시 REST 엔드포인트 불러오기 sync)
+    public ResponseEntity<Void> sync() {
+    ingestService.ingestAllPolicies();
+return ResponseEntity.ok().build();
+}
 
     /** 정책 목록 조회 (검색 + 페이징) */
     @Operation(summary = "청년정책 목록 조회", description = "DB에 저장된 청년정책 목록을 조회합니다.")

@@ -63,7 +63,10 @@ export default function AppLayout({ children, narrow = false }) {
                       href={item.link}
                       style={styles.dropdownItem}
                       onMouseEnter={(e) =>
-                        Object.assign(e.currentTarget.style, styles.dropdownItemHover)
+                        Object.assign(
+                          e.currentTarget.style,
+                          styles.dropdownItemHover
+                        )
                       }
                       onMouseLeave={(e) =>
                         (e.currentTarget.style.backgroundColor = "white")
@@ -97,7 +100,10 @@ export default function AppLayout({ children, narrow = false }) {
                       href={item.link}
                       style={styles.dropdownItem}
                       onMouseEnter={(e) =>
-                        Object.assign(e.currentTarget.style, styles.dropdownItemHover)
+                        Object.assign(
+                          e.currentTarget.style,
+                          styles.dropdownItemHover
+                        )
                       }
                       onMouseLeave={(e) =>
                         (e.currentTarget.style.backgroundColor = "white")
@@ -109,6 +115,11 @@ export default function AppLayout({ children, narrow = false }) {
                 </div>
               )}
             </div>
+
+            {/* 정책 */}
+            <a href="/policy" style={styles.link}>
+              정책
+            </a>
 
             {/* 관심목록 */}
             <div
@@ -133,7 +144,10 @@ export default function AppLayout({ children, narrow = false }) {
                       style={styles.dropdownItem}
                       onClick={(e) => handleProtectedClick(e, item.link)}
                       onMouseEnter={(e) =>
-                        Object.assign(e.currentTarget.style, styles.dropdownItemHover)
+                        Object.assign(
+                          e.currentTarget.style,
+                          styles.dropdownItemHover
+                        )
                       }
                       onMouseLeave={(e) =>
                         (e.currentTarget.style.backgroundColor = "white")
@@ -218,7 +232,7 @@ const styles = {
     fontSize: "16px",
     justifyContent: "center",
     flex: 1,
-    marginLeft: 100,
+    marginLeft: 80,
   },
   link: {
     color: "#333",
