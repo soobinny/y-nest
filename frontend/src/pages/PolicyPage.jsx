@@ -276,6 +276,14 @@ export default function PolicyPage() {
                   <li
                     key={policy.policyNo || policy.policyName}
                     style={styles.policyCard}
+                    onMouseEnter={(e) =>
+                      (e.currentTarget.style.boxShadow =
+                        "0 6px 20px rgba(0,0,0,0.12)")
+                    }
+                    onMouseLeave={(e) =>
+                      (e.currentTarget.style.boxShadow =
+                        "0 3px 12px rgba(0,0,0,0.05)")
+                    }
                   >
                     <div style={styles.cardHeader}>
                       <div>
@@ -302,10 +310,12 @@ export default function PolicyPage() {
                         const end = formatDate(policy.endDate);
                         const hasValidDate = start !== "-" || end !== "-";
                         return hasValidDate ? (
-                          <span>
+                          <span style={styles.dateText}>
                             접수 {start} ~ {end}
                           </span>
-                        ) : null;
+                        ) : (
+                          <span style={styles.dateText}>상시공고</span>
+                        );
                       })()}
                       <div
                         style={{
@@ -535,9 +545,10 @@ const styles = {
   policyCard: {
     border: "1px solid #eee",
     borderRadius: "16px",
-    padding: "22px 26px",
+    padding: "35px 35px",
     boxShadow: "0 3px 12px rgba(0,0,0,0.05)",
     background: "#fff",
+    transition: "box-shadow 0.25s ease",
   },
   cardHeader: {
     display: "flex",
@@ -566,7 +577,7 @@ const styles = {
     background: "#e4f4ea",
     color: "#3a7f5c",
     borderRadius: "999px",
-    padding: "6px 12px",
+    padding: "6px 10px",
     fontSize: "12px",
     fontWeight: 600,
   },
@@ -575,7 +586,7 @@ const styles = {
     color: "#555",
     lineHeight: 1.5,
     marginBottom: "12px",
-    whiteSpace: "pre-line"
+    whiteSpace: "pre-line",
   },
   metaRow: {
     display: "flex",
@@ -636,4 +647,11 @@ const styles = {
     color: "#fff",
     borderColor: "#9ed8b5",
   },
+  dateText: {
+  fontWeight: 600,
+  marginTop: "6px",
+  display: "inline-block",
+  color: "#294d3bff",
+},
 };
+
