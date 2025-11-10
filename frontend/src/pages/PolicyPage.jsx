@@ -3,7 +3,7 @@ import AppLayout from "../components/AppLayout";
 import api from "../lib/axios";
 
 const PAGE_SIZE = 10;
-const MAX_PAGE_BUTTONS = 7;
+const MAX_PAGE_BUTTONS = 9;
 
 const REGION_OPTIONS = [
   { label: "전국", value: "ALL" },
