@@ -98,6 +98,20 @@ export default function PolicyPage() {
   const [highlightLoading, setHighlightLoading] = useState(false);
   const [recentPolicies, setRecentPolicies] = useState([]);
   const [closingSoonPolicies, setClosingSoonPolicies] = useState([]);
+  const closingHighlightItems = useMemo(() => {
+    if (closingSoonPolicies.length > 0) return closingSoonPolicies;
+    if (!highlightLoading && policies.length > 0) {
+      return policies.slice(0, 4);
+    }
+    return [];
+  }, [closingSoonPolicies, highlightLoading, policies]);
+  const recentHighlightItems = useMemo(() => {
+    if (recentPolicies.length > 0) return recentPolicies;
+    if (!highlightLoading && policies.length > 0) {
+      return policies.slice(-4);
+    }
+    return [];
+  }, [recentPolicies, highlightLoading, policies]);
 
   useEffect(() => {
     let ignore = false;
@@ -199,19 +213,16 @@ export default function PolicyPage() {
     <AppLayout>
       <div style={styles.page}>
         <section style={styles.highlightSection}>
-          <h2 style={styles.sectionTitle}>온통청년 하이라이트</h2>
           <div style={styles.highlightGrid}>
-            <HighlightColumn
-              title="마감 임박 정책"
-              items={closingSoonPolicies}
+            <PolicyHighlightCard
+              title="💡 마감 임박 정책"
+              items={closingHighlightItems}
               loading={highlightLoading}
-              emptyMessage="마감 임박 정책이 없습니다."
             />
-            <HighlightColumn
-              title="신규 정책"
-              items={recentPolicies}
+            <PolicyHighlightCard
+              title="💡 신규 정책"
+              items={recentHighlightItems}
               loading={highlightLoading}
-              emptyMessage="최근 등록된 정책이 없습니다."
             />
           </div>
         </section>
@@ -305,7 +316,7 @@ export default function PolicyPage() {
                           rel="noopener noreferrer"
                           style={styles.link}
                         >
-                          신청 사이트 열기
+                          자세히 보기 →
                         </a>
                       )}
                     </div>
@@ -359,24 +370,42 @@ export default function PolicyPage() {
   );
 }
 
-function HighlightColumn({ title, items, loading, emptyMessage }) {
+function PolicyHighlightCard({ title, items, loading }) {
+  const [hovered, setHovered] = useState(null);
+
   return (
-    <div style={styles.highlightColumn}>
+    <div style={styles.highlightCard}>
       <h3 style={styles.highlightTitle}>{title}</h3>
       {loading ? (
-        <p style={styles.highlightStatus}>불러오는 중...</p>
+        <p style={styles.highlightEmpty}>불러오는 중...</p>
       ) : items.length === 0 ? (
-        <p style={styles.highlightStatus}>{emptyMessage}</p>
+        <p style={styles.highlightEmpty}>데이터가 없습니다.</p>
       ) : (
         <ul style={styles.highlightList}>
-          {items.map((item) => (
-            <li key={item.policyNo || item.policyName} style={styles.highlightItem}>
-              <strong>{item.policyName}</strong>
-              <span style={styles.highlightMeta}>
-                {item.agency || "-"} / 마감 {formatDate(item.endDate)}
-              </span>
-            </li>
-          ))}
+          {items.map((item) => {
+            const key = item.policyNo || item.policyName;
+            return (
+              <li
+                key={key}
+                onMouseEnter={() => setHovered(key)}
+                onMouseLeave={() => setHovered(null)}
+                onClick={() => {
+                  if (item.applyUrl) {
+                    window.open(item.applyUrl, "_blank", "noopener,noreferrer");
+                  }
+                }}
+                style={{
+                  ...styles.highlightItem,
+                  ...(hovered === key ? styles.highlightItemHover : {}),
+                }}
+              >
+                <strong>{item.policyName}</strong>
+                <div style={styles.highlightMeta}>
+                  {item.agency || "-"} / 마감 {formatDate(item.endDate)}
+                </div>
+              </li>
+            );
+          })}
         </ul>
       )}
     </div>
@@ -403,54 +432,29 @@ const styles = {
     fontSize: "14px",
     margin: 0,
   },
-  highlightSection: {
-    width: "94%",
-    maxWidth: "1100px",
-    background: "#fff",
-    borderRadius: "18px",
-    boxShadow: "0 4px 18px rgba(0,0,0,0.08)",
-    padding: "28px 32px",
-  },
+  highlightSection: { width: "101%", maxWidth: "1200px" },
   highlightGrid: {
     display: "grid",
-    gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))",
+    gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))",
     gap: "20px",
   },
-  highlightColumn: {
-    background: "#f9fbfd",
-    borderRadius: "14px",
-    padding: "18px",
-  },
-  highlightTitle: {
-    fontSize: "18px",
-    fontWeight: 600,
-    marginBottom: "10px",
-  },
-  highlightList: {
-    listStyle: "none",
-    margin: 0,
-    padding: 0,
-    display: "flex",
-    flexDirection: "column",
-    gap: "12px",
-  },
-  highlightItem: {
+  highlightCard: {
     background: "#fff",
-    borderRadius: "10px",
-    padding: "12px 14px",
-    boxShadow: "0 2px 6px rgba(0,0,0,0.06)",
+    borderRadius: "16px",
+    boxShadow: "0 4px 12px rgba(0,0,0,0.08)",
+    padding: "20px",
   },
-  highlightMeta: {
-    display: "block",
-    marginTop: "6px",
-    fontSize: "13px",
-    color: "#666",
+  highlightTitle: { fontSize: "20px", fontWeight: "700", marginBottom: "10px" },
+  highlightEmpty: { color: "#999", fontSize: "13px" },
+  highlightList: { listStyle: "none", margin: 0, padding: 0 },
+  highlightItem: {
+    borderBottom: "1px solid #eee",
+    padding: "8px 4px",
+    cursor: "pointer",
+    transition: "background-color 0.2s",
   },
-  highlightStatus: {
-    color: "#777",
-    fontSize: "14px",
-    margin: 0,
-  },
+  highlightItemHover: { background: "#f9f9f9" },
+  highlightMeta: { fontSize: "13px", color: "#666" },
   mainSection: {
     width: "94%",
     maxWidth: "1100px",
