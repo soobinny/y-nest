@@ -11,6 +11,7 @@ export default function EditMyPage() {
     income_band: "",
     region: "",
     is_homeless: false,
+    notificationEnabled: true,
     birthdate: "",
   });
   const [showPasswordForm, setShowPasswordForm] = useState(false);
@@ -42,6 +43,7 @@ export default function EditMyPage() {
           income_band: res.data.income_band ?? "",
           region: res.data.region ?? "",
           is_homeless: res.data.is_homeless ?? false,
+          notificationEnabled: res.data.notificationEnabled ?? true,
           birthdate: res.data.birthdate ? res.data.birthdate.split("T")[0] : "",
         });
       } catch {
@@ -144,6 +146,7 @@ export default function EditMyPage() {
           income_band: form.income_band || null,
           region: form.region || null,
           is_homeless: form.is_homeless,
+          notificationEnabled: form.notificationEnabled,
           birthdate: form.birthdate || null,
         },
         {
@@ -312,6 +315,18 @@ export default function EditMyPage() {
             />
             무주택자입니다
           </label>
+
+          <label style={styles.checkboxLabel}>
+            <input
+              type="checkbox"
+              name="notificationEnabled"
+              checked={form.notificationEnabled}
+              onChange={handleChange}
+              style={styles.checkboxInput}
+            />
+            이메일 공고 수신에 동의합니다.
+          </label>
+
 
           <button type="submit" style={styles.button}>
             수정 완료

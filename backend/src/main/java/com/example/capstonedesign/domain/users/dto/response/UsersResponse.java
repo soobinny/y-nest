@@ -7,9 +7,9 @@ import com.example.capstonedesign.domain.users.entity.UserRole;
 /**
  * UsersResponse
  * -------------------------------------------------
- * - 사용자 정보를 클라이언트로 반환할 때 사용되는 DTO
- * - 회원 가입, 로그인 후 프로필 조회, 수정 등의 응답에 사용
- * - 비밀번호 등 민감 정보는 포함하지 않음
+ * - 사용자 정보를 클라이언트로 반환할 때 사용하는 DTO
+ * - 회원 가입, 로그인 후 본인 조회, 정보 수정 응답에 활용
+ * - 비밀번호 등 민감 정보는 포함하지 않는다
  */
 public record UsersResponse(
 
@@ -34,7 +34,10 @@ public record UsersResponse(
         // 무주택 여부
         Boolean is_homeless,
 
-        //생년월일
+        // 알림 수신 여부
+        Boolean notificationEnabled,
+
+        // 생년월일
         LocalDate birthdate,
 
         // 사용자 역할 (USER 또는 ADMIN)

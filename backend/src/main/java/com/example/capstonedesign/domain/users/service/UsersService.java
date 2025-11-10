@@ -183,6 +183,7 @@ public class UsersService {
         if (req.income_band() != null) u.setIncome_band(req.income_band());
         if (req.region() != null) u.setRegion(req.region());
         if (req.is_homeless() != null) u.setIs_homeless(req.is_homeless());
+        if (req.notificationEnabled() != null) u.setNotificationEnabled(req.notificationEnabled());
         if (req.birthdate() != null) u.setBirthdate(req.birthdate());
 
         Users saved = usersRepository.save(u);
@@ -241,6 +242,7 @@ public class UsersService {
                 u.getIncome_band(),
                 u.getRegion(),
                 u.getIs_homeless(),
+                u.getNotificationEnabled(),
                 u.getBirthdate(),
                 u.getRole()
         );

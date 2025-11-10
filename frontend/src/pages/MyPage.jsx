@@ -6,26 +6,27 @@ export default function MyPage() {
   const [user, setUser] = useState(null);
   const [message, setMessage] = useState("");
 
-useEffect(() => {
-  const token = localStorage.getItem("accessToken");
-  if (!token) {
-    window.location.href = "/login";
-    return;
-  }
-
-  const fetchUser = async () => {
-    try {
-      const res = await api.get("/users/me", {
-        headers: { Authorization: token },
-      });
-      setUser(res.data);
-    } catch {
+  useEffect(() => {
+    const token = localStorage.getItem("accessToken");
+    if (!token) {
       window.location.href = "/login";
+      return;
     }
-  };
 
-  fetchUser();
-}, []);
+    const fetchUser = async () => {
+      try {
+        const res = await api.get("/users/me", {
+          headers: { Authorization: token },
+        });
+        setUser(res.data);
+      } catch {
+        window.location.href = "/login";
+      }
+    };
+
+    fetchUser();
+  }, []);
+
   const handleLogout = () => {
     if (window.confirm("로그아웃 하시겠습니까?")) {
       localStorage.removeItem("accessToken");
@@ -34,9 +35,9 @@ useEffect(() => {
   };
 
   const handleDeleteAccount = async () => {
-    const confirmDelete = window.confirm("회원 탈퇴하시겠습니까?");
+    const confirmDelete = window.confirm("정말 회원 탈퇴하시겠습니까?");
     if (!confirmDelete) return;
-    const password = prompt("비밀번호를 입력해주세요:");
+    const password = prompt("비밀번호를 입력해 주세요:");
     if (!password) return;
     try {
       const res = await api.delete("/users/delete", {
@@ -47,11 +48,12 @@ useEffect(() => {
       localStorage.removeItem("accessToken");
       window.location.href = "/signup";
     } catch {
-      alert("탈퇴 중 오류가 발생했습니다.");
+      alert("탈퇴 처리 중 오류가 발생했습니다.");
     }
   };
 
   if (!user) return null;
+
   return (
     <AppLayout narrow>
       <div
@@ -103,6 +105,17 @@ useEffect(() => {
             <span style={styles.label}>주택</span>
             <span style={styles.value}>
               {user.is_homeless ? "무주택" : "주택 보유"}
+            </span>
+          </div>
+        </div>
+
+        {/* 알림 설정 */}
+        <div style={styles.section}>
+          <h3 style={styles.sectionTitle}>🔔 알림 설정</h3>
+          <div style={styles.row}>
+            <span style={styles.label}>이메일 공고 수신</span>
+            <span style={styles.value}>
+              {user.notificationEnabled ? "동의" : "거부"}
             </span>
           </div>
         </div>
