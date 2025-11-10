@@ -94,10 +94,18 @@ export default function PolicyPage() {
   const [highlightLoading, setHighlightLoading] = useState(false);
   const [recentPolicies, setRecentPolicies] = useState([]);
   const [closingSoonPolicies, setClosingSoonPolicies] = useState([]);
+  const filterWithDeadline = (list = []) =>
+    list.filter((policy) => {
+      const formattedEnd = formatDate(policy?.endDate);
+      return formattedEnd && formattedEnd !== "-";
+    });
+
   const closingHighlightItems = useMemo(() => {
-    if (closingSoonPolicies.length > 0) return closingSoonPolicies;
+    const closingWithDeadline = filterWithDeadline(closingSoonPolicies);
+    if (closingWithDeadline.length > 0) return closingWithDeadline;
+
     if (!highlightLoading && policies.length > 0) {
-      return policies.slice(0, 4);
+      return filterWithDeadline(policies).slice(0, 4);
     }
     return [];
   }, [closingSoonPolicies, highlightLoading, policies]);
