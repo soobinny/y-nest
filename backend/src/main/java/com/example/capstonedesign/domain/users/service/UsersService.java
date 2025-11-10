@@ -63,6 +63,7 @@ public class UsersService {
         u.setIncome_band(req.income_band());
         u.setRegion(req.region());
         u.setIs_homeless(req.is_homeless() != null ? req.is_homeless() : false);
+        u.setNotificationEnabled(req.notificationEnabled() != null ? req.notificationEnabled() : true);
         u.setRole(req.role() != null ? req.role() : UserRole.USER);
         u.setBirthdate(req.birthdate());
 

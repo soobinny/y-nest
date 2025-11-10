@@ -16,6 +16,7 @@ export default function SignupPage() {
     region: "",
     income_band: "",
     is_homeless: false,
+    notificationEnabled: true,
     role: "USER",
   });
   const [message, setMessage] = useState("");
@@ -56,6 +57,7 @@ export default function SignupPage() {
         income_band: form.income_band || null,
         region: `${form.province} ${form.city}` || null,
         is_homeless: form.is_homeless,
+        notificationEnabled: form.notificationEnabled,
         role: "USER",
         birthdate: form.birthdate,
       };
@@ -173,6 +175,16 @@ export default function SignupPage() {
               style={styles.checkboxInput}
             />
             무주택자입니다
+          </label>
+          <label style={styles.checkboxLabel}>
+            <input
+              type="checkbox"
+              name="notificationEnabled"
+              checked={form.notificationEnabled}
+              onChange={handleChange}
+              style={styles.checkboxInput}
+            />
+            이메일 공고 수신에 동의합니다.
           </label>
           <button
             type="submit"
