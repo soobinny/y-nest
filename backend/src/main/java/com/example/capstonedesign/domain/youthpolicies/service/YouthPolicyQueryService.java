@@ -299,7 +299,7 @@ public class YouthPolicyQueryService {
 
     private Comparator<YouthPolicy> createComparatorForOrder(Sort.Order order) {
         return switch (order.getProperty()) {
-            case "startDate" -> (p1, p2) -> compareDates(parseDate(p1.getStartDate()), parseDate(p2.getStartDate()), order.isDescending());
+            case "startDate" -> (p1, p2) -> compareDates(resolveStartDate(p1), resolveStartDate(p2), order.isDescending());
             case "endDate" -> (p1, p2) -> compareEndDates(p1.getEndDate(), p2.getEndDate(), order.isDescending());
             case "createdAt" -> (p1, p2) -> compareDateTimes(p1.getCreatedAt(), p2.getCreatedAt(), order.isDescending());
             default -> null;
@@ -350,6 +350,15 @@ public class YouthPolicyQueryService {
         if (trimmed.isEmpty()) return true;
         if ("00000000".equals(trimmed)) return true;
         return trimmed.contains("상시");
+    }
+
+    private LocalDate resolveStartDate(YouthPolicy policy) {
+        LocalDate parsed = parseDate(policy.getStartDate());
+        if (parsed != null) {
+            return parsed;
+        }
+        LocalDateTime createdAt = policy.getCreatedAt();
+        return createdAt != null ? createdAt.toLocalDate() : null;
     }
 
     private static LocalDate parseDate(String value) {
