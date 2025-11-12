@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Data;
 
+import java.util.Collections;
 import java.util.List;
 
 /**
@@ -68,5 +69,19 @@ public class YouthPolicyApiResponse {
         private String plcySprtCn;        // 지원 내용
         private String bizPrdBgngYmd;     // 사업 시작일
         private String bizPrdEndYmd;      // 사업 종료일
+    }
+
+    /** 빈 응답용 정적 메서드 */
+    public static YouthPolicyApiResponse empty() {
+        YouthPolicyApiResponse resp = new YouthPolicyApiResponse();
+
+        resp.setResultCode(0);  // 기본값: 0 (정상), 혹은 -1로 지정 가능
+        resp.setResultMessage("NO_DATA");
+
+        Result result = new Result();
+        result.setYouthPolicyList(Collections.emptyList());
+        resp.setResult(result);
+
+        return resp;
     }
 }

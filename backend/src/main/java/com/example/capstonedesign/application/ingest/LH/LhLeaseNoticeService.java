@@ -144,4 +144,9 @@ public class LhLeaseNoticeService {
             log.error("❌ LH 공고 수집 실패: {}", e.getMessage(), e);
         }
     }
+
+    /** 프로젝트 전체 구조 통일용 Wrapper 메서드 */
+    public void syncNotices() {
+        fetchNotices();
+    }
 }
