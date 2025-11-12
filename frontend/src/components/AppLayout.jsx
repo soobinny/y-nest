@@ -131,7 +131,7 @@ export default function AppLayout({ children, narrow = false }) {
                 style={styles.link}
                 onClick={(e) => handleProtectedClick(e, "/favorites")}
               >
-                관심목록
+                보관함
               </span>
               {activeDropdown === "favorites" && (
                 <div style={styles.dropdown}>
