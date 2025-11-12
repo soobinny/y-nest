@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import {useEffect, useState} from "react";
 
 export default function AppLayout({ children, narrow = false }) {
   const [activeDropdown, setActiveDropdown] = useState(null);
@@ -14,7 +14,7 @@ export default function AppLayout({ children, narrow = false }) {
     if (isLoggedIn) {
       localStorage.removeItem("accessToken");
       setIsLoggedIn(false);
-      alert("로그아웃 되었습니다.");
+      alert("로그아웃되었습니다.");
       window.location.href = "/home";
     } else {
       window.location.href = "/login";
@@ -36,6 +36,13 @@ export default function AppLayout({ children, narrow = false }) {
       {/* 공통 네비게이션 헤더 */}
       <header style={styles.header}>
         <div style={styles.navContainer}>
+
+          {/* 로고 */}
+          <div style={styles.logo}>
+            <a href="/home" style={styles.logoText}>Y-Nest</a>
+          </div>
+
+          {/* 네비게이션 */}
           <nav style={styles.nav}>
             <a href="/home" style={styles.link}>
               홈
@@ -225,6 +232,7 @@ const styles = {
     display: "flex",
     justifyContent: "space-between",
     alignItems: "center",
+    gap: "40px",
   },
   nav: {
     display: "flex",
@@ -232,7 +240,6 @@ const styles = {
     fontSize: "16px",
     justifyContent: "center",
     flex: 1,
-    marginLeft: 80,
   },
   link: {
     color: "#333",
@@ -300,5 +307,15 @@ const styles = {
     fontSize: "13px",
     color: "#888",
     padding: "20px 0",
+  },
+  logo: {
+    flexShrink: 0,
+  },
+  logoText: {
+    fontSize: "22px",
+    fontWeight: "800",
+    color: "#91c7f5",
+    textDecoration: "none",
+    letterSpacing: "0.5px",
   },
 };
