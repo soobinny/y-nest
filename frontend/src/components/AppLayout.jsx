@@ -138,6 +138,7 @@ export default function AppLayout({ children, narrow = false }) {
                   {[
                     { name: "주거공고", link: "/favorites/housing" },
                     { name: "금융상품", link: "/favorites/finance" },
+                    { name: "정책", link: "/favorites/policy"},
                   ].map((item) => (
                     <span
                       key={item.name}
