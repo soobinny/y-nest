@@ -1,5 +1,8 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import AppLayout from "../components/AppLayout";
+
+const PAGE_SIZE = 10;
+const MAX_PAGE_BUTTONS = 9;
 
 const FAVORITE_TABS = [
   { label: "주거", value: "housing" },
@@ -47,9 +50,21 @@ const MOCK_FAVORITES = {
   ],
 };
 
+const buildPageNumbers = (currentPage, totalPages) => {
+  const safeTotal = Math.max(1, totalPages || 1);
+  if (safeTotal <= MAX_PAGE_BUTTONS) {
+    return Array.from({ length: safeTotal }, (_, idx) => idx + 1);
+  }
+  const blockIndex = Math.floor((currentPage - 1) / MAX_PAGE_BUTTONS);
+  const start = blockIndex * MAX_PAGE_BUTTONS + 1;
+  const length = Math.min(MAX_PAGE_BUTTONS, safeTotal - start + 1);
+  return Array.from({ length }, (_, idx) => start + idx);
+};
+
 export default function FavoritesPage() {
   const [activeTab, setActiveTab] = useState(FAVORITE_TABS[0].value);
   const [keyword, setKeyword] = useState("");
+  const [page, setPage] = useState(1);
 
   const favorites = useMemo(() => {
     const baseList = MOCK_FAVORITES[activeTab] ?? [];
@@ -61,6 +76,32 @@ export default function FavoritesPage() {
         item.provider.toLowerCase().includes(trimmed)
     );
   }, [activeTab, keyword]);
+
+  useEffect(() => {
+    setPage(1);
+  }, [activeTab, keyword]);
+
+  const totalPages = useMemo(
+    () => Math.max(1, Math.ceil((favorites.length || 0) / PAGE_SIZE)),
+    [favorites.length]
+  );
+
+  const currentPage = Math.min(page, totalPages);
+
+  const paginatedFavorites = useMemo(() => {
+    const start = (currentPage - 1) * PAGE_SIZE;
+    return favorites.slice(start, start + PAGE_SIZE);
+  }, [favorites, currentPage]);
+
+  const pageNumbers = useMemo(
+    () => buildPageNumbers(currentPage, totalPages),
+    [currentPage, totalPages]
+  );
+
+  const handlePageChange = (nextPage) => {
+    if (nextPage < 1 || nextPage > totalPages) return;
+    setPage(nextPage);
+  };
 
   return (
     <AppLayout>
@@ -104,7 +145,7 @@ export default function FavoritesPage() {
               </div>
             ) : (
               <ul style={styles.list}>
-                {favorites.map((item) => (
+                {paginatedFavorites.map((item) => (
                   <li
                     key={item.id}
                     style={styles.item}
@@ -150,6 +191,54 @@ export default function FavoritesPage() {
                   </li>
                 ))}
               </ul>
+            )}
+
+            {totalPages > 1 && (
+              <div style={styles.pagination}>
+                <button
+                  type="button"
+                  onClick={() => handlePageChange(currentPage - 1)}
+                  disabled={currentPage === 1}
+                  style={{
+                    ...styles.paginationButton,
+                    ...(currentPage === 1 ? styles.paginationButtonDisabled : {}),
+                  }}
+                >
+                  이전
+                </button>
+
+                <div style={styles.paginationPages}>
+                  {pageNumbers.map((pageNumber) => (
+                    <button
+                      key={pageNumber}
+                      type="button"
+                      onClick={() => handlePageChange(pageNumber)}
+                      style={{
+                        ...styles.paginationPage,
+                        ...(currentPage === pageNumber
+                          ? styles.paginationPageActive
+                          : {}),
+                      }}
+                    >
+                      {pageNumber}
+                    </button>
+                  ))}
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => handlePageChange(currentPage + 1)}
+                  disabled={currentPage === totalPages}
+                  style={{
+                    ...styles.paginationButton,
+                    ...(currentPage === totalPages
+                      ? styles.paginationButtonDisabled
+                      : {}),
+                  }}
+                >
+                  다음
+                </button>
+              </div>
             )}
           </div>
         </div>
@@ -311,5 +400,44 @@ const styles = {
   emptyHint: {
     fontSize: "14px",
     color: "#9ca3af",
+  },
+  pagination: {
+    display: "flex",
+    justifyContent: "center",
+    alignItems: "center",
+    gap: "10px",
+    marginTop: "28px",
+    flexWrap: "wrap",
+  },
+  paginationButton: {
+    border: "1px solid #ddd",
+    borderRadius: "8px",
+    background: "#fff",
+    padding: "6px 14px",
+    fontSize: "13px",
+    cursor: "pointer",
+  },
+  paginationButtonDisabled: {
+    color: "#bbb",
+    borderColor: "#eee",
+    cursor: "not-allowed",
+    background: "#f9f9f9",
+  },
+  paginationPages: {
+    display: "flex",
+    gap: "6px",
+  },
+  paginationPage: {
+    border: "1px solid #ddd",
+    borderRadius: "8px",
+    background: "#fff",
+    padding: "6px 12px",
+    fontSize: "13px",
+    cursor: "pointer",
+  },
+  paginationPageActive: {
+    background: "#9ed8b5",
+    color: "#fff",
+    borderColor: "#9ed8b5",
   },
 };
