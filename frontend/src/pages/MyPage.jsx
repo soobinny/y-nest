@@ -28,14 +28,14 @@ export default function MyPage() {
   }, []);
 
   const handleLogout = () => {
-    if (window.confirm("로그아웃 하시겠습니까?")) {
+    if (window.confirm("로그아웃하시겠습니까?")) {
       localStorage.removeItem("accessToken");
       window.location.href = "/login";
     }
   };
 
   const handleDeleteAccount = async () => {
-    const confirmDelete = window.confirm("정말 회원 탈퇴하시겠습니까?");
+    const confirmDelete = window.confirm("정말 회원 탈퇴 하시겠습니까?");
     if (!confirmDelete) return;
     const password = prompt("비밀번호를 입력해 주세요:");
     if (!password) return;

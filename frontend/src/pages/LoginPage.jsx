@@ -10,17 +10,35 @@ export default function LoginPage() {
   const handleChange = (e) =>
     setForm({ ...form, [e.target.name]: e.target.value });
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    try {
-      const res = await api.post("/users/login", form);
-      const { token, tokenType } = res.data;
-      localStorage.setItem("accessToken", `${tokenType} ${token}`);
-      window.location.href = "/home";
-    } catch {
-      setMessage("이메일 또는 비밀번호가 올바르지 않습니다.");
-    }
-  };
+    // 로그인 처리 함수 수정
+    const handleSubmit = async (e) => {
+        e.preventDefault();
+        try {
+            // (1) 로그인 요청 → JWT 토큰 발급
+            const res = await api.post("/users/login", form);
+            const { token, tokenType } = res.data;
+            const accessToken = `${tokenType} ${token}`;
+
+            // (2) 토큰 저장
+            localStorage.setItem("accessToken", accessToken);
+
+            // (3) 사용자 정보 요청 (JWT로 이름 불러오기)
+            const userRes = await api.get("/users/me", {
+                headers: {
+                    Authorization: accessToken,
+                },
+            });
+
+            // (4) 이름 저장
+            localStorage.setItem("userName", userRes.data.name);
+
+            // (5) 홈으로 이동
+            window.location.href = "/home"; // 홈으로 이동
+        } catch (err) {
+            console.error("로그인 실패:", err);
+            setMessage("이메일 또는 비밀번호가 올바르지 않습니다.");
+        }
+    };
 
   return (
     <AppLayout narrow>
