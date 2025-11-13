@@ -131,13 +131,14 @@ export default function AppLayout({ children, narrow = false }) {
                 style={styles.link}
                 onClick={(e) => handleProtectedClick(e, "/favorites")}
               >
-                관심목록
+                보관함
               </span>
               {activeDropdown === "favorites" && (
                 <div style={styles.dropdown}>
                   {[
                     { name: "주거공고", link: "/favorites/housing" },
                     { name: "금융상품", link: "/favorites/finance" },
+                    { name: "정책", link: "/favorites/policy"},
                   ].map((item) => (
                     <span
                       key={item.name}
