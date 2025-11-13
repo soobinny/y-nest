@@ -1,6 +1,7 @@
 ﻿import { useEffect, useMemo, useState } from "react";
 import AppLayout from "../components/AppLayout";
 import api from "../lib/axios";
+import FavoriteStar from "../components/FavoriteStar";
 
 const PAGE_SIZE = 10;
 const MAX_PAGE_BUTTONS = 9;
@@ -435,8 +436,31 @@ export default function PolicyPage() {
                   >
                     <div style={styles.cardHeader}>
                       <div>
-                        <h3 style={styles.policyTitle}>{policy.policyName}</h3>
-                        <p style={styles.agency}>{policy.agency || "-"}</p>
+                        <div
+                          style={{
+                            display: "flex",
+                            flexDirection: "column",
+                            gap: "15px",
+                          }}
+                        >
+                          <div
+                            style={{
+                              display: "flex",
+                              alignItems: "center",
+                              gap: "6px",
+                            }}
+                          >
+                            <div style={{ transform: "translateY(-1px)" }}>
+                              <FavoriteStar
+                                productId={policy.policyNo || policy.policyName}
+                              />
+                            </div>
+                            <h3 style={styles.policyTitle}>
+                              {policy.policyName}
+                            </h3>
+                          </div>
+                          <p style={styles.agency}>{policy.agency || "-"}</p>
+                        </div>
                       </div>
                       <div style={styles.metaBlock}>
                         <span style={styles.badge}>
