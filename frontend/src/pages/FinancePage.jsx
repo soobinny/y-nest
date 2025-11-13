@@ -10,6 +10,7 @@ import {
   Legend,
   ResponsiveContainer,
 } from "recharts";
+import FavoriteStar from "../components/FavoriteStar";
 
 const LOAN_TYPE_CONFIG = [
   { type: "MORTGAGE_LOAN", title: "주택담보대출" },
@@ -560,10 +561,7 @@ export default function FinancePage() {
         };
 
         const matchesBankSelection = (item) => {
-          if (
-            normalizedSelectedBanks.length === 0 &&
-            !includeEtc
-          ) {
+          if (normalizedSelectedBanks.length === 0 && !includeEtc) {
             return true;
           }
 
@@ -574,9 +572,7 @@ export default function FinancePage() {
 
           const matchesExplicitBanks = normalizedSelectedBanks.length
             ? normalizedSelectedBanks.some((bank) =>
-                normalizedProviders.some((provider) =>
-                  provider.includes(bank)
-                )
+                normalizedProviders.some((provider) => provider.includes(bank))
               )
             : true;
 
@@ -1133,18 +1129,38 @@ export default function FinancePage() {
                                   }
                                 >
                                   <div style={styles.loanItemHeader}>
-                                    <div>
-                                      <h4 style={styles.loanItemTitle}>
-                                        {group.productName}
-                                      </h4>
-                                      <span style={styles.loanProvider}>
-                                        {group.companyName}
-                                      </span>
+                                    {/* 제목 + 별 */}
+                                    <div
+                                      style={{
+                                        display: "flex",
+                                        alignItems: "center",
+                                        gap: "6px",
+                                      }}
+                                    >
+                                      <div
+                                        style={{
+                                          transform: "translateY(-1px)",
+                                        }}
+                                      >
+                                        <FavoriteStar productId={group.productId} />
+                                      </div>
+
+                                      <div>
+                                        <h4 style={styles.loanItemTitle}>
+                                          {group.productName}
+                                        </h4>
+                                        <span style={styles.loanProvider}>
+                                          {group.companyName}
+                                        </span>
+                                      </div>
                                     </div>
+
+                                    {/* 오른쪽 대출타입 뱃지 */}
                                     <span style={styles.loanBadge}>
                                       {title}
                                     </span>
                                   </div>
+
                                   <div style={styles.loanVariantList}>
                                     {group.variants.map(
                                       (variant, variantIdx) => (
@@ -1308,7 +1324,20 @@ export default function FinancePage() {
                         }
                       >
                         <div style={styles.itemHeader}>
-                          <h3 style={styles.itemTitle}>{item.productName}</h3>
+                          <div
+                            style={{
+                              display: "flex",
+                              alignItems: "center",
+                              gap: "6px",
+                            }}
+                          >
+                            <div style={{ transform: "translateY(-1px)" }}>
+                              <FavoriteStar productId={item.productId} />
+                            </div>
+
+                            <h3 style={styles.itemTitle}>{item.productName}</h3>
+                          </div>
+
                           <span style={styles.provider}>{item.provider}</span>
                         </div>
                         <pre

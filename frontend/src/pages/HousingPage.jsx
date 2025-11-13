@@ -1,6 +1,7 @@
 ﻿import { useEffect, useState } from "react";
 import AppLayout from "../components/AppLayout";
 import api from "../lib/axios";
+import FavoriteStar from "../components/FavoriteStar";
 
 // 페이지당 아이템 수 & 페이지 버튼 수
 const PAGE_SIZE = 10;
@@ -396,7 +397,16 @@ export default function HousingPage() {
                     }
                   >
                     <div style={styles.cardHeader}>
-                      <h3 style={styles.cardTitle}>{item.title}</h3>
+                      <div
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          gap: "6px",
+                        }}
+                      >
+                        <FavoriteStar productId={item.id} />
+                        <h3 style={styles.cardTitle}>{item.title}</h3>
+                      </div>
                       <span style={styles.status}>{item.status}</span>
                     </div>
                     <p style={styles.meta}>

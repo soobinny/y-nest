@@ -1,6 +1,7 @@
 package com.example.capstonedesign.domain.finance.financeproducts.dto.response;
 
 import com.example.capstonedesign.domain.finance.financeproducts.entity.FinanceProductType;
+import com.example.capstonedesign.domain.finance.financeproducts.entity.FinanceProducts;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import lombok.Builder;
 import lombok.Data;
@@ -51,4 +52,24 @@ public class FinanceProductsResponse {
     private Double score;
     /** 추천 근거 요약 (예: "청년층 우대, 고금리 상품") */
     private String reason;
+
+     public static FinanceProductsResponse fromEntity(FinanceProducts fp) {
+
+        var product = fp.getProduct(); // Products 엔티티
+
+        return FinanceProductsResponse.builder()
+                .id(fp.getId())
+                .productId(product != null ? product.getId() : null)
+                .productName(product != null ? product.getName() : null)
+                .provider(product != null ? product.getProvider() : null)
+                .detailUrl(product != null ? product.getDetailUrl() : null)
+                .finCoNo(fp.getFinCoNo())
+                .productType(fp.getProductType())
+                .interestRate(fp.getInterestRate())
+                .minDeposit(fp.getMinDeposit())
+                .joinCondition(fp.getJoinCondition())
+                .score(null)   // 추천 알고리즘이 채우는 용도
+                .reason(null)
+                .build();
+    }
 }

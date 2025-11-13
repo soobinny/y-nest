@@ -1,5 +1,6 @@
 package com.example.capstonedesign.domain.favorites.dto;
 
+import com.example.capstonedesign.domain.products.entity.ProductType;
 import com.fasterxml.jackson.annotation.JsonAlias;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotNull;
@@ -69,5 +70,8 @@ public class FavoritesDto {
         private String provider;
         private String detailUrl;
         private LocalDateTime createdAt;
+
+         //(HOUSING / FINANCE / POLICY)
+        private ProductType productType;
     }
 }

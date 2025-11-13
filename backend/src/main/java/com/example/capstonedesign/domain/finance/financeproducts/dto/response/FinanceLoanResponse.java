@@ -1,5 +1,6 @@
 package com.example.capstonedesign.domain.finance.financeproducts.dto.response;
 
+import com.example.capstonedesign.domain.finance.financeproducts.entity.FinanceLoanOption;
 import com.example.capstonedesign.domain.finance.financeproducts.entity.FinanceProductType;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import lombok.Builder;
@@ -16,6 +17,8 @@ import java.math.BigDecimal;
 @Data
 @Builder
 public class FinanceLoanResponse {
+
+     private Integer productId;
 
     /** 상품명 (예: 개인신용대출 A형) */
     private String productName;
@@ -54,4 +57,44 @@ public class FinanceLoanResponse {
     private Double score;
     /** 추천 근거 요약 (예: 청년층 + 저소득 우대) */
     private String reason;
+
+    public static FinanceLoanResponse fromEntity(FinanceLoanOption option) {
+
+    var financeProduct = option.getFinanceProduct();
+    var product = financeProduct.getProduct();
+
+    return FinanceLoanResponse.builder()
+            .productId(product != null ? product.getId() : null)
+            .productName(product != null ? product.getName() : null)
+            .companyName(product != null ? product.getProvider() : null)
+            .productType(financeProduct.getProductType())
+
+            // 금리 정보
+            .lendRateMin(option.getLendRateMin())
+            .lendRateMax(option.getLendRateMax())
+            .lendRateAvg(option.getLendRateAvg())
+
+            // 금리유형 코드/이름
+            .crdtLendRateType(option.getCrdtLendRateType())
+            .crdtLendRateTypeNm(option.getCrdtLendRateTypeNm())
+
+            // 등급별 금리
+            .crdtGrad1(option.getCrdtGrad1())
+            .crdtGrad4(option.getCrdtGrad4())
+            .crdtGrad5(option.getCrdtGrad5())
+            .crdtGrad6(option.getCrdtGrad6())
+            .crdtGrad10(option.getCrdtGrad10())
+            .crdtGrad11(option.getCrdtGrad11())
+            .crdtGrad12(option.getCrdtGrad12())
+            .crdtGrad13(option.getCrdtGrad13())
+
+            // 평균 금리
+            .crdtGradAvg(option.getCrdtGradAvg())
+
+            // 추천 점수/사유 (없으면 null)
+            .score(null)
+            .reason(null)
+            .build();
+}
+
 }

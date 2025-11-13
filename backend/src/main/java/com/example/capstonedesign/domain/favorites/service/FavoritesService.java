@@ -116,6 +116,7 @@ public class FavoritesService {
                 .provider(f.getProduct().getProvider())
                 .detailUrl(f.getProduct().getDetailUrl())
                 .createdAt(f.getCreatedAt())
+                .productType(f.getProduct().getType())
                 .build());
     }
 

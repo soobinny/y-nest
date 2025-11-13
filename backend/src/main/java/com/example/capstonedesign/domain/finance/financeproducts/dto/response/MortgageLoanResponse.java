@@ -1,5 +1,6 @@
 package com.example.capstonedesign.domain.finance.financeproducts.dto.response;
 
+import com.example.capstonedesign.domain.finance.financeproducts.entity.FinanceLoanOption;
 import com.example.capstonedesign.domain.finance.financeproducts.entity.FinanceProductType;
 import lombok.Builder;
 import lombok.Data;
@@ -14,6 +15,8 @@ import java.math.BigDecimal;
 @Data
 @Builder
 public class MortgageLoanResponse {
+
+     private Integer productId;
 
     /** 상품명 (예: 주택담보대출 A형) */
     private String productName;
@@ -41,4 +44,24 @@ public class MortgageLoanResponse {
 
     /** 담보 유형 (예: 아파트, 주택 등) */
     private String mrtgTypeName;
+
+
+public static MortgageLoanResponse fromEntity(FinanceLoanOption option) {
+
+    var financeProduct = option.getFinanceProduct();
+    var product = financeProduct.getProduct();
+
+    return MortgageLoanResponse.builder()
+            .productId(product != null ? product.getId() : null)
+            .productName(product != null ? product.getName() : null)
+            .companyName(product != null ? product.getProvider() : null)
+            .productType(financeProduct.getProductType())
+            .lendRateMin(option.getLendRateMin())
+            .lendRateMax(option.getLendRateMax())
+            .lendRateAvg(option.getLendRateAvg())
+            .lendTypeName(option.getLendTypeName())
+            .rpayTypeName(option.getRpayTypeName())
+            .mrtgTypeName(option.getMrtgTypeName())
+            .build();
+}
 }
