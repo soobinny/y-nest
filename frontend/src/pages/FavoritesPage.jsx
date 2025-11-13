@@ -25,6 +25,7 @@ const buildPageNumbers = (currentPage, totalPages) => {
 export default function FavoritesPage() {
   const [activeTab, setActiveTab] = useState(FAVORITE_TABS[0].value);
   const [keyword, setKeyword] = useState("");
+  const [keywordInput, setKeywordInput] = useState("");
   const [page, setPage] = useState(1);
 
   // ✅ 전체 즐겨찾기 (백엔드에서 한 번 가져옴)
@@ -103,6 +104,12 @@ export default function FavoritesPage() {
     return "";
   };
 
+  const handleSearch = () => {
+    const trimmed = keywordInput.trim();
+    setKeyword(trimmed);
+    setKeywordInput(trimmed);
+  };
+
   return (
     <AppLayout>
       <div style={styles.page}>
@@ -132,13 +139,21 @@ export default function FavoritesPage() {
                   {tab.label}
                 </button>
               ))}
-              <input
-                type="text"
-                placeholder="검색어 입력"
-                value={keyword}
-                onChange={(e) => setKeyword(e.target.value)}
-                style={styles.searchInput}
-              />
+              <div style={styles.searchGroup}>
+                <input
+                  type="text"
+                  placeholder="검색어 입력"
+                  value={keywordInput}
+                  onChange={(e) => setKeywordInput(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") handleSearch();
+                  }}
+                  style={styles.searchInput}
+                />
+                <button style={styles.searchButton} onClick={handleSearch}>
+                  검색
+                </button>
+              </div>
             </div>
 
             {/* 목록 */}
@@ -309,19 +324,34 @@ const styles = {
     fontSize: "14px",
     fontWeight: 500,
     cursor: "pointer",
-    transition: "background 0.2s ease, color 0.2s ease",
   },
   tabActive: {
     background: "#9ed8b5",
     color: "#fff",
   },
+  searchGroup: {
+    display: "flex",
+    gap: "10px",
+    alignItems: "center",
+    flex: 1,
+    minWidth: "260px",
+  },
   searchInput: {
-    borderRadius: "999px",
-    border: "1px solid #e5e7eb",
-    padding: "10px 18px",
+    borderRadius: "10px",
+    border: "1px solid #ddd",
+    padding: "10px 14px",
     fontSize: "14px",
     flex: 1,
-    minWidth: "240px",
+  },
+  searchButton: {
+    background: "#9ed8b5",
+    color: "#fff",
+    border: "none",
+    borderRadius: "10px",
+    padding: "10px 20px",
+    fontWeight: 600,
+    cursor: "pointer",
+    whiteSpace: "nowrap",
   },
   list: {
     listStyle: "none",
@@ -394,8 +424,9 @@ const styles = {
     fontWeight: 600,
   },
   detailLink: {
+    fontSize: "13px",
     color: "#1877f2",
-    fontWeight: 600,
+    fontWeight: 500,
     textDecoration: "none",
   },
   empty: {

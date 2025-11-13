@@ -12,7 +12,6 @@ export default function FavoriteStar({ productId }) {
         const res = await api.get(`/api/favorites/exists/${productId}`);
         setIsFav(res.data === true);
       } catch {
-        // 로그인 안 했거나 오류 → 빈별 유지
         setIsFav(false);
       } finally {
         setLoading(false);
@@ -24,7 +23,6 @@ export default function FavoriteStar({ productId }) {
   const toggleFavorite = async () => {
     try {
       const res = await api.post(`/api/favorites/toggle/${productId}`);
-
       const added = res.data === true;
       setIsFav(added);
 
@@ -38,18 +36,19 @@ export default function FavoriteStar({ productId }) {
     }
   };
 
-  // 클릭 가능 별 UI
   return (
-    <span
+    <img
       onClick={toggleFavorite}
+      src={loading ? "/star-off.png" : isFav ? "/star-on.png" : "/star-off.png"}
+      alt="favorite"
       style={{
         cursor: "pointer",
-        fontSize: "22px",
+        width: "22px",
+        height: "22px",
         marginRight: "5px",
+        marginTop: "8px",
         userSelect: "none",
       }}
-    >
-      {loading ? "☆" : isFav ? "⭐" : "☆"}
-    </span>
+    />
   );
 }
