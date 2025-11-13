@@ -491,4 +491,12 @@ public class FinlifeIngestService {
             loanOptionRepository.save(newOpt);
         }
     }
+
+    /**
+     * 초기 데이터 존재 여부 확인
+     * - 금융회사 테이블에 한 건이라도 있으면 초기 데이터가 있다고 판단
+     */
+    public boolean hasInitialData() {
+        return companiesRepository.count() > 0;
+    }
 }
