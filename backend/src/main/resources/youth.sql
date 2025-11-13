@@ -21,8 +21,8 @@ CREATE TABLE users
     created_at           TIMESTAMP                    NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at           TIMESTAMP                    NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     notification_enabled BOOLEAN                      NOT NULL DEFAULT TRUE,
-    notification_channel ENUM ('EMAIL','KAKAO','SMS') NOT NULL DEFAULT 'EMAIL'
-    birthdate DATE NOT NULL;
+    notification_channel ENUM ('EMAIL','KAKAO','SMS') NOT NULL DEFAULT 'EMAIL',
+    birthdate            DATE                         NOT NULL
 );
 
 -- =========================
@@ -198,7 +198,7 @@ CREATE TABLE youth_policies
     category_middle VARCHAR(100),
     agency          VARCHAR(255),
     apply_url       VARCHAR(500),
-    region_code     TEXT,
+    region_code     LONGTEXT,
     target_age      VARCHAR(50),
     support_content MEDIUMTEXT,
     start_date      VARCHAR(100),

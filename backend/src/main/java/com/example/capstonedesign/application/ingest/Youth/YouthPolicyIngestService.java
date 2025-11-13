@@ -78,4 +78,9 @@ public class YouthPolicyIngestService {
             page++;
         }
     }
+
+    /** 프로젝트 전체 일관성을 위한 Wrapper */
+    public void syncPolicies() {
+        ingestAllPolicies();  // 기존 메서드 호출
+    }
 }

@@ -211,4 +211,9 @@ public class ShIngestService {
     private String toJson(Object obj) {
         try { return MAPPER.writeValueAsString(obj); } catch (Exception e) { return "[]"; }
     }
+
+    /** 프로젝트 전체 구조 통일용 Wrapper 메서드 */
+    public void syncNotices() {
+        crawlAll(); // 내부 기존 메서드 실행
+    }
 }
