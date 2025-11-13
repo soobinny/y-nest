@@ -1142,9 +1142,7 @@ export default function FinancePage() {
                                           transform: "translateY(-1px)",
                                         }}
                                       >
-                                        <FavoriteStar
-                                          productId={`LOAN_${group.productName}_${group.companyName}`}
-                                        />
+                                        <FavoriteStar productId={group.productId} />
                                       </div>
 
                                       <div>
@@ -1334,7 +1332,7 @@ export default function FinancePage() {
                             }}
                           >
                             <div style={{ transform: "translateY(-1px)" }}>
-                              <FavoriteStar productId={`FINANCE_${item.id}`} />
+                              <FavoriteStar productId={item.productId} />
                             </div>
 
                             <h3 style={styles.itemTitle}>{item.productName}</h3>

@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import AppLayout from "../components/AppLayout";
+import api from "../lib/axios";
 
 const PAGE_SIZE = 10;
 const MAX_PAGE_BUTTONS = 9;
@@ -9,46 +10,6 @@ const FAVORITE_TABS = [
   { label: "금융", value: "finance" },
   { label: "정책", value: "policy" },
 ];
-
-const MOCK_FAVORITES = {
-  housing: [
-    {
-      id: 1,
-      title: "2025 청년 행복주택 1차 공급",
-      provider: "LH공사",
-      summary: "수도권 거주 무주택 청년 대상 공공임대주택 공급 공고입니다.",
-      period: "2025.03.01 ~ 2025.03.31",
-      tag: "전월세 지원",
-      link: "https://apply.lh.or.kr",
-      createdAt: "2025-02-10",
-    },
-  ],
-  finance: [
-    {
-      id: 11,
-      title: "청년 버팀목 전세자금 대출",
-      provider: "국토교통부 · 주택도시기금",
-      summary: "전세보증금 최대 2억까지 연 1.8% 고정금리 지원.",
-      period: "상시접수",
-      tag: "주거금융",
-      link: "https://nhuf.molit.go.kr",
-      createdAt: "2025-02-05",
-    },
-  ],
-  policy: [
-    {
-      id: 21,
-      title: "청년 주거급여 분리지급 제도",
-      provider: "국토교통부",
-      summary:
-        "몸은 타지에, 주민등록은 본가에 둔 청년을 위한 주거급여 분리지급 정책.",
-      period: "상시",
-      tag: "생활안정",
-      link: "https://www.gov.kr",
-      createdAt: "2025-02-01",
-    },
-  ],
-};
 
 const buildPageNumbers = (currentPage, totalPages) => {
   const safeTotal = Math.max(1, totalPages || 1);
@@ -66,16 +27,48 @@ export default function FavoritesPage() {
   const [keyword, setKeyword] = useState("");
   const [page, setPage] = useState(1);
 
+  // ✅ 전체 즐겨찾기 (백엔드에서 한 번 가져옴)
+  const [allFavorites, setAllFavorites] = useState([]);
+  const [loading, setLoading] = useState(false);
+
+  // 최초 로딩 시 한 번 가져오기
+  useEffect(() => {
+    const fetchFavorites = async () => {
+      try {
+        setLoading(true);
+        const res = await api.get("/api/favorites", {
+          params: { page: 0, size: 100 }, // 넉넉하게
+        });
+        setAllFavorites(res.data.content || []);
+      } catch (err) {
+        console.error("즐겨찾기 목록 조회 실패:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchFavorites();
+  }, []);
+
+  // 탭/검색어에 따른 필터링
   const favorites = useMemo(() => {
-    const baseList = MOCK_FAVORITES[activeTab] ?? [];
     const trimmed = keyword.trim().toLowerCase();
-    if (!trimmed) return baseList;
-    return baseList.filter(
+
+    const filteredByType = allFavorites.filter((item) => {
+      const type = item.productType; // HOUSING / FINANCE / POLICY
+      if (activeTab === "housing") return type === "HOUSING";
+      if (activeTab === "finance") return type === "FINANCE";
+      if (activeTab === "policy") return type === "POLICY";
+      return true;
+    });
+
+    if (!trimmed) return filteredByType;
+
+    return filteredByType.filter(
       (item) =>
-        item.title.toLowerCase().includes(trimmed) ||
-        item.provider.toLowerCase().includes(trimmed)
+        item.productName?.toLowerCase().includes(trimmed) ||
+        item.provider?.toLowerCase().includes(trimmed)
     );
-  }, [activeTab, keyword]);
+  }, [allFavorites, activeTab, keyword]);
 
   useEffect(() => {
     setPage(1);
@@ -103,13 +96,26 @@ export default function FavoritesPage() {
     setPage(nextPage);
   };
 
+  const getTabLabel = () => {
+    if (activeTab === "housing") return "주거";
+    if (activeTab === "finance") return "금융";
+    if (activeTab === "policy") return "정책";
+    return "";
+  };
+
   return (
     <AppLayout>
       <div style={styles.page}>
         <div style={styles.cardContainer}>
           <div style={styles.card}>
             <header style={styles.header}>
-              <h1 style={styles.title}>⭐ 즐겨찾기</h1>
+              {/* ⭐ 제목 옆 별 */}
+              <h1 style={styles.title}>
+                <span role="img" aria-label="star" style={{ marginRight: 6 }}>
+                  ⭐
+                </span>
+                즐겨찾기
+              </h1>
             </header>
 
             {/* 탭 + 검색 */}
@@ -136,18 +142,24 @@ export default function FavoritesPage() {
             </div>
 
             {/* 목록 */}
-            {favorites.length === 0 ? (
+            {loading ? (
               <div style={styles.empty}>
-                <p style={styles.emptyText}>등록된 즐겨찾기가 없습니다.</p>
+                <p style={styles.emptyText}>불러오는 중...</p>
+              </div>
+            ) : favorites.length === 0 ? (
+              <div style={styles.empty}>
+                <p style={styles.emptyText}>
+                  {getTabLabel()} 즐겨찾기가 없습니다.
+                </p>
                 <p style={styles.emptyHint}>
-                  별 아이콘을 눌러 관심 항목을 저장해보세요.
+                  공고/상품 옆의 ⭐ 아이콘을 눌러 즐겨찾기에 추가해보세요.
                 </p>
               </div>
             ) : (
               <ul style={styles.list}>
                 {paginatedFavorites.map((item) => (
                   <li
-                    key={item.id}
+                    key={item.productId}
                     style={styles.item}
                     onMouseEnter={(e) =>
                       (e.currentTarget.style.boxShadow =
@@ -161,32 +173,32 @@ export default function FavoritesPage() {
                     <div style={styles.itemHeader}>
                       <div>
                         <p style={styles.provider}>{item.provider}</p>
-                        <h3 style={styles.itemTitle}>{item.title}</h3>
+                        <h3 style={styles.itemTitle}>{item.productName}</h3>
                       </div>
-                      <span style={styles.tag}>{item.tag}</span>
+                      <span style={styles.tag}>{getTabLabel()}</span>
                     </div>
 
-                    <p style={styles.summary}>{item.summary}</p>
-
-                    <div style={styles.metaRow}>
-                      <span style={styles.metaLabel}>모집 기간</span>
-                      <span style={styles.metaValue}>{item.period}</span>
-                    </div>
                     <div style={styles.metaRow}>
                       <span style={styles.metaLabel}>등록일</span>
-                      <span style={styles.metaValue}>{item.createdAt}</span>
+                      <span style={styles.metaValue}>
+                        {item.createdAt
+                          ? String(item.createdAt).split("T")[0]
+                          : "-"}
+                      </span>
                     </div>
 
                     <div style={styles.cardFooter}>
                       <span style={styles.favoriteBadge}>⭐ 즐겨찾기</span>
-                      <a
-                        href={item.link}
-                        target="_blank"
-                        rel="noreferrer"
-                        style={styles.detailLink}
-                      >
-                        자세히 보기 →
-                      </a>
+                      {item.detailUrl && (
+                        <a
+                          href={item.detailUrl}
+                          target="_blank"
+                          rel="noreferrer"
+                          style={styles.detailLink}
+                        >
+                          자세히 보기 →
+                        </a>
+                      )}
                     </div>
                   </li>
                 ))}
@@ -201,7 +213,9 @@ export default function FavoritesPage() {
                   disabled={currentPage === 1}
                   style={{
                     ...styles.paginationButton,
-                    ...(currentPage === 1 ? styles.paginationButtonDisabled : {}),
+                    ...(currentPage === 1
+                      ? styles.paginationButtonDisabled
+                      : {}),
                   }}
                 >
                   이전
@@ -274,6 +288,9 @@ const styles = {
     fontWeight: 700,
     margin: 0,
     color: "#1e2b3b",
+    display: "inline-flex",
+    alignItems: "center",
+    gap: "6px",
   },
   tabBar: {
     display: "flex",
@@ -348,12 +365,6 @@ const styles = {
     padding: "6px 12px",
     fontSize: "12px",
     fontWeight: 600,
-  },
-  summary: {
-    color: "#4b5563",
-    fontSize: "14px",
-    lineHeight: 1.6,
-    marginBottom: "14px",
   },
   metaRow: {
     display: "flex",

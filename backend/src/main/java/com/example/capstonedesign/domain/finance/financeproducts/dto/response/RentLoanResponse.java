@@ -1,5 +1,6 @@
 package com.example.capstonedesign.domain.finance.financeproducts.dto.response;
 
+import com.example.capstonedesign.domain.finance.financeproducts.entity.FinanceLoanOption;
 import com.example.capstonedesign.domain.finance.financeproducts.entity.FinanceProductType;
 import lombok.Builder;
 import lombok.Data;
@@ -14,6 +15,8 @@ import java.math.BigDecimal;
 @Data
 @Builder
 public class RentLoanResponse {
+
+     private Integer productId;
 
     /** 상품명 (예: 전세자금대출 A형) */
     private String productName;
@@ -38,4 +41,22 @@ public class RentLoanResponse {
 
     /** 상환 방식 (예: 원리금균등, 만기일시 등) */
     private String rpayTypeName;
+
+public static RentLoanResponse fromEntity(FinanceLoanOption option) {
+
+    var financeProduct = option.getFinanceProduct();
+    var product = financeProduct.getProduct();
+
+    return RentLoanResponse.builder()
+            .productId(product != null ? product.getId() : null)
+            .productName(product != null ? product.getName() : null)
+            .companyName(product != null ? product.getProvider() : null)
+            .productType(financeProduct.getProductType())
+            .lendRateMin(option.getLendRateMin())
+            .lendRateMax(option.getLendRateMax())
+            .lendRateAvg(option.getLendRateAvg())
+            .lendTypeName(option.getLendTypeName())   // ✅ 수정됨
+            .rpayTypeName(option.getRpayTypeName())   // ✅ 수정됨
+            .build();
+}
 }
