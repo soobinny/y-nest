@@ -136,9 +136,12 @@ export default function AppLayout({ children, narrow = false }) {
               {activeDropdown === "favorites" && (
                 <div style={styles.dropdown}>
                   {[
-                    { name: "즐겨찾기", link: "/favorites" },
-                    { name: "맞춤정책", link: "/favorites" },
-                  ].map((item) => (
+
+                    { name: "주거공고", link: "/favorites/housing" },
+                    { name: "금융상품", link: "/favorites/finance" },
+                    { name: "정책", link: "/favorites/policy"},
+
+                   ].map((item) => (
                     <span
                       key={item.name}
                       style={styles.dropdownItem}

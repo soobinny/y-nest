@@ -61,17 +61,26 @@ public class YouthPolicyQueryService {
         LocalDate sevenDaysAgo = today.minusDays(30);
 
         List<YouthPolicy> recent = repository.findAll().stream()
-                .filter(p -> p.getStartDate() != null)
                 .filter(p -> {
                     try {
-                        LocalDate start = LocalDate.parse(p.getStartDate(), FORMATTER);
+                        LocalDate start = parseDate(p.getStartDate());
+                        if (start == null && p.getCreatedAt() != null) {
+                            start = p.getCreatedAt().toLocalDate();
+                        }
+                        if (start == null) return false;
                         return !start.isBefore(sevenDaysAgo) && !start.isAfter(today);
                     } catch (Exception e) {
                         return false;
                     }
                 })
                 .sorted(Comparator.comparing(
-                        p -> LocalDate.parse(p.getStartDate(), FORMATTER),
+                        p -> {
+                            LocalDate start = parseDate(p.getStartDate());
+                            if (start == null && p.getCreatedAt() != null) {
+                                start = p.getCreatedAt().toLocalDate();
+                            }
+                            return start != null ? start : LocalDate.MIN;
+                        },
                         Comparator.reverseOrder()))
                 .toList();
 
@@ -87,17 +96,21 @@ public class YouthPolicyQueryService {
         LocalDate threeDaysLater = today.plusDays(7);
 
         List<YouthPolicy> closingSoon = repository.findAll().stream()
-                .filter(p -> p.getEndDate() != null)
+                .filter(p -> p.getEndDate() != null && !isOngoing(p.getEndDate()))
                 .filter(p -> {
                     try {
-                        LocalDate end = LocalDate.parse(p.getEndDate(), FORMATTER);
+                        LocalDate end = parseDate(p.getEndDate());
+                        if (end == null) return false;
                         return (end.isAfter(today.minusDays(1)) && !end.isAfter(threeDaysLater));
                     } catch (Exception e) {
                         return false;
                     }
                 })
                 .sorted(Comparator.comparing(
-                        p -> LocalDate.parse(p.getEndDate(), FORMATTER)))
+                        p -> {
+                            LocalDate end = parseDate(p.getEndDate());
+                            return end != null ? end : LocalDate.MAX;
+                        }))
                 .toList();
 
         int start = (int) pageable.getOffset();
@@ -299,7 +312,7 @@ public class YouthPolicyQueryService {
 
     private Comparator<YouthPolicy> createComparatorForOrder(Sort.Order order) {
         return switch (order.getProperty()) {
-            case "startDate" -> (p1, p2) -> compareDates(parseDate(p1.getStartDate()), parseDate(p2.getStartDate()), order.isDescending());
+            case "startDate" -> (p1, p2) -> compareDates(resolveStartDate(p1), resolveStartDate(p2), order.isDescending());
             case "endDate" -> (p1, p2) -> compareEndDates(p1.getEndDate(), p2.getEndDate(), order.isDescending());
             case "createdAt" -> (p1, p2) -> compareDateTimes(p1.getCreatedAt(), p2.getCreatedAt(), order.isDescending());
             default -> null;
@@ -352,11 +365,21 @@ public class YouthPolicyQueryService {
         return trimmed.contains("상시");
     }
 
+    private LocalDate resolveStartDate(YouthPolicy policy) {
+        LocalDate parsed = parseDate(policy.getStartDate());
+        if (parsed != null) {
+            return parsed;
+        }
+        LocalDateTime createdAt = policy.getCreatedAt();
+        return createdAt != null ? createdAt.toLocalDate() : null;
+    }
+
     private static LocalDate parseDate(String value) {
         if (value == null || value.isBlank()) return null;
-        String normalized = value;
-        if (value.matches("\\d{8}")) {
-            normalized = value.replaceAll("(\\d{4})(\\d{2})(\\d{2})", "$1-$2-$3");
+        String normalized = value.trim();
+        normalized = normalized.replace('.', '-').replace('/', '-');
+        if (normalized.matches("\\d{8}")) {
+            normalized = normalized.replaceAll("(\\d{4})(\\d{2})(\\d{2})", "$1-$2-$3");
         }
         try {
             return LocalDate.parse(normalized, FORMATTER);
