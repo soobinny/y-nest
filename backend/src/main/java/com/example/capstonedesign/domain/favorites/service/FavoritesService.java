@@ -20,13 +20,6 @@ import org.springframework.transaction.annotation.Transactional;
  * FavoritesService
  * -------------------------------------------------
  * 즐겨찾기(Favorites) 도메인의 핵심 비즈니스 로직을 담당하는 Service 계층
- * <p></p>
- * 주요 기능
- * - 즐겨찾기 추가 (add)
- * - 즐겨찾기 제거 (remove)
- * - 즐겨찾기 존재 여부 확인 (exists)
- * - 즐겨찾기 목록 조회 (list)
- * - 즐겨찾기 토글 기능 (toggle)
  */
 @Service
 @RequiredArgsConstructor
@@ -48,8 +41,8 @@ public class FavoritesService {
         if (productId == null) throw new IllegalArgumentException("productId는 필수입니다.");
         if (userId == null) throw new IllegalArgumentException("userId는 필수입니다.");
 
-        Integer uid = Math.toIntExact(userId);
-        Integer pid = Math.toIntExact(productId);
+        Integer pid = productId.intValue();
+        Integer uid = userId.intValue();
 
         // 유저/상품 유효성 검증
         Users user = loadUser(uid);
@@ -75,8 +68,8 @@ public class FavoritesService {
      */
     @Transactional
     public void remove(Long userId, Long productId) {
-        Integer uid = Math.toIntExact(userId);
-        Integer pid = Math.toIntExact(productId);
+        Integer pid = productId.intValue();
+        Integer uid = userId.intValue();
 
         int affected = favoritesRepository.deleteByUserAndProduct(uid, pid);
         if (affected == 0) {
@@ -92,8 +85,9 @@ public class FavoritesService {
      */
     @Transactional(readOnly = true)
     public boolean exists(Long userId, Long productId) {
-        Integer uid = Math.toIntExact(userId);
-        Integer pid = Math.toIntExact(productId);
+        Integer pid = productId.intValue();
+        Integer uid = userId.intValue();
+
         return favoritesRepository.existsByUser_IdAndProduct_Id(uid, pid);
     }
 
@@ -106,7 +100,7 @@ public class FavoritesService {
      */
     @Transactional(readOnly = true)
     public Page<FavoritesDto.ItemResponse> list(Long userId, Pageable pageable) {
-        Integer uid = Math.toIntExact(userId);
+        Integer uid = userId.intValue();
         Page<Favorites> page = favoritesRepository.findPageByUserId(uid, pageable);
 
         // Entity → DTO 변환
@@ -133,8 +127,8 @@ public class FavoritesService {
      */
     @Transactional
     public boolean toggle(Long userId, Long productId) {
-        Integer uid = Math.toIntExact(userId);
-        Integer pid = Math.toIntExact(productId);
+        Integer pid = productId.intValue();
+        Integer uid = userId.intValue();
 
         return favoritesRepository.findByUser_IdAndProduct_Id(uid, pid)
                 // 존재하면 → 삭제 후 false 반환

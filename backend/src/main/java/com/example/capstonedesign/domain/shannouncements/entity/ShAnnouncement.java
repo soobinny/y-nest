@@ -1,5 +1,6 @@
 package com.example.capstonedesign.domain.shannouncements.entity;
 
+import com.example.capstonedesign.domain.products.entity.Products;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -24,6 +25,10 @@ public class ShAnnouncement {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id; // PK
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "product_id", nullable = false)
+    private Products product;
 
     private String source;        // 출처 (예: "i-sh")
     private String externalId;    // 외부 고유 ID (seq 값)

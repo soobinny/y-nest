@@ -19,6 +19,9 @@ import java.time.LocalDate;
 @Builder
 public class HousingAnnouncementsResponse {
 
+    /** LH/SH 공고 자체 ID가 아님 → 즐겨찾기용 productId */
+    private Integer productId;
+
     /** 공고 고유 식별자 (PK) */
     private Long id;
 

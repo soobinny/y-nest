@@ -1,5 +1,8 @@
 package com.example.capstonedesign.application.ingest.SH;
 
+import com.example.capstonedesign.domain.products.entity.ProductType;
+import com.example.capstonedesign.domain.products.entity.Products;
+import com.example.capstonedesign.domain.products.repository.ProductsRepository;
 import com.example.capstonedesign.domain.shannouncements.entity.RecruitStatus;
 import com.example.capstonedesign.domain.shannouncements.entity.SHHousingCategory;
 import com.example.capstonedesign.domain.shannouncements.entity.ShAnnouncement;
@@ -33,6 +36,7 @@ import java.util.regex.Pattern;
 public class ShIngestService {
 
     private final ShAnnouncementRepository repo;
+    private final ProductsRepository productsRepository;
 
     private static final String BASE = "https://www.i-sh.co.kr";
     private static final ObjectMapper MAPPER = new ObjectMapper();
@@ -143,7 +147,23 @@ public class ShIngestService {
                             ));
                         }
 
+                        // ==============================================
+                        // 1) PRODUCT 먼저 생성
+                        // ==============================================
+                        Products product = productsRepository.save(
+                                Products.builder()
+                                        .type(ProductType.HOUSING)
+                                        .name(title)
+                                        .provider("SH 서울주택도시공사")
+                                        .detailUrl(detailUrl)
+                                        .build()
+                        );
+
+                        // ==============================================
+                        // 2) SH 공고 생성 + product 매핑
+                        // ==============================================
                         ShAnnouncement ann = ShAnnouncement.builder()
+                                .product(product)
                                 .source("i-sh")
                                 .externalId(externalId)
                                 .title(title)
@@ -173,8 +193,12 @@ public class ShIngestService {
 
     /** 기존 데이터는 업데이트, 없으면 신규 저장 */
     private void upsert(ShAnnouncement a) {
+
         repo.findBySourceAndExternalId(a.getSource(), a.getExternalId())
                 .ifPresentOrElse(e -> {
+                    Products product = e.getProduct();
+
+                    e.setProduct(product);   // 중요
                     e.setTitle(a.getTitle());
                     e.setDepartment(a.getDepartment());
                     e.setPostDate(a.getPostDate());
@@ -187,6 +211,7 @@ public class ShIngestService {
                     e.setAttachments(a.getAttachments());
                     e.setDetailUrl(a.getDetailUrl());
                     e.setUpdatedAt(LocalDateTime.now());
+
                     repo.save(e);
                 }, () -> repo.save(a));
     }
@@ -214,6 +239,6 @@ public class ShIngestService {
 
     /** 프로젝트 전체 구조 통일용 Wrapper 메서드 */
     public void syncNotices() {
-        crawlAll(); // 내부 기존 메서드 실행
+        crawlAll();
     }
 }

@@ -130,6 +130,7 @@ public class ShAnnouncementService {
 
                     return ShAnnouncementResponse.builder()
                             .id(a.getId())
+                            .productId(a.getProduct().getId())
                             .title(a.getTitle())
                             .department(a.getDepartment())
                             .postDate(a.getPostDate())

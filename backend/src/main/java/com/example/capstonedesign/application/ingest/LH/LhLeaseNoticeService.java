@@ -2,6 +2,9 @@ package com.example.capstonedesign.application.ingest.LH;
 
 import com.example.capstonedesign.domain.housingannouncements.entity.LhNotice;
 import com.example.capstonedesign.domain.housingannouncements.repository.LhNoticeRepository;
+import com.example.capstonedesign.domain.products.entity.ProductType;
+import com.example.capstonedesign.domain.products.entity.Products;
+import com.example.capstonedesign.domain.products.repository.ProductsRepository;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
@@ -31,6 +34,7 @@ public class LhLeaseNoticeService {
 
     /** LH 공고 Repository (DB 저장용) */
     private final LhNoticeRepository lhNoticeRepository;
+    private final ProductsRepository productsRepository;
 
     /** 공공데이터포털 API 인증키 (application.yml에서 주입) */
     @Value("${lh.api.service-key}")
@@ -117,8 +121,23 @@ public class LhLeaseNoticeService {
                             lhNoticeRepository.findByPanNmAndPanNtStDt(panNm, panNtStDt);
                     if (existing.isPresent()) continue;
 
-                    // 신규 데이터 생성
+                    // ===============================
+                    // 1) Products 먼저 생성
+                    // ===============================
+                    Products product = productsRepository.save(
+                            Products.builder()
+                                    .type(ProductType.HOUSING)
+                                    .name(panNm)                      // 공고명
+                                    .provider("LH 한국토지주택공사")      // 제공기관
+                                    .detailUrl(obj.path("DTL_URL").asText(""))
+                                    .build()
+                    );
+
+                    // ===============================
+                    // 2) LhNotice 생성 + product 매핑
+                    // ===============================
                     LhNotice notice = LhNotice.builder()
+                            .product(product) // product_id 매핑
                             .uppAisTpNm(obj.path("UPP_AIS_TP_NM").asText(""))
                             .aisTpCdNm(obj.path("AIS_TP_CD_NM").asText(""))
                             .panNm(panNm)
@@ -129,7 +148,6 @@ public class LhLeaseNoticeService {
                             .dtlUrl(obj.path("DTL_URL").asText(""))
                             .build();
 
-                    // DB 저장
                     lhNoticeRepository.save(notice);
                     totalCount++;
                 }

@@ -1,5 +1,8 @@
 package com.example.capstonedesign.application.ingest.Youth;
 
+import com.example.capstonedesign.domain.products.entity.ProductType;
+import com.example.capstonedesign.domain.products.entity.Products;
+import com.example.capstonedesign.domain.products.repository.ProductsRepository;
 import com.example.capstonedesign.domain.youthpolicies.dto.response.YouthPolicyApiResponse;
 import com.example.capstonedesign.domain.youthpolicies.entity.YouthPolicy;
 import com.example.capstonedesign.domain.youthpolicies.repository.YouthPolicyRepository;
@@ -23,6 +26,7 @@ public class YouthPolicyIngestService {
 
     private final YouthPolicyClient client;
     private final YouthPolicyRepository repository;
+    private final ProductsRepository productsRepository;
 
     /**
      * 온통청년 정책 전체 수집
@@ -47,10 +51,27 @@ public class YouthPolicyIngestService {
             }
 
             response.getResult().getYouthPolicyList().forEach(item -> {
+
                 repository.findByPolicyNo(item.getPlcyNo()).ifPresentOrElse(
                         existing -> log.debug("✅ 이미 존재: {}", item.getPlcyNo()),
                         () -> {
+                            // ============================
+                            // 1) Products 생성
+                            // ============================
+                            Products product = productsRepository.save(
+                                    Products.builder()
+                                            .type(ProductType.POLICY)
+                                            .name(item.getPlcyNm())
+                                            .provider(item.getSprvsnInstCdNm())
+                                            .detailUrl(item.getAplyUrlAddr())
+                                            .build()
+                            );
+
+                            // ============================
+                            // 2) YouthPolicy 생성 + FK 연결
+                            // ============================
                             YouthPolicy policy = YouthPolicy.builder()
+                                    .product(product)
                                     .policyNo(item.getPlcyNo())
                                     .policyName(item.getPlcyNm())
                                     .description(item.getPlcyExplnCn())
@@ -67,7 +88,9 @@ public class YouthPolicyIngestService {
                                     .build();
 
                             repository.save(policy);
-                            log.info("🆕 신규 저장: {} ({})", item.getPlcyNm(), item.getPlcyNo());
+
+                            log.info("🆕 신규 정책 저장: {} ({})",
+                                    item.getPlcyNm(), item.getPlcyNo());
                         }
                 );
             });
@@ -81,6 +104,6 @@ public class YouthPolicyIngestService {
 
     /** 프로젝트 전체 일관성을 위한 Wrapper */
     public void syncPolicies() {
-        ingestAllPolicies();  // 기존 메서드 호출
+        ingestAllPolicies();
     }
 }

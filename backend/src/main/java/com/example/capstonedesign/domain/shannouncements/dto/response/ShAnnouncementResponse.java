@@ -22,6 +22,8 @@ import java.util.Map;
 public class ShAnnouncementResponse {
 
     private Long id;                          // 공고 ID
+    private Integer productId;                // 즐겨찾기용 productId
+
     private String title;                     // 제목
     private String department;                // 담당 부서
     private LocalDate postDate;               // 게시일
@@ -46,6 +48,7 @@ public class ShAnnouncementResponse {
 
         return ShAnnouncementResponse.builder()
                 .id(e.getId())
+                .productId(e.getProduct().getId())
                 .title(e.getTitle())
                 .department(e.getDepartment())
                 .postDate(e.getPostDate())
