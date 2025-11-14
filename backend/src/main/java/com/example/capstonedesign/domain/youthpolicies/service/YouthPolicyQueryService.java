@@ -7,16 +7,13 @@ import com.example.capstonedesign.domain.youthpolicies.entity.YouthPolicy;
 import com.example.capstonedesign.domain.youthpolicies.repository.YouthPolicyRepository;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageImpl;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
+import org.springframework.data.domain.*;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -39,8 +36,10 @@ public class YouthPolicyQueryService {
 
     /** 기본 정책 목록 조회 (검색 + 페이징) */
     public Page<YouthPolicyResponse> getPaged(String keyword, String regionCode, Pageable pageable, Sort sort) {
+        // 정렬 기준 생성(상시 공고 후순위 + 요청 정렬조건 반영)
         Comparator<YouthPolicy> comparator = buildComparator(sort == null ? Sort.unsorted() : sort);
 
+        // 전체 정책 조회 후 키워드/지역 필터링 + 정렬
         List<YouthPolicy> list = repository.findAll().stream()
                 .filter(p -> (keyword == null || p.getPolicyName().contains(keyword) ||
                         (p.getAgency() != null && p.getAgency().contains(keyword))))
@@ -50,9 +49,20 @@ public class YouthPolicyQueryService {
 
         Pageable safePageable = (pageable == null) ? PageRequest.of(0, 10) : pageable;
         int start = (int) safePageable.getOffset();
+
+        // 페이징 안전 처리: 시작 인덱스가 범위 밖이면 빈 페이지 반환
+        if (start >= list.size()) {
+            return new PageImpl<YouthPolicy>(
+                    Collections.emptyList(),
+                    safePageable,
+                    list.size()
+            ).map(YouthPolicyResponse::fromEntity);
+        }
+
         int end = Math.min(start + safePageable.getPageSize(), list.size());
         Page<YouthPolicy> page = new PageImpl<>(list.subList(start, end), safePageable, list.size());
         return page.map(YouthPolicyResponse::fromEntity);
+
     }
 
     /** 최근 공고 (시작일 기준 30일 이내) */
@@ -60,6 +70,7 @@ public class YouthPolicyQueryService {
         LocalDate today = LocalDate.now();
         LocalDate sevenDaysAgo = today.minusDays(30);
 
+        // 시작일(없으면 createdAt) 기준 최근 30일 내 공고만 필터링
         List<YouthPolicy> recent = repository.findAll().stream()
                 .filter(p -> {
                     try {
@@ -73,6 +84,7 @@ public class YouthPolicyQueryService {
                         return false;
                     }
                 })
+                // 시작일 기준 최신순 정렬
                 .sorted(Comparator.comparing(
                         p -> {
                             LocalDate start = parseDate(p.getStartDate());
@@ -85,6 +97,16 @@ public class YouthPolicyQueryService {
                 .toList();
 
         int start = (int) pageable.getOffset();
+
+        // 페이징 안전 처리
+        if (start >= recent.size()) {
+            return new PageImpl<YouthPolicy>(
+                    Collections.emptyList(), // 타입: List<YouthPolicy>
+                    pageable,
+                    recent.size()
+            ).map(YouthPolicyResponse::fromEntity);
+        }
+
         int end = Math.min(start + pageable.getPageSize(), recent.size());
         return new PageImpl<>(recent.subList(start, end), pageable, recent.size())
                 .map(YouthPolicyResponse::fromEntity);
@@ -95,6 +117,7 @@ public class YouthPolicyQueryService {
         LocalDate today = LocalDate.now();
         LocalDate threeDaysLater = today.plusDays(7);
 
+        // 상시 공고 제외 + 7일 내 마감 공고만 필터링
         List<YouthPolicy> closingSoon = repository.findAll().stream()
                 .filter(p -> p.getEndDate() != null && !isOngoing(p.getEndDate()))
                 .filter(p -> {
@@ -106,6 +129,7 @@ public class YouthPolicyQueryService {
                         return false;
                     }
                 })
+                // 마감일 오름차순 정렬(더 빨리 마감되는 공고가 위로)
                 .sorted(Comparator.comparing(
                         p -> {
                             LocalDate end = parseDate(p.getEndDate());
@@ -114,9 +138,20 @@ public class YouthPolicyQueryService {
                 .toList();
 
         int start = (int) pageable.getOffset();
+
+        // 페이징 안전 처리
+        if (start >= closingSoon.size()) {
+            return new PageImpl<YouthPolicy>(
+                    Collections.emptyList(),
+                    pageable,
+                    closingSoon.size()
+            ).map(YouthPolicyResponse::fromEntity);
+        }
+
         int end = Math.min(start + pageable.getPageSize(), closingSoon.size());
         return new PageImpl<>(closingSoon.subList(start, end), pageable, closingSoon.size())
                 .map(YouthPolicyResponse::fromEntity);
+
     }
 
     /** 사용자 맞춤 추천 (지역·나이·소득 기반 + 추천 점수·사유 포함) */
@@ -129,6 +164,7 @@ public class YouthPolicyQueryService {
         String incomeBand = user.getIncome_band().replace(" ", "");
         String regionPrefix = convertRegionToCode(region);
 
+        // 사용자 조건(지역/나이/소득)에 맞는 정책 필터링 후 점수 계산 및 상위 10개 추천
         return repository.findAll().stream()
                 .filter(p -> matchRegion(region, regionPrefix, p.getRegionCode(), strictRegionMatch))
                 .filter(p -> matchAgeFlexible(p.getTargetAge(), age))
@@ -288,15 +324,23 @@ public class YouthPolicyQueryService {
         return YouthPolicyResponse.fromEntity(entity);
     }
 
+    /** 상시 공고를 항상 뒤로 보내는 정렬 + 기본 정렬 구성 */
     private Comparator<YouthPolicy> buildComparator(Sort sort) {
+        // 상시 여부 우선 정렬: isOngoing == false(일반 공고) 먼저, true(상시 공고) 나중
+        Comparator<YouthPolicy> ongoingLast = Comparator.comparing(
+                (YouthPolicy p) -> isOngoing(p.getEndDate())
+        );
+
+        // 기본 정렬: 시작일(파싱) 내림차순 → createdAt 내림차순
         Comparator<YouthPolicy> defaultComparator = Comparator
-                .comparing(YouthPolicy::getCreatedAt, Comparator.nullsLast(Comparator.naturalOrder()))
-                .reversed();
+                .comparing(this::resolveStartDate, Comparator.nullsLast(Comparator.reverseOrder()))
+                .thenComparing(YouthPolicy::getCreatedAt, Comparator.nullsLast(Comparator.reverseOrder()));
 
         if (sort == null || sort.isUnsorted()) {
-            return defaultComparator;
+            return ongoingLast.thenComparing(defaultComparator);
         }
 
+        // 요청된 Sort 조건들을 체인으로 묶기
         Comparator<YouthPolicy> chained = null;
         for (Sort.Order order : sort) {
             Comparator<YouthPolicy> orderComparator = createComparatorForOrder(order);
@@ -305,20 +349,27 @@ public class YouthPolicyQueryService {
         }
 
         if (chained == null) {
-            return defaultComparator;
+            chained = defaultComparator;
         }
-        return chained.thenComparing(defaultComparator);
+
+        // 어떤 정렬 기준이든 항상 먼저 "상시 공고는 맨 뒤" 규칙 실행
+        return ongoingLast.thenComparing(chained);
     }
 
+    /** Sort.Order별 개별 Comparator 생성 */
     private Comparator<YouthPolicy> createComparatorForOrder(Sort.Order order) {
         return switch (order.getProperty()) {
-            case "startDate" -> (p1, p2) -> compareDates(resolveStartDate(p1), resolveStartDate(p2), order.isDescending());
-            case "endDate" -> (p1, p2) -> compareEndDates(p1.getEndDate(), p2.getEndDate(), order.isDescending());
-            case "createdAt" -> (p1, p2) -> compareDateTimes(p1.getCreatedAt(), p2.getCreatedAt(), order.isDescending());
+            case "startDate" ->
+                    (p1, p2) -> compareDates(resolveStartDate(p1), resolveStartDate(p2), order.isDescending());
+            case "endDate" ->
+                    (p1, p2) -> compareEndDates(p1.getEndDate(), p2.getEndDate(), order.isDescending());
+            case "createdAt" ->
+                    (p1, p2) -> compareDateTimes(p1.getCreatedAt(), p2.getCreatedAt(), order.isDescending());
             default -> null;
         };
     }
 
+    /** LocalDateTime 비교 (null-safe) */
     private static int compareDateTimes(LocalDateTime first, LocalDateTime second, boolean descending) {
         if (first == null && second == null) {
             return 0;
@@ -332,6 +383,7 @@ public class YouthPolicyQueryService {
         return descending ? second.compareTo(first) : first.compareTo(second);
     }
 
+    /** LocalDate 비교 (null-safe) */
     private static int compareDates(LocalDate first, LocalDate second, boolean descending) {
         if (first == null && second == null) {
             return 0;
@@ -345,6 +397,7 @@ public class YouthPolicyQueryService {
         return descending ? second.compareTo(first) : first.compareTo(second);
     }
 
+    /** 마감일 비교 시 상시 여부 먼저 고려 */
     private int compareEndDates(String first, String second, boolean descending) {
         boolean firstOngoing = isOngoing(first);
         boolean secondOngoing = isOngoing(second);
@@ -357,6 +410,7 @@ public class YouthPolicyQueryService {
         return compareDates(firstDate, secondDate, descending);
     }
 
+    /** 상시 공고 판별: null/빈값/00000000/'상시' 포함 시 상시로 판단 */
     private static boolean isOngoing(String value) {
         if (value == null) return true;
         String trimmed = value.trim();
@@ -365,6 +419,7 @@ public class YouthPolicyQueryService {
         return trimmed.contains("상시");
     }
 
+    /** 정책의 정렬용 시작일 계산 (startDate → createdAt 순으로 fallback) */
     private LocalDate resolveStartDate(YouthPolicy policy) {
         LocalDate parsed = parseDate(policy.getStartDate());
         if (parsed != null) {
@@ -374,6 +429,7 @@ public class YouthPolicyQueryService {
         return createdAt != null ? createdAt.toLocalDate() : null;
     }
 
+    /** 다양한 포맷의 날짜 문자열을 LocalDate로 파싱 */
     private static LocalDate parseDate(String value) {
         if (value == null || value.isBlank()) return null;
         String normalized = value.trim();
