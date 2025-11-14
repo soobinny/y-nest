@@ -1,4 +1,4 @@
-﻿import { useEffect, useState } from "react";
+﻿import {useEffect, useState} from "react";
 import AppLayout from "../components/AppLayout";
 import api from "../lib/axios";
 import FavoriteStar from "../components/FavoriteStar";
@@ -88,7 +88,8 @@ const buildPageNumbers = (currentPage, totalPages) => {
 const normalizeItem = (item, sourceType) => {
   if (sourceType === "LH") {
     return {
-      id: item.id,
+      id: item.id,                     // 공고 PK
+      productId: item.productId,       // Products.
       title: item.name,
       status: item.status,
       region: item.regionName,
@@ -101,6 +102,7 @@ const normalizeItem = (item, sourceType) => {
   } else {
     return {
       id: item.id,
+      productId: item.productId,
       title: item.title,
       status: SH_STATUS_LABEL[item.recruitStatus] || "-",
       region: item.department,
@@ -404,7 +406,7 @@ export default function HousingPage() {
                           gap: "6px",
                         }}
                       >
-                        <FavoriteStar productId={item.id} />
+                        <FavoriteStar productId={item.productId} />
                         <h3 style={styles.cardTitle}>{item.title}</h3>
                       </div>
                       <span style={styles.status}>{item.status}</span>
@@ -488,7 +490,7 @@ export default function HousingPage() {
   );
 }
 
-// 🔹 HighlightCard
+// HighlightCard
 function HighlightCard({ title, items, loading, sourceType }) {
   const [hovered, setHovered] = useState(null);
 

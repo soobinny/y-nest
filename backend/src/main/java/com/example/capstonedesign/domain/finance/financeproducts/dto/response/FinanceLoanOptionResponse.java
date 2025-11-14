@@ -15,7 +15,7 @@ import java.math.BigDecimal;
 @Builder
 public class FinanceLoanOptionResponse {
 
-     private Integer productId;
+    private Integer productId;
 
     // 상위 대출 상품 정보
     private String productName;     // 금융상품명

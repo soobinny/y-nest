@@ -43,6 +43,7 @@ public class FinanceLoanQueryService {
         return products.stream().flatMap(fp ->
                 loanOptionRepository.findByFinanceProduct(fp).stream().map(opt ->
                         MortgageLoanResponse.builder()
+                                .productId(fp.getProduct().getId())
                                 .productName(fp.getProduct().getName())
                                 .companyName(fp.getProduct().getProvider())
                                 .productType(fp.getProductType())
@@ -67,6 +68,7 @@ public class FinanceLoanQueryService {
         return products.stream().flatMap(fp ->
                 loanOptionRepository.findByFinanceProduct(fp).stream().map(opt ->
                         RentLoanResponse.builder()
+                                .productId(fp.getProduct().getId())
                                 .productName(fp.getProduct().getName())
                                 .companyName(fp.getProduct().getProvider())
                                 .productType(fp.getProductType())
@@ -93,6 +95,7 @@ public class FinanceLoanQueryService {
                     if (option == null) return null;
 
                     return FinanceLoanResponse.builder()
+                            .productId(product.getProduct().getId())
                             .productName(product.getProduct().getName())
                             .companyName(product.getProduct().getProvider())
                             .productType(product.getProductType())
@@ -162,6 +165,7 @@ public class FinanceLoanQueryService {
                             String reason = getRecommendationReason(age, incomeBand, product.getProductType(), avgRate);
 
                             return FinanceLoanResponse.builder()
+                                    .productId(product.getProduct().getId())
                                     .productName(product.getProduct().getName())
                                     .companyName(product.getProduct().getProvider())
                                     .productType(product.getProductType())

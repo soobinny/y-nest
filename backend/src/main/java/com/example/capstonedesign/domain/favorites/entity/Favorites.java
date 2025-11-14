@@ -12,11 +12,6 @@ import java.time.LocalDateTime;
  * -------------------------------------------------
  * - 사용자가 금융상품/공고를 즐겨찾기에 등록한 정보를 저장하는 엔티티
  * - User ↔ Product 간 다대다(N:N) 관계의 연결(bridge) 테이블 역할
- * <p>
- * 주요 특징
- * 1. user_id + product_id 조합에 대한 Unique 제약 (중복 등록 방지)
- * 2. 생성 시점(createdAt) 자동 설정 (@PrePersist)
- * 3. 조회 성능 향상을 위한 인덱스 구성 (user별 정렬, product별 조회)
  */
 @Entity
 @Table(

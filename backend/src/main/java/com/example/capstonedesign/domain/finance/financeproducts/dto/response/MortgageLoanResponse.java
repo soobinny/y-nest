@@ -16,7 +16,7 @@ import java.math.BigDecimal;
 @Builder
 public class MortgageLoanResponse {
 
-     private Integer productId;
+    private Integer productId;
 
     /** 상품명 (예: 주택담보대출 A형) */
     private String productName;

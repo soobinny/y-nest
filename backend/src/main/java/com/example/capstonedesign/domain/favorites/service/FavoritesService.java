@@ -3,6 +3,7 @@ package com.example.capstonedesign.domain.favorites.service;
 import com.example.capstonedesign.domain.favorites.common.FavoritesApiException;
 import com.example.capstonedesign.domain.favorites.common.FavoritesErrorCode;
 import com.example.capstonedesign.domain.favorites.dto.FavoritesDto;
+import com.example.capstonedesign.domain.favorites.dto.response.FavoriteProductResponse;
 import com.example.capstonedesign.domain.favorites.entity.Favorites;
 import com.example.capstonedesign.domain.favorites.repository.FavoritesRepository;
 import com.example.capstonedesign.domain.products.entity.Products;
@@ -15,6 +16,8 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.util.List;
 
 /**
  * FavoritesService
@@ -54,7 +57,12 @@ public class FavoritesService {
         }
 
         try {
-            favoritesRepository.save(Favorites.builder().user(user).product(product).build());
+            favoritesRepository.save(
+                    Favorites.builder()
+                            .user(user)
+                            .product(product)
+                            .build()
+            );
         } catch (DataIntegrityViolationException e) {
             // 트랜잭션 경합 시에도 동일하게 409 처리 (멱등성 유지)
             throw new FavoritesApiException(FavoritesErrorCode.FAVORITE_ALREADY_EXISTS);
@@ -68,6 +76,9 @@ public class FavoritesService {
      */
     @Transactional
     public void remove(Long userId, Long productId) {
+        if (productId == null) throw new IllegalArgumentException("productId는 필수입니다.");
+        if (userId == null) throw new IllegalArgumentException("userId는 필수입니다.");
+
         Integer pid = productId.intValue();
         Integer uid = userId.intValue();
 
@@ -85,6 +96,8 @@ public class FavoritesService {
      */
     @Transactional(readOnly = true)
     public boolean exists(Long userId, Long productId) {
+        if (productId == null || userId == null) return false;
+
         Integer pid = productId.intValue();
         Integer uid = userId.intValue();
 
@@ -100,6 +113,8 @@ public class FavoritesService {
      */
     @Transactional(readOnly = true)
     public Page<FavoritesDto.ItemResponse> list(Long userId, Pageable pageable) {
+        if (userId == null) throw new IllegalArgumentException("userId는 필수입니다.");
+
         Integer uid = userId.intValue();
         Page<Favorites> page = favoritesRepository.findPageByUserId(uid, pageable);
 
@@ -120,31 +135,67 @@ public class FavoritesService {
      * - 존재하면 삭제 후 false 반환 (즐겨찾기 해제됨)
      * - 존재하지 않으면 추가 후 true 반환 (즐겨찾기 등록됨)
      * - 동시 요청(DataIntegrityViolationException) 발생 시에도 추가 성공(true)으로 처리
-     * <p></p>
-     * 장점
-     * - 단일 엔드포인트로 on/off 기능 통합
-     * - 클라이언트에서 별도 상태 요청 없이 즉시 상태 반영 가능
      */
     @Transactional
     public boolean toggle(Long userId, Long productId) {
-        Integer pid = productId.intValue();
-        Integer uid = userId.intValue();
+        if (productId == null) throw new IllegalArgumentException("productId는 필수입니다.");
+        if (userId == null) throw new IllegalArgumentException("userId는 필수입니다.");
 
-        return favoritesRepository.findByUser_IdAndProduct_Id(uid, pid)
-                // 존재하면 → 삭제 후 false 반환
-                .map(f -> { favoritesRepository.delete(f); return false; })
-                // 없으면 → 추가 후 true 반환
-                .orElseGet(() -> {
-                    Users user = loadUser(uid);
-                    Products product = loadProduct(pid);
-                    try {
-                        favoritesRepository.save(Favorites.builder().user(user).product(product).build());
-                        return true; // 이번 호출로 추가됨
-                    } catch (DataIntegrityViolationException e) {
-                        // 동시성 경합 시 이미 다른 요청이 추가 완료된 상태 → true로 간주
-                        return true;
-                    }
-                });
+        Integer uid = userId.intValue();
+        Integer pid = productId.intValue();
+
+        var existing = favoritesRepository.findByUser_IdAndProduct_Id(uid, pid);
+
+        if (existing.isPresent()) {
+            favoritesRepository.delete(existing.get());
+            return false; // 해제됨
+        }
+
+        // 존재하지 않으면 새로 등록
+        Users user = loadUser(uid);
+        Products product = loadProduct(pid);
+
+        try {
+            favoritesRepository.save(
+                    Favorites.builder()
+                            .user(user)
+                            .product(product)
+                            .build()
+            );
+        } catch (DataIntegrityViolationException e) {
+            // 유니크 제약 경합 시, 이미 다른 트랜잭션에서 등록된 것으로 간주하고 "등록된 상태"로 처리
+            return true;
+        }
+
+        return true; // 등록됨
+    }
+
+    /**
+     * 즐겨찾기 목록 조회 (전체, 최신순)
+     * -------------------------------------------------
+     * - Products 정보와 함께 내려주는 간단한 요약용 응답
+     */
+    @Transactional(readOnly = true)
+    public List<FavoriteProductResponse> getFavoriteProducts(Long userId) {
+        if (userId == null) throw new IllegalArgumentException("userId는 필수입니다.");
+
+        Integer uid = userId.intValue();
+        var favorites = favoritesRepository.findByUser_IdOrderByCreatedAtDesc(uid);
+
+        return favorites.stream()
+                .map(fav -> {
+                    Products p = fav.getProduct();
+                    return new FavoriteProductResponse(
+                            Long.valueOf(fav.getId()),
+                            Long.valueOf(p.getId()),
+                            p.getType(),
+                            p.getName(),
+                            p.getProvider(),
+                            p.getDetailUrl(),
+                            fav.getCreatedAt()
+                    );
+                })
+                .toList();
     }
 
     /**

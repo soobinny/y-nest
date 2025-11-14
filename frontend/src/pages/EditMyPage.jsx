@@ -47,7 +47,7 @@ export default function EditMyPage() {
           birthdate: res.data.birthdate ? res.data.birthdate.split("T")[0] : "",
         });
       } catch {
-        alert("로그인 후 이용해주세요.");
+        alert("로그인 후 이용해 주세요.");
       }
     };
     fetchUser();
@@ -108,15 +108,15 @@ export default function EditMyPage() {
     if (showPasswordForm) {
       if (hasCurrent || hasNew || hasConfirm) {
         if (!hasCurrent) {
-          setPasswordError("현재 비밀번호를 입력해주세요.");
+          setPasswordError("현재 비밀번호를 입력해 주세요.");
           return;
         }
         if (!hasNew) {
-          setPasswordError("새 비밀번호를 입력해주세요.");
+          setPasswordError("새 비밀번호를 입력해 주세요.");
           return;
         }
         if (!hasConfirm) {
-          setPasswordError("비밀번호를 모두 입력해주세요.");
+          setPasswordError("비밀번호를 모두 입력해 주세요.");
           return;
         }
         if (newPassword !== confirmPassword) {
@@ -186,7 +186,7 @@ export default function EditMyPage() {
     window.location.href = "/mypage";
   };
 
-  if (!form) return <p style={styles.loading}>로그인 완료 후 접속해주세요.</p>;
+  if (!form) return <p style={styles.loading}>로그인 완료 후 접속해 주세요.</p>;
 
   return (
     <AppLayout narrow>
@@ -229,7 +229,7 @@ export default function EditMyPage() {
                 placeholder="현재 비밀번호"
                 style={styles.input}
               />
-              {passwordError === "현재 비밀번호를 입력해주세요." && (
+              {passwordError === "현재 비밀번호를 입력해 주세요." && (
                 <p style={styles.errorText}>{passwordError}</p>
               )}
               {passwordError === "현재 비밀번호가 일치하지 않습니다." && (
@@ -244,7 +244,7 @@ export default function EditMyPage() {
                 placeholder="새 비밀번호"
                 style={styles.input}
               />
-              {passwordError === "새 비밀번호를 입력해주세요." && (
+              {passwordError === "새 비밀번호를 입력해 주세요." && (
                 <p style={styles.errorText}>{passwordError}</p>
               )}
               {passwordError.includes("비밀번호는 8자 이상") && (
@@ -259,7 +259,7 @@ export default function EditMyPage() {
                 placeholder="새 비밀번호 확인"
                 style={styles.input}
               />
-              {passwordError === "비밀번호를 모두 입력해주세요." && (
+              {passwordError === "비밀번호를 모두 입력해 주세요." && (
                 <p style={styles.errorText}>{passwordError}</p>
               )}
               {passwordError === "새 비밀번호가 일치하지 않습니다." && (
@@ -281,7 +281,7 @@ export default function EditMyPage() {
           <input
             type="text"
             name="age"
-            placeholder="생년월일을 입력해주세요."
+            placeholder="생년월일을 입력해 주세요."
             value={form.age ? `나이: ${form.age}` : ""}
             readOnly
             style={{ ...styles.input, backgroundColor: "#f4f4f4" }}
@@ -397,7 +397,6 @@ const styles = {
     marginBottom: "10px",
     cursor: "pointer",
     transition: "all 0.2s ease",
-    marginBottom: 0,
   },
   passwordForm: {
     display: "flex",
