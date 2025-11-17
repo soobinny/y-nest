@@ -168,8 +168,8 @@ export default function HomePage() {
 
                                 <div style={styles.loginMenu}>
                                     {[
-                                        { text: "⭐ 즐겨찾기한 정책", path: "/favorites" },
-                                        { text: "🎯 맞춤형 정책", path: "/recommend" },
+                                        { text: "⭐ 즐겨찾기", path: "/favorites" },
+                                        { text: "🎯 맞춤공고", path: "/recommend" },
                                     ].map((item) => (
                                         <div
                                             key={item.text}
@@ -211,8 +211,8 @@ export default function HomePage() {
                                 {/* 즐겨찾기 / 맞춤형 정책 */}
                                 <div style={styles.loginMenu}>
                                     {[
-                                        { text: "⭐ 즐겨찾기한 정책", path: "/favorites" },
-                                        { text: "🎯 맞춤형 정책", path: "/recommend" },
+                                        { text: "⭐ 즐겨찾기", path: "/favorites" },
+                                        { text: "🎯 맞춤공고", path: "/recommend" },
                                     ].map((item) => (
                                         <div
                                             key={item.text}
