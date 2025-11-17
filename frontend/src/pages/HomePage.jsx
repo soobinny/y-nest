@@ -55,7 +55,7 @@ export default function HomePage() {
         return (
             <AppLayout>
                 <div style={{textAlign: "center", marginTop: "80px"}}>
-                    <p>⏳ 최근 게시물을 불러오는 중...</p>
+                    <p>⏳ 최근 게시물 불러오는 중...</p>
                 </div>
             </AppLayout>
         );
@@ -125,24 +125,6 @@ export default function HomePage() {
                                             "Y-Nest에 오신 것을 환영합니다!"
                                         )}
                                     </p>
-
-                                    <button
-                                        style={
-                                            hoveredButton
-                                                ? { ...styles.logoutInlineButton, ...styles.logoutInlineButtonHover }
-                                                : styles.logoutInlineButton
-                                        }
-                                        onMouseEnter={() => setHoveredButton(true)}
-                                        onMouseLeave={() => setHoveredButton(false)}
-                                        onClick={() => {
-                                            localStorage.removeItem("accessToken");
-                                            localStorage.removeItem("userName");
-                                            alert("로그아웃되었습니다.");
-                                            window.location.reload();
-                                        }}
-                                    >
-                                        로그아웃
-                                    </button>
                                 </div>
 
                                 {/* 최근 본 정책 블록 */}
@@ -169,13 +151,13 @@ export default function HomePage() {
                                         </>
                                     ) : (
                                         <>
-                                            <p style={{ fontSize: "13px", margin: 0 }}>🕒 마지막으로 확인한 게시물</p>
+                                            <p style={{ fontSize: "13px", margin: 10 }}>🕒 마지막으로 확인한 게시물</p>
                                             <p
                                                 style={{
                                                     fontSize: "13px",
                                                     fontWeight: "500",
                                                     color: "#999",
-                                                    marginTop: "4px",
+                                                    marginTop: "10px",
                                                 }}
                                             >
                                                 마지막으로 확인한 게시물이 없습니다.
@@ -191,16 +173,20 @@ export default function HomePage() {
                                     ].map((item) => (
                                         <div
                                             key={item.text}
-                                            style={
-                                                hoveredItem === item.text
-                                                    ? { ...styles.loginItem, ...styles.loginItemHover }
-                                                    : styles.loginItem
-                                            }
+                                            style={styles.loginItem}
                                             onMouseEnter={() => setHoveredItem(item.text)}
                                             onMouseLeave={() => setHoveredItem(null)}
                                             onClick={() => (window.location.href = item.path)}
                                         >
-                                            <span>{item.text}</span>
+                                            <span
+                                                style={
+                                                    hoveredItem === item.text
+                                                        ? { textDecoration: "underline" }
+                                                        : {}
+                                                }
+                                            >
+                                                {item.text}
+                                            </span>
                                         </div>
                                     ))}
                                 </div>
@@ -208,10 +194,6 @@ export default function HomePage() {
                         ) : (
                             // 비로그인 상태
                             <>
-                                <p style={styles.loginGuide}>
-                                    한 번의 로그인으로 주거·금융·정책 정보를 한눈에!
-                                </p>
-
                                 {/* 로그인 버튼 */}
                                 <button
                                     style={
@@ -251,7 +233,15 @@ export default function HomePage() {
                                                 }
                                             }}
                                         >
-                                            <span>{item.text}</span>
+                                            <span
+                                                style={
+                                                    hoveredItem === item.text
+                                                        ? { textDecoration: "underline" }
+                                                        : {}
+                                                }
+                                            >
+                                                {item.text}
+                                            </span>
                                         </div>
                                     ))}
                                 </div>
@@ -337,11 +327,9 @@ export default function HomePage() {
             </div>
         </AppLayout>
     );
-}
+} 
 
-/* ===========================
-   스타일 영역
-=========================== */
+
 let styles;
 styles = {
     page: {
@@ -396,7 +384,7 @@ styles = {
         backgroundColor: "#fff",
         borderRadius: 12,
         boxShadow: "0 2px 8px rgba(0,0,0,0.06)",
-        padding: "24px 22px",
+        padding: "15px 22px",
         textAlign: "center",
         cursor: "pointer",
         transition: "all 0.25s ease",
@@ -405,7 +393,6 @@ styles = {
         justifyContent: "center",
     },
     serviceCardHover: {
-        backgroundColor: "#f9f9f9",
         transform: "scale(1.02)",
         boxShadow: "0 4px 10px rgba(0,0,0,0.1)",
     },
@@ -428,7 +415,7 @@ styles = {
         backgroundColor: "#fff",
         borderRadius: 12,
         boxShadow: "0 2px 8px rgba(0,0,0,0.06)",
-        padding: "20px 18px",
+        padding: "26px 18px",
         textAlign: "center",
         fontFamily: "'Pretendard', 'Noto Sans KR', sans-serif",
         display: "flex",
@@ -436,20 +423,14 @@ styles = {
         justifyContent: "center",
         alignItems: "center",
         minWidth: "200px",
-        maxHeight: "200px",
-    },
-    /* 안내문 */
-    loginGuide: {
-        fontSize: "13.5px",
-        color: "#444",
-        marginBottom: "15px",
+        maxHeight: "240px",
     },
     /* 로그인 버튼 */
     loginMainButton: {
         display: "block",
         width: "100%",
-        maxWidth: "250px",
-        margin: "0 auto 14px",
+        maxWidth: "225px",
+        margin: "0 auto 24px",
         backgroundColor: "#6ecd94ff",
         color: "#fff",
         border: "none",
@@ -478,20 +459,18 @@ styles = {
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
-        backgroundColor: "#f9fafb",
-        borderRadius: "8px",
+        backgroundColor: "transparent",
+        borderRadius: 0,
         padding: "6px 10px",
         fontSize: "13px",
         color: "#333",
         fontWeight: "500",
-        boxShadow: "0 1px 3px rgba(0,0,0,0.04)",
+        boxShadow: "none",
         transition: "all 0.25s ease",
         cursor: "pointer",
     },
     loginItemHover: {
-        backgroundColor: "#f9f9f9",
-        boxShadow: "0 2px 6px rgba(0,0,0,0.08)",
-        transform: "scale(1.02)",
+        /* hover effect disabled */
     },
     recommendBox: {
         backgroundColor: "#f5f7f8",
@@ -515,23 +494,6 @@ styles = {
         gap: "10px",
         marginBottom: "10px",
     },
-    /* 인라인 로그아웃 버튼 */
-    logoutInlineButton: {
-        backgroundColor: "#6ecd94",
-        color: "#fff",
-        border: "none",
-        borderRadius: "6px",
-        padding: "10px 12px",
-        fontSize: "12.5px",
-        fontWeight: "600",
-        cursor: "pointer",
-        transition: "all 0.25s ease",
-        lineHeight: "1",
-    },
-    logoutInlineButtonHover: {
-        backgroundColor: "#5dbb86",
-    },
-
     /* 하단 링크 구역 */
     loginLinks: {
         fontSize: "13px",

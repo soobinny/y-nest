@@ -315,7 +315,7 @@ const styles = {
     flexShrink: 0,
   },
   logoText: {
-    fontSize: "22px",
+    fontSize: "30px",
     fontWeight: "800",
     color: "#91c7f5",
     textDecoration: "none",
