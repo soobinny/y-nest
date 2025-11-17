@@ -131,7 +131,7 @@ export default function RecommendPage() {
         <div style={styles.container}>
           <h1 style={styles.title}>🎯 맞춤 추천 공고</h1>
           <p style={styles.subtitle}>
-            내 나이, 소득, 지역 정보를 바탕으로&nbsp;나에게 꼭 맞는&nbsp; 
+            내 나이, 소득, 지역 정보를 바탕으로&nbsp;나에게 꼭 맞는&nbsp;
             <b>주거 · 금융 · 청년정책</b>을 한 곳에서 확인해보세요.
           </p>
 
@@ -197,14 +197,23 @@ export default function RecommendPage() {
                           }}
                         >
                           <div style={styles.cardTagRow}>
-                            <span style={{ ...styles.badge, backgroundColor: "#91c7f5" }}>
+                            <span
+                              style={{
+                                ...styles.badge,
+                                backgroundColor: "#91c7f5",
+                              }}
+                            >
                               LH
                             </span>
                             {item.category && (
-                              <span style={styles.subBadge}>{item.category}</span>
+                              <span style={styles.subBadge}>
+                                {item.category}
+                              </span>
                             )}
                             {item.status && (
-                              <span style={styles.statusText}>{item.status}</span>
+                              <span style={styles.statusText}>
+                                {item.status}
+                              </span>
                             )}
                           </div>
                           <h3 style={styles.cardTitle}>{item.name}</h3>
@@ -244,14 +253,23 @@ export default function RecommendPage() {
                           onMouseLeave={() => setHoveredCard(null)}
                         >
                           <div style={styles.cardTagRow}>
-                            <span style={{ ...styles.badge, backgroundColor: "#4eb166" }}>
+                            <span
+                              style={{
+                                ...styles.badge,
+                                backgroundColor: "#4eb166",
+                              }}
+                            >
                               SH
                             </span>
                             {item.supplyType && (
-                              <span style={styles.subBadge}>{item.supplyType}</span>
+                              <span style={styles.subBadge}>
+                                {item.supplyType}
+                              </span>
                             )}
                             {item.recruitStatus && (
-                              <span style={styles.statusText}>{item.recruitStatus}</span>
+                              <span style={styles.statusText}>
+                                {item.recruitStatus}
+                              </span>
                             )}
                           </div>
                           <h3 style={styles.cardTitle}>{item.title}</h3>
@@ -303,7 +321,10 @@ export default function RecommendPage() {
                   {/* 예금/적금/대출 리스트 */}
                   {activeFinanceTab === "DEPOSIT" && (
                     <>
-                      <SectionHeader label="💰 내 소득·나이에 맞는 예금 추천" compact />
+                      <SectionHeader
+                        label="💰 내 소득·나이에 맞는 예금 추천"
+                        compact
+                      />
                       {depositList.length === 0 ? (
                         <EmptyMessage />
                       ) : (
@@ -324,7 +345,10 @@ export default function RecommendPage() {
 
                   {activeFinanceTab === "SAVING" && (
                     <>
-                      <SectionHeader label="📈 꾸준히 모으기 좋은 적금 추천" compact />
+                      <SectionHeader
+                        label="📈 꾸준히 모으기 좋은 적금 추천"
+                        compact
+                      />
                       {savingList.length === 0 ? (
                         <EmptyMessage />
                       ) : (
@@ -345,14 +369,19 @@ export default function RecommendPage() {
 
                   {activeFinanceTab === "LOAN" && (
                     <>
-                      <SectionHeader label="🏦 내 상황에 맞는 대출 추천" compact />
+                      <SectionHeader
+                        label="🏦 내 상황에 맞는 대출 추천"
+                        compact
+                      />
                       {loanList.length === 0 ? (
                         <EmptyMessage />
                       ) : (
                         <div style={styles.cardList}>
                           {loanList.map((item) => (
                             <div
-                              key={`LOAN-${item.id || item.fnncId || Math.random()}`}
+                              key={`LOAN-${
+                                item.id || item.fnncId || Math.random()
+                              }`}
                               style={
                                 hoveredCard === `LOAN-${item.id}`
                                   ? { ...styles.card, ...styles.cardHover }
@@ -373,7 +402,9 @@ export default function RecommendPage() {
                                   대출
                                 </span>
                                 {item.loanType && (
-                                  <span style={styles.subBadge}>{item.loanType}</span>
+                                  <span style={styles.subBadge}>
+                                    {item.loanType}
+                                  </span>
                                 )}
                               </div>
                               <h3 style={styles.cardTitle}>
@@ -409,48 +440,57 @@ export default function RecommendPage() {
                     <EmptyMessage />
                   ) : (
                     <div style={styles.cardList}>
-                      {policyList.map((item) => (
-                        <div
-                          key={`POLICY-${item.id}`}
-                          style={
-                            hoveredCard === `POLICY-${item.id}`
-                              ? { ...styles.card, ...styles.cardHover }
-                              : styles.card
-                          }
-                          onMouseEnter={() =>
-                            setHoveredCard(`POLICY-${item.id}`)
-                          }
-                          onMouseLeave={() => setHoveredCard(null)}
-                          onClick={() => {
-                            if (item.detailUrl) {
-                              window.open(item.detailUrl, "_blank");
+                      {policyList.map((item, index) => {
+                        // id가 undefined일 때 대비 → index로 fallback key 생성
+                        const key = `POLICY-${item.id ?? index}`;
+
+                        return (
+                          <div
+                            key={key}
+                            style={
+                              hoveredCard === key
+                                ? { ...styles.card, ...styles.cardHover }
+                                : styles.card
                             }
-                          }}
-                        >
-                          <div style={styles.cardTagRow}>
-                            <span
-                              style={{
-                                ...styles.badge,
-                                backgroundColor: "#91c7f5",
-                              }}
-                            >
-                              정책
-                            </span>
+                            onMouseEnter={() => setHoveredCard(key)}
+                            onMouseLeave={() => setHoveredCard(null)}
+                            onClick={() => {
+                              if (item.detailUrl)
+                                window.open(item.detailUrl, "_blank");
+                            }}
+                          >
+                            <div style={styles.cardTagRow}>
+                              <span
+                                style={{
+                                  ...styles.badge,
+                                  backgroundColor: "#91c7f5",
+                                }}
+                              >
+                                정책
+                              </span>
+                            </div>
+
+                            <h3 style={styles.cardTitle}>{item.policyName}</h3>
+
+                            <p style={styles.cardMeta}>
+                              🏢 {item.agency || "기관 미상"}
+                            </p>
+
+                            <p style={styles.cardMeta}>
+                              📅{" "}
+                              {item.startDate
+                                ? `${item.startDate} ~ ${
+                                    item.endDate || "상시"
+                                  }`
+                                : "일정 정보 없음"}
+                            </p>
+
+                            {item.reason && (
+                              <p style={styles.cardReason}>{item.reason}</p>
+                            )}
                           </div>
-                          <h3 style={styles.cardTitle}>{item.policyName}</h3>
-                          <p style={styles.cardMeta}>
-                            🏢 {item.agency || "기관 미상"}
-                          </p>
-                          <p style={styles.cardMeta}>
-                            📅{" "}
-                            {item.startDate &&
-                              `${item.startDate} ~ ${item.endDate || "상시"}`}
-                          </p>
-                          {item.reason && (
-                            <p style={styles.cardReason}>{item.reason}</p>
-                          )}
-                        </div>
-                      ))}
+                        );
+                      })}
                     </div>
                   )}
                 </div>
