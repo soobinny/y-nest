@@ -150,7 +150,12 @@ export default function RecommendPage() {
                     ? { ...styles.mainTab, ...styles.mainTabActive }
                     : styles.mainTab
                 }
-                onClick={() => setActiveMainTab(tab.key)}
+                onClick={(e) => {
+                  setActiveMainTab(tab.key);
+                  e.currentTarget.blur(); // remove focus outline after click
+                }}
+                onMouseDown={(e) => e.preventDefault()} // prevent focus ring on click
+                onFocus={(e) => e.currentTarget.blur()} // avoid persistent focus outline
               >
                 {tab.label}
               </button>
@@ -311,7 +316,12 @@ export default function RecommendPage() {
                             ? { ...styles.subTab, ...styles.subTabActive }
                             : styles.subTab
                         }
-                        onClick={() => setActiveFinanceTab(tab.key)}
+                        onClick={(e) => {
+                          setActiveFinanceTab(tab.key);
+                          e.currentTarget.blur(); // remove focus outline after click
+                        }}
+                        onMouseDown={(e) => e.preventDefault()} // prevent focus ring on click
+                        onFocus={(e) => e.currentTarget.blur()} // avoid persistent focus outline
                       >
                         {tab.label}
                       </button>
@@ -628,47 +638,52 @@ const styles = {
     marginBottom: "8px",
   },
   mainTab: {
-    flex: 1,
-    padding: "10px 0",
-    borderRadius: 999,
-    border: "1px solid #e0e0e0",
-    backgroundColor: "#fff",
-    cursor: "pointer",
-    fontSize: "14px",
-    fontWeight: 500,
-    color: "#555",
-    outline: none,
-  },
-  mainTabActive: {
-    backgroundColor: "#9ed8b5",
-    color: "#fff",
-    borderColor: "#9ed8b5",
-    fontWeight: 600,
-  },
-  subTabs: {
-    display: "flex",
-    gap: "8px",
-    marginBottom: "10px",
-    marginTop: "4px",
-    outline: none,
-  },
-  subTab: {
-    flex: 1,
-    padding: "8px 0",
-    borderRadius: 999,
-    border: "1px solid #e0e0e0",
-    backgroundColor: "#fff",
-    cursor: "pointer",
-    fontSize: "13px",
-    fontWeight: 500,
-    color: "#555",
-  },
-  subTabActive: {
-    backgroundColor: "#91c7f5",
-    color: "#fff",
-    borderColor: "#91c7f5",
-    fontWeight: 600,
-  },
+  flex: 1,
+  padding: "10px 0",
+  borderRadius: 999,
+  backgroundColor: "#fff",
+  cursor: "pointer",
+  fontSize: "14px",
+  fontWeight: 500,
+  color: "#555",
+  outline: "none",
+  boxShadow: "none",
+  border: "1px solid #00000020",   // ✔ Policypage처럼 얇은 연한 테두리
+},
+mainTabActive: {
+  backgroundColor: "#9ed8b5",
+  color: "#fff",
+  fontWeight: 600,
+  border: "none",
+},
+subTabs: {
+  display: "flex",
+  gap: "8px",
+  marginBottom: "10px",
+  marginTop: "4px",
+  outline: "none",
+},
+
+subTab: {
+  flex: 1,
+  padding: "8px 0",
+  borderRadius: 999,
+  backgroundColor: "#fff",
+  cursor: "pointer",
+  fontSize: "13px",
+  fontWeight: 500,
+  color: "#555",
+  outline: "none",
+  boxShadow: "none",
+  border: "1px solid #00000020",
+},
+
+subTabActive: {
+  backgroundColor: "#91c7f5",
+  color: "#fff",
+  fontWeight: 600,
+  border: "none",
+},
   centerBox: {
     marginTop: "30px",
     textAlign: "center",
