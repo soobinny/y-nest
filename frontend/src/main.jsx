@@ -12,6 +12,7 @@ import FindPasswordPage from "./pages/FindPasswordPage";
 import HousingPage from "./pages/HousingPage.jsx";
 import PolicyPage from "./pages/PolicyPage.jsx";
 import FavoritesPage from "./pages/FavoritesPage.jsx";
+import RecommendPage from "./pages/RecommendPage.jsx";
 
 ReactDOM.createRoot(document.getElementById("root")).render(
   <React.StrictMode>
@@ -28,6 +29,7 @@ ReactDOM.createRoot(document.getElementById("root")).render(
         <Route path="/find-id" element={<FindIdPage />} />
         <Route path="/find-password" element={<FindPasswordPage />} />
         <Route path="/favorites" element={<FavoritesPage />} />
+        <Route path="/recommend" element={<RecommendPage />} />
       </Routes>
     </BrowserRouter>
   </React.StrictMode>

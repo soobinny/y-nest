@@ -30,6 +30,7 @@ export default function LoginPage() {
             });
 
             // (4) 이름 저장
+            localStorage.setItem("userId", userRes.data.id);
             localStorage.setItem("userName", userRes.data.name);
 
             // (5) 홈으로 이동
