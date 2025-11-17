@@ -26,8 +26,20 @@ public class DataInitializer {
      */
     @EventListener(ApplicationReadyEvent.class)
     public void initData() {
-        log.info("🔹 [INIT] 서버 시작 - 초기 데이터 동기화 시작");
 
+        // ------------------------------
+        // 초기 데이터 여부 체크
+        // ------------------------------
+        if (finlifeIngestService.hasInitialData()) {
+            log.info("초기 데이터가 이미 존재합니다. 초기화를 스킵합니다.");
+            return;
+        }
+
+        log.info("[INIT] 초기 데이터 없음 → 최초 1회 초기화 시작");
+
+        // ------------------------------
+        // 금융상품 동기화
+        // ------------------------------
         try {
             log.info("🏦 금융상품 동기화 시작");
             finlifeIngestService.syncCompanies(3);
@@ -38,6 +50,9 @@ public class DataInitializer {
             log.error("❌ 금융 동기화 실패", e);
         }
 
+        // ------------------------------
+        // LH 주거공고 동기화
+        // ------------------------------
         try {
             log.info("🏠 LH 주거공고 동기화 시작");
             lhIngestService.syncNotices();
@@ -46,23 +61,28 @@ public class DataInitializer {
             log.error("❌ LH 동기화 실패", e);
         }
 
+        // ------------------------------
+        // SH 주거공고 동기화
+        // ------------------------------
         try {
             log.info("🏢 SH 주거공고 동기화 시작");
             shIngestService.syncNotices();
-            log.info("✅ SH 동기화 완료");
+            log.info("⚡ SH 동기화 완료");
         } catch (Exception e) {
             log.error("❌ SH 동기화 실패", e);
         }
 
+        // ------------------------------
+        // 청년정책 동기화
+        // ------------------------------
         try {
             log.info("💡 청년정책 동기화 시작");
             youthPolicyIngestService.syncPolicies();
-            log.info("✅ 청년정책 동기화 완료");
+            log.info("✨ 청년정책 동기화 완료");
         } catch (Exception e) {
             log.error("❌ 청년정책 동기화 실패", e);
         }
 
-        log.info("🎉 [INIT COMPLETE] 모든 초기 데이터 동기화 완료!");
+        log.info("🎉 [INIT COMPLETE] 최초 1회 초기 데이터 동기화 완료!");
     }
 }
-
