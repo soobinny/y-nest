@@ -144,9 +144,8 @@ export default function AppLayout({ children, narrow = false }) {
                 <div style={styles.dropdown}>
                   {[
 
-                    { name: "주거공고", link: "/favorites/housing" },
-                    { name: "금융상품", link: "/favorites/finance" },
-                    { name: "정책", link: "/favorites/policy"},
+                    { name: "즐겨찾기", link: "/favorites" },
+                    { name: "맞춤공고", link: "/recommend" },
 
                    ].map((item) => (
                     <span
