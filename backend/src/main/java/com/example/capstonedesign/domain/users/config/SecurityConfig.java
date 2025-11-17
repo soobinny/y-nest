@@ -47,6 +47,7 @@ public class SecurityConfig {
                                 "/api/finance/products/**",
 
                                 // Swagger & 문서 접근 허용
+                                "/api/chat",
                                 "/api/notices/recent",
                                 "/api/housings",
                                 "/api/housings/search",

@@ -4,6 +4,7 @@ import com.example.capstonedesign.domain.products.entity.ProductType;
 import com.example.capstonedesign.domain.products.entity.Products;
 import org.springframework.data.jpa.repository.JpaRepository;
 
+import java.util.List;
 import java.util.Optional;
 
 /**
@@ -37,4 +38,6 @@ public interface ProductsRepository extends JpaRepository<Products, Integer> {
      * WHERE detail_url = ?
      */
     Optional<Products> findByDetailUrl(String detailUrl);
+
+    List<Products> findTop5ByTypeAndNameContainingIgnoreCaseOrderByIdAsc(ProductType productType, String keywordLike);
 }

@@ -56,4 +56,8 @@ public interface LhNoticeRepository extends JpaRepository<LhNotice, Long> {
 
     /** 게시일(panNtStDt) 기준 최신순 상위 20건 조회 */
     List<LhNotice> findTop20ByOrderByPanNtStDtDesc();
+
+    List<LhNotice> findTop5ByCnpCdNmContainingAndPanNmContainingOrderByClsgDtAsc(String regionKeyword, String titleKeyword);
+
+    List<LhNotice> findTop5ByCnpCdNmContainingOrderByClsgDtAsc(String regionLike);
 }
