@@ -637,12 +637,12 @@ const styles = {
     fontSize: "14px",
     fontWeight: 500,
     color: "#555",
-    transition: "all 0.2s ease",
+    outline: none,
   },
   mainTabActive: {
-    backgroundColor: "#6ecd94",
+    backgroundColor: "#9ed8b5",
     color: "#fff",
-    borderColor: "#6ecd94",
+    borderColor: "#9ed8b5",
     fontWeight: 600,
   },
   subTabs: {
@@ -650,6 +650,7 @@ const styles = {
     gap: "8px",
     marginBottom: "10px",
     marginTop: "4px",
+    outline: none,
   },
   subTab: {
     flex: 1,
@@ -661,7 +662,6 @@ const styles = {
     fontSize: "13px",
     fontWeight: 500,
     color: "#555",
-    transition: "all 0.2s ease",
   },
   subTabActive: {
     backgroundColor: "#91c7f5",
