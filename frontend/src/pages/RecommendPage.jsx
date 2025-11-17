@@ -152,10 +152,7 @@ export default function RecommendPage() {
                 }
                 onClick={(e) => {
                   setActiveMainTab(tab.key);
-                  e.currentTarget.blur(); // remove focus outline after click
                 }}
-                onMouseDown={(e) => e.preventDefault()} // prevent focus ring on click
-                onFocus={(e) => e.currentTarget.blur()} // avoid persistent focus outline
               >
                 {tab.label}
               </button>
@@ -318,10 +315,7 @@ export default function RecommendPage() {
                         }
                         onClick={(e) => {
                           setActiveFinanceTab(tab.key);
-                          e.currentTarget.blur(); // remove focus outline after click
                         }}
-                        onMouseDown={(e) => e.preventDefault()} // prevent focus ring on click
-                        onFocus={(e) => e.currentTarget.blur()} // avoid persistent focus outline
                       >
                         {tab.label}
                       </button>
