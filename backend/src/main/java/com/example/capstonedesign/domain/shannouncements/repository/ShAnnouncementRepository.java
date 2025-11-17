@@ -21,4 +21,8 @@ public interface ShAnnouncementRepository extends
 
     /** 게시일(postDate) 기준 최신순 상위 20건 조회 */
     List<ShAnnouncement> findTop20ByOrderByPostDateDesc();
+
+    List<ShAnnouncement> findTop5ByRegionContainingAndTitleContainingOrderByPostDateAsc(String regionKeyword, String keyword);
+
+    List<ShAnnouncement> findTop5ByRegionContainingOrderByPostDateAsc(String regionLike);
 }

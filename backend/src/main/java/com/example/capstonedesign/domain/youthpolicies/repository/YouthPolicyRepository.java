@@ -36,4 +36,6 @@ public interface YouthPolicyRepository extends JpaRepository<YouthPolicy, Long> 
         ORDER BY y.startDate DESC
     """)
     List<YouthPolicy> findActiveOrderByStartDateDesc(@Param("today") String today, Pageable pageable);
+
+    List<YouthPolicy> findTop5ByPolicyNameContainingOrDescriptionContainingOrderByIdAsc(String keywordLike, String keywordLike1);
 }

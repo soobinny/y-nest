@@ -1,4 +1,5 @@
 import {useEffect, useState} from "react";
+import FloatingChatbot from "./FloatingChatbot";
 
 export default function AppLayout({ children, narrow = false }) {
   const [activeDropdown, setActiveDropdown] = useState(null);
@@ -203,6 +204,9 @@ export default function AppLayout({ children, narrow = false }) {
       >
         {children}
       </main>
+
+        {/* 플로팅 챗봇 */}
+        <FloatingChatbot />
 
       {/* 공통 푸터 */}
       <footer style={styles.footer}>© 2025 Y-Nest</footer>
