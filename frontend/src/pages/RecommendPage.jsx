@@ -91,7 +91,9 @@ export default function RecommendPage() {
   // 금융 - 대출 추천
   const loadLoanRecommend = () =>
     withLoading("loan", async () => {
-      const res = await api.get(`/api/finance/loans/recommend/${userId}`);
+      const res = await api.get(
+        `/api/finance/loans/options/recommend/${userId}`
+      );
       setLoanList(res.data || []);
     });
 
@@ -381,54 +383,65 @@ export default function RecommendPage() {
                         <EmptyMessage />
                       ) : (
                         <div style={styles.cardList}>
-                          {loanList.map((item) => (
-                            <div
-                              key={`LOAN-${
-                                item.id || item.fnncId || Math.random()
-                              }`}
-                              style={
-                                hoveredCard === `LOAN-${item.id}`
-                                  ? { ...styles.card, ...styles.cardHover }
-                                  : styles.card
-                              }
-                              onMouseEnter={() =>
-                                setHoveredCard(`LOAN-${item.id}`)
-                              }
-                              onMouseLeave={() => setHoveredCard(null)}
-                            >
-                              <div style={styles.cardTagRow}>
-                                <span
-                                  style={{
-                                    ...styles.badge,
-                                    backgroundColor: "#f6c851",
-                                  }}
-                                >
-                                  대출
-                                </span>
-                                {item.loanType && (
-                                  <span style={styles.subBadge}>
-                                    {item.loanType}
+                          {loanList.map((item, index) => {
+                            const key = `LOAN-${
+                              item.id ??
+                              item.fnncId ??
+                              item.productId ??
+                              item.loanId ??
+                              index
+                            }`;
+
+                            return (
+                              <div
+                                key={key}
+                                style={
+                                  hoveredCard === key
+                                    ? { ...styles.card, ...styles.cardHover }
+                                    : styles.card
+                                }
+                                onMouseEnter={() => setHoveredCard(key)}
+                                onMouseLeave={() => setHoveredCard(null)}
+                              >
+                                <div style={styles.cardTagRow}>
+                                  <span
+                                    style={{
+                                      ...styles.badge,
+                                      backgroundColor: "#f6c851",
+                                    }}
+                                  >
+                                    대출
                                   </span>
+                                  {item.loanType && (
+                                    <span style={styles.subBadge}>
+                                      {item.loanType}
+                                    </span>
+                                  )}
+                                </div>
+
+                                <h3 style={styles.cardTitle}>
+                                  {item.productName ||
+                                    item.loanName ||
+                                    "대출 상품"}
+                                </h3>
+
+                                <p style={styles.cardMeta}>
+                                  🏦{" "}
+                                  {item.provider || item.korCoNm || "금융기관"}
+                                </p>
+
+                                {item.avgRate && (
+                                  <p style={styles.cardMeta}>
+                                    📊 평균 금리 {item.avgRate}%
+                                  </p>
+                                )}
+
+                                {item.reason && (
+                                  <p style={styles.cardReason}>{item.reason}</p>
                                 )}
                               </div>
-                              <h3 style={styles.cardTitle}>
-                                {item.productName ||
-                                  item.loanName ||
-                                  "대출 상품"}
-                              </h3>
-                              <p style={styles.cardMeta}>
-                                🏦 {item.provider || item.korCoNm || "금융기관"}
-                              </p>
-                              {item.avgRate && (
-                                <p style={styles.cardMeta}>
-                                  📊 평균 금리 {item.avgRate}%
-                                </p>
-                              )}
-                              {item.reason && (
-                                <p style={styles.cardReason}>{item.reason}</p>
-                              )}
-                            </div>
-                          ))}
+                            );
+                          })}
                         </div>
                       )}
                     </>
@@ -632,52 +645,52 @@ const styles = {
     marginBottom: "8px",
   },
   mainTab: {
-  flex: 1,
-  padding: "10px 0",
-  borderRadius: 999,
-  backgroundColor: "#fff",
-  cursor: "pointer",
-  fontSize: "14px",
-  fontWeight: 500,
-  color: "#555",
-  outline: "none",
-  boxShadow: "none",
-  border: "1px solid #00000020",   // ✔ Policypage처럼 얇은 연한 테두리
-},
-mainTabActive: {
-  backgroundColor: "#9ed8b5",
-  color: "#fff",
-  fontWeight: 600,
-  border: "none",
-},
-subTabs: {
-  display: "flex",
-  gap: "8px",
-  marginBottom: "10px",
-  marginTop: "4px",
-  outline: "none",
-},
+    flex: 1,
+    padding: "10px 0",
+    borderRadius: 999,
+    backgroundColor: "#fff",
+    cursor: "pointer",
+    fontSize: "14px",
+    fontWeight: 500,
+    color: "#555",
+    outline: "none",
+    boxShadow: "none",
+    border: "1px solid #00000020", // ✔ Policypage처럼 얇은 연한 테두리
+  },
+  mainTabActive: {
+    backgroundColor: "#9ed8b5",
+    color: "#fff",
+    fontWeight: 600,
+    border: "none",
+  },
+  subTabs: {
+    display: "flex",
+    gap: "8px",
+    marginBottom: "10px",
+    marginTop: "4px",
+    outline: "none",
+  },
 
-subTab: {
-  flex: 1,
-  padding: "8px 0",
-  borderRadius: 999,
-  backgroundColor: "#fff",
-  cursor: "pointer",
-  fontSize: "13px",
-  fontWeight: 500,
-  color: "#555",
-  outline: "none",
-  boxShadow: "none",
-  border: "1px solid #00000020",
-},
+  subTab: {
+    flex: 1,
+    padding: "8px 0",
+    borderRadius: 999,
+    backgroundColor: "#fff",
+    cursor: "pointer",
+    fontSize: "13px",
+    fontWeight: 500,
+    color: "#555",
+    outline: "none",
+    boxShadow: "none",
+    border: "1px solid #00000020",
+  },
 
-subTabActive: {
-  backgroundColor: "#91c7f5",
-  color: "#fff",
-  fontWeight: 600,
-  border: "none",
-},
+  subTabActive: {
+    backgroundColor: "#91c7f5",
+    color: "#fff",
+    fontWeight: 600,
+    border: "none",
+  },
   centerBox: {
     marginTop: "30px",
     textAlign: "center",
