@@ -42,11 +42,11 @@ return ResponseEntity.ok().build();
     @Operation(summary = "청년정책 목록 조회", description = "DB에 저장된 청년정책 목록을 조회합니다.")
     @GetMapping
     public Page<YouthPolicyResponse> getPolicies(
-            @Parameter(description = "??? ????? (????? ??? ?????)")
+            @Parameter(description = "검색 키워드 (정책명 또는 기관명)")
             @RequestParam(required = false) String keyword,
-            @Parameter(description = "??????? (??: 11000)")
+            @Parameter(description = "지역코드 (예: 11000)")
             @RequestParam(required = false) String regionCode,
-            @Parameter(description = "???? (??: startDate,desc)")
+            @Parameter(description = "정렬 기준 (예: startDate,desc)")
             @RequestParam(required = false) String sort,
             @ParameterObject Pageable pageable
     ) {

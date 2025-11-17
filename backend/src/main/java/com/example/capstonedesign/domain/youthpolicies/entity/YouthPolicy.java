@@ -1,5 +1,6 @@
 package com.example.capstonedesign.domain.youthpolicies.entity;
 
+import com.example.capstonedesign.domain.products.entity.Products;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -20,6 +21,10 @@ public class YouthPolicy {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "product_id", nullable = false)
+    private Products product;
 
     /** 정책 고유번호 (온통청년 plcyNo) */
     @Column(unique = true, nullable = false)

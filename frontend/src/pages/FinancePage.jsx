@@ -1,15 +1,7 @@
-﻿import { useEffect, useMemo, useRef, useState } from "react";
+﻿import {useEffect, useMemo, useRef, useState} from "react";
 import api from "../lib/axios";
 import AppLayout from "../components/AppLayout";
-import {
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  Tooltip,
-  Legend,
-  ResponsiveContainer,
-} from "recharts";
+import {Bar, BarChart, Legend, ResponsiveContainer, Tooltip, XAxis, YAxis,} from "recharts";
 import FavoriteStar from "../components/FavoriteStar";
 
 const LOAN_TYPE_CONFIG = [
@@ -141,14 +133,24 @@ const groupLoanItemsByProduct = (items = []) => {
 
   items.forEach((item) => {
     const key = `${item.productName || ""}::${item.companyName || ""}`;
+
     if (!grouped.has(key)) {
       grouped.set(key, {
+        productId: item.productId || null,
         productName: item.productName || "-",
         companyName: item.companyName || "-",
         variants: [],
       });
     }
-    grouped.get(key).variants.push(item);
+
+      const group = grouped.get(key);
+
+      // 혹시 첫 번째 옵션에는 productId가 없고 뒤에만 들어있을 수 있으니 보정
+      if (!group.productId && item.productId) {
+          group.productId = item.productId;
+      }
+
+      group.variants.push(item);
   });
 
   return Array.from(grouped.values());
@@ -340,7 +342,7 @@ export default function FinancePage() {
       rateNum <= 0 ||
       yearsNum <= 0
     ) {
-      alert("모든 값을 올바르게 입력해주세요.");
+      alert("모든 값을 올바르게 입력해 주세요.");
       return;
     }
 
@@ -666,7 +668,7 @@ export default function FinancePage() {
       setProductPage(safePage);
     } catch (err) {
       console.error("Failed to fetch finance products:", err);
-      if (requestedCategory === "LOAN") {
+      if (category  === "LOAN") {
         setLoanResults({ ...INITIAL_LOAN_RESULTS });
       }
     } finally {

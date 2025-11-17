@@ -55,17 +55,17 @@ export default function SignupPage() {
         name: form.name,
         age: form.age ? Number(form.age) : null,
         income_band: form.income_band || null,
-        region: `${form.province} ${form.city}` || null,
+        region: `${form.province || ""} ${form.city || ""}`.trim(),
         is_homeless: form.is_homeless,
         notificationEnabled: form.notificationEnabled,
         role: "USER",
         birthdate: form.birthdate,
       };
       await api.post("/users/signup", payload);
-      alert("회원가입이 완료되었습니다.");
+      alert("회원 가입이 완료되었습니다.");
       window.location.href = "/login";
     } catch {
-      setMessage("회원가입 중 오류가 발생했습니다.");
+      setMessage("회원 가입 중 오류가 발생했습니다.");
     }
   };
 
@@ -80,7 +80,7 @@ export default function SignupPage() {
           (e.currentTarget.style.boxShadow = "0 4px 14px rgba(0,0,0,0.08)")
         }
       >
-        <h2 style={styles.title}>회원가입</h2>
+        <h2 style={styles.title}>회원 가입</h2>
         <form onSubmit={handleSubmit} style={styles.form}>
           <input
             type="text"
@@ -136,7 +136,7 @@ export default function SignupPage() {
           <input
             type="text"
             name="age"
-            placeholder="생년월일을 선택해주세요"
+            placeholder="생년월일을 선택해 주세요"
             value={form.age ? `나이: ${form.age}` : ""}
             readOnly
             style={{ ...styles.input, backgroundColor: "#f4f4f4" }}
@@ -156,7 +156,7 @@ export default function SignupPage() {
           </select>
           {form.income_band === "해당 없음" && (
             <p style={styles.infoText}>
-              소득 구간은 회원가입 후 마이페이지에서 수정할 수 있습니다.
+              소득 구간은 회원 가입 후 마이페이지에서 수정할 수 있습니다.
             </p>
           )}
           <RegionSelect
@@ -194,7 +194,7 @@ export default function SignupPage() {
             onMouseDown={(e) => (e.target.style.transform = "scale(0.99)")}
             onMouseUp={(e) => (e.target.style.transform = "scale(1.01)")}
           >
-            회원가입
+            회원 가입
           </button>
         </form>
         {message && <p style={styles.message}>{message}</p>}

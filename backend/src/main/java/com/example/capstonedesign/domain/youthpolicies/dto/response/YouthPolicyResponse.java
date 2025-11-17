@@ -16,6 +16,9 @@ import lombok.Data;
 @Builder
 public class YouthPolicyResponse {
 
+    private Long id;                // 엔티티 PK (정책 상세조회 용)
+    private Integer productId;      // 즐겨찾기/공통 product 매핑용
+
     private String policyNo;        // 정책 번호
     private String policyName;      // 정책명
     private String categoryLarge;   // 대분류
@@ -36,6 +39,8 @@ public class YouthPolicyResponse {
     /** 엔티티 → DTO 변환 */
     public static YouthPolicyResponse fromEntity(YouthPolicy policy) {
         return YouthPolicyResponse.builder()
+                .id(policy.getId())
+                .productId(policy.getProduct().getId())
                 .policyNo(policy.getPolicyNo())
                 .policyName(policy.getPolicyName())
                 .categoryLarge(policy.getCategoryLarge())
@@ -51,8 +56,12 @@ public class YouthPolicyResponse {
     }
 
     /** 추천 결과 포함 변환: 엔티티 + 점수 + 사유 */
-    public static YouthPolicyResponse fromEntityWithRecommendation(YouthPolicy policy, double score, String reason) {
+    public static YouthPolicyResponse fromEntityWithRecommendation(
+            YouthPolicy policy, double score, String reason) {
+
         return YouthPolicyResponse.builder()
+                .id(policy.getId())
+                .productId(policy.getProduct().getId())
                 .policyNo(policy.getPolicyNo())
                 .policyName(policy.getPolicyName())
                 .categoryLarge(policy.getCategoryLarge())

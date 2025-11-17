@@ -370,6 +370,7 @@ public class HousingAnnouncementsService {
      */
     private HousingAnnouncementsResponse toResponseFromLh(LhNotice notice) {
         return HousingAnnouncementsResponse.builder()
+                .productId(notice.getProduct().getId())
                 .id(notice.getId())
                 .name(notice.getPanNm())
                 .provider("LH 한국토지주택공사")

@@ -1,5 +1,6 @@
 package com.example.capstonedesign.domain.housingannouncements.entity;
 
+import com.example.capstonedesign.domain.products.entity.Products;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -26,6 +27,10 @@ public class LhNotice {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "product_id", nullable = false)
+    private Products product;
 
     /** 상위 공고유형명 (예: 임대공고, 분양공고) */
     private String uppAisTpNm;

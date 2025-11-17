@@ -18,7 +18,7 @@ import java.math.BigDecimal;
 @Builder
 public class FinanceLoanResponse {
 
-     private Integer productId;
+    private Integer productId;
 
     /** 상품명 (예: 개인신용대출 A형) */
     private String productName;
@@ -95,6 +95,5 @@ public class FinanceLoanResponse {
             .score(null)
             .reason(null)
             .build();
-}
-
+    }
 }

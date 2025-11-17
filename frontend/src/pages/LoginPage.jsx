@@ -114,7 +114,7 @@ export default function LoginPage() {
     style={styles.link}
     onClick={() => (window.location.href = "/signup")}
   >
-    회원가입
+    회원 가입
   </span>
 </div>
     </AppLayout>

@@ -1,4 +1,4 @@
-﻿import { useEffect, useMemo, useState } from "react";
+﻿import {useEffect, useMemo, useState} from "react";
 import AppLayout from "../components/AppLayout";
 import api from "../lib/axios";
 import FavoriteStar from "../components/FavoriteStar";
@@ -35,127 +35,127 @@ const SORT_OPTIONS = [
 const QUICK_KEYWORDS = ["주거", "취업", "창업", "금융", "생활", "교육", "교통"];
 
 const formatDate = (value) => {
-  if (!value || value === "00000000") return "-"; // 빈값 또는 잘못된 포맷 방지
+    if (!value || value === "00000000") return "-"; // 빈값 또는 잘못된 포맷 방지
 
-  try {
-    // 8자리 숫자 형태면 YYYY-MM-DD로 변환
-    if (/^\d{8}$/.test(value)) {
-      value = value.replace(/(\d{4})(\d{2})(\d{2})/, "$1-$2-$3");
+    try {
+        // 8자리 숫자 형태면 YYYY-MM-DD로 변환
+        if (/^\d{8}$/.test(value)) {
+            value = value.replace(/(\d{4})(\d{2})(\d{2})/, "$1-$2-$3");
+        }
+
+        const date = new Date(value);
+        if (isNaN(date.getTime())) return "-"; // Invalid Date 방지
+
+        return date.toLocaleDateString("ko-KR");
+    } catch {
+        return "-";
     }
-
-    const date = new Date(value);
-    if (isNaN(date.getTime())) return "-"; // Invalid Date 방지
-
-    return date.toLocaleDateString("ko-KR");
-  } catch {
-    return "-";
-  }
 };
 
 const buildPageNumbers = (currentPage, totalPages) => {
-  if (!totalPages) return [1];
-  if (totalPages <= MAX_PAGE_BUTTONS) {
-    return Array.from({ length: totalPages }, (_, idx) => idx + 1);
-  }
-  const blockIndex = Math.floor((currentPage - 1) / MAX_PAGE_BUTTONS);
-  const start = blockIndex * MAX_PAGE_BUTTONS + 1;
-  const length = Math.min(MAX_PAGE_BUTTONS, totalPages - start + 1);
-  return Array.from({ length }, (_, idx) => start + idx);
+    if (!totalPages) return [1];
+    if (totalPages <= MAX_PAGE_BUTTONS) {
+        return Array.from({ length: totalPages }, (_, idx) => idx + 1);
+    }
+    const blockIndex = Math.floor((currentPage - 1) / MAX_PAGE_BUTTONS);
+    const start = blockIndex * MAX_PAGE_BUTTONS + 1;
+    const length = Math.min(MAX_PAGE_BUTTONS, totalPages - start + 1);
+    return Array.from({ length }, (_, idx) => start + idx);
 };
 
 const normalizePagePayload = (payload) => {
-  if (!payload) {
-    return { content: [], totalPages: 0, totalElements: 0 };
+    if (!payload) {
+        return { content: [], totalPages: 0, totalElements: 0 };
 
-    const parseDateValue = (value) => {
-      if (!value || value === "00000000") return null;
-      let normalized = value;
-      if (/^\d{8}$/.test(value)) {
+        const parseDateValue = (value) => {
+            if (!value || value === "00000000") return null;
+            let normalized = value;
+            if (/^\d{8}$/.test(value)) {
+                normalized = value.replace(/(\d{4})(\d{2})(\d{2})/, "$1-$2-$3");
+            }
+            const date = new Date(normalized);
+            return Number.isNaN(date.getTime()) ? null : date;
+        };
+
+        const isOngoingAnnouncement = (value) => {
+            if (!value) return true;
+            const trimmed = value.trim();
+            if (!trimmed || trimmed === "00000000") return true;
+            return trimmed.includes("상시");
+        };
+
+        const filterRecentPolicies = (list = []) => {
+            const today = new Date();
+            const thirtyDaysAgo = new Date();
+            thirtyDaysAgo.setDate(today.getDate() - 30);
+
+            return list.filter((policy) => {
+                const start = parseDateValue(policy?.startDate);
+                if (!start) return false;
+                if (start < thirtyDaysAgo) return false;
+
+                const end = parseDateValue(policy?.endDate);
+                if (end && end < today && !isOngoingAnnouncement(policy?.endDate)) {
+                    return false;
+                }
+                return true;
+            });
+        };
+    }
+    const nested = payload?.data ?? payload?.result ?? payload;
+    if (Array.isArray(nested)) {
+        return {
+            content: nested,
+            totalPages: nested.length > 0 ? 1 : 0,
+            totalElements: nested.length,
+        };
+    }
+    const content = Array.isArray(nested.content) ? nested.content : [];
+    const totalPages =
+        typeof nested.totalPages === "number"
+            ? nested.totalPages
+            : content.length
+                ? 1
+                : 0;
+    const totalElements =
+        typeof nested.totalElements === "number"
+            ? nested.totalElements
+            : content.length;
+    return { content, totalPages, totalElements };
+};
+const parseDateValue = (value) => {
+    if (!value || value === "00000000") return null;
+    let normalized = value;
+    if (/^\d{8}$/.test(value)) {
         normalized = value.replace(/(\d{4})(\d{2})(\d{2})/, "$1-$2-$3");
-      }
-      const date = new Date(normalized);
-      return Number.isNaN(date.getTime()) ? null : date;
-    };
+    }
+    const date = new Date(normalized);
+    return Number.isNaN(date.getTime()) ? null : date;
+};
 
-    const isOngoingAnnouncement = (value) => {
-      if (!value) return true;
-      const trimmed = value.trim();
-      if (!trimmed || trimmed === "00000000") return true;
-      return trimmed.includes("상시");
-    };
+const isOngoingAnnouncement = (value) => {
+    if (!value) return true;
+    const trimmed = value.trim();
+    if (!trimmed || trimmed === "00000000") return true;
+    return trimmed.includes("상시");
+};
 
-    const filterRecentPolicies = (list = []) => {
-      const today = new Date();
-      const thirtyDaysAgo = new Date();
-      thirtyDaysAgo.setDate(today.getDate() - 30);
+const filterRecentPolicies = (list = []) => {
+    const today = new Date();
+    const thirtyDaysAgo = new Date();
+    thirtyDaysAgo.setDate(today.getDate() - 30);
 
-      return list.filter((policy) => {
+    return list.filter((policy) => {
         const start = parseDateValue(policy?.startDate);
         if (!start) return false;
         if (start < thirtyDaysAgo) return false;
 
         const end = parseDateValue(policy?.endDate);
         if (end && end < today && !isOngoingAnnouncement(policy?.endDate)) {
-          return false;
+            return false;
         }
         return true;
-      });
-    };
-  }
-  const nested = payload?.data ?? payload?.result ?? payload;
-  if (Array.isArray(nested)) {
-    return {
-      content: nested,
-      totalPages: nested.length > 0 ? 1 : 0,
-      totalElements: nested.length,
-    };
-  }
-  const content = Array.isArray(nested.content) ? nested.content : [];
-  const totalPages =
-    typeof nested.totalPages === "number"
-      ? nested.totalPages
-      : content.length
-      ? 1
-      : 0;
-  const totalElements =
-    typeof nested.totalElements === "number"
-      ? nested.totalElements
-      : content.length;
-  return { content, totalPages, totalElements };
-};
-const parseDateValue = (value) => {
-  if (!value || value === "00000000") return null;
-  let normalized = value;
-  if (/^\d{8}$/.test(value)) {
-    normalized = value.replace(/(\d{4})(\d{2})(\d{2})/, "$1-$2-$3");
-  }
-  const date = new Date(normalized);
-  return Number.isNaN(date.getTime()) ? null : date;
-};
-
-const isOngoingAnnouncement = (value) => {
-  if (!value) return true;
-  const trimmed = value.trim();
-  if (!trimmed || trimmed === "00000000") return true;
-  return trimmed.includes("상시");
-};
-
-const filterRecentPolicies = (list = []) => {
-  const today = new Date();
-  const thirtyDaysAgo = new Date();
-  thirtyDaysAgo.setDate(today.getDate() - 30);
-
-  return list.filter((policy) => {
-    const start = parseDateValue(policy?.startDate);
-    if (!start) return false;
-    if (start < thirtyDaysAgo) return false;
-
-    const end = parseDateValue(policy?.endDate);
-    if (end && end < today && !isOngoingAnnouncement(policy?.endDate)) {
-      return false;
-    }
-    return true;
-  });
+    });
 };
 
 export default function PolicyPage() {
@@ -242,7 +242,7 @@ export default function PolicyPage() {
         console.error("청년 정책 목록 조회 실패:", err);
         if (!ignore) {
           setError(
-            "정책 정보를 불러오지 못했습니다. 잠시 후 다시 시도해주세요."
+            "정책 정보를 불러오지 못했습니다. 잠시 후 다시 시도해 주세요."
           );
           setPolicies([]);
         }
@@ -452,7 +452,7 @@ export default function PolicyPage() {
                           >
                             <div style={{ transform: "translateY(-1px)" }}>
                               <FavoriteStar
-                                productId={policy.policyNo || policy.policyName}
+                                productId={policy.productId}
                               />
                             </div>
                             <h3 style={styles.policyTitle}>

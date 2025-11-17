@@ -16,7 +16,7 @@ import java.math.BigDecimal;
 @Builder
 public class RentLoanResponse {
 
-     private Integer productId;
+    private Integer productId;
 
     /** 상품명 (예: 전세자금대출 A형) */
     private String productName;
@@ -55,8 +55,8 @@ public static RentLoanResponse fromEntity(FinanceLoanOption option) {
             .lendRateMin(option.getLendRateMin())
             .lendRateMax(option.getLendRateMax())
             .lendRateAvg(option.getLendRateAvg())
-            .lendTypeName(option.getLendTypeName())   // ✅ 수정됨
-            .rpayTypeName(option.getRpayTypeName())   // ✅ 수정됨
+            .lendTypeName(option.getLendTypeName())
+            .rpayTypeName(option.getRpayTypeName())
             .build();
 }
 }

@@ -8,6 +8,7 @@ import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import java.util.List;
 import java.util.Optional;
 
 /**
@@ -15,12 +16,6 @@ import java.util.Optional;
  * -------------------------------------------------
  * - 즐겨찾기(Favorites) 엔티티용 JPA 리포지토리
  * - 존재 여부, 삭제, 페이지 조회 등 커스텀 쿼리 제공
- * <p></p>
- * 메서드 요약
- * 1) existsByUser_IdAndProduct_Id : (user, product) 조합 존재 여부 확인
- * 2) deleteByUserAndProduct       : (user, product) 조합 삭제 (idempotent)
- * 3) findPageByUserId             : 사용자별 최신순 페이지 조회 (상품 즉시 로딩)
- * 4) findByUser_IdAndProduct_Id   : 단건 조회
  */
 public interface FavoritesRepository extends JpaRepository<Favorites, Integer> {
 
@@ -38,8 +33,13 @@ public interface FavoritesRepository extends JpaRepository<Favorites, Integer> {
      * @return 삭제된 행(row) 수 (없으면 0)
      */
     @Modifying(clearAutomatically = true, flushAutomatically = true)
-    @Query("DELETE FROM Favorites f WHERE f.user.id = :userId AND f.product.id = :productId")
-    int deleteByUserAndProduct(@Param("userId") Integer userId, @Param("productId") Integer productId);
+    @Query("""
+           DELETE FROM Favorites f
+           WHERE f.user.id = :userId
+             AND f.product.id = :productId
+           """)
+    int deleteByUserAndProduct(@Param("userId") Integer userId,
+                               @Param("productId") Integer productId);
 
     /**
      * 사용자별 즐겨찾기 페이지 조회 (최신순)
@@ -70,4 +70,7 @@ public interface FavoritesRepository extends JpaRepository<Favorites, Integer> {
 
     /** 단건 조회: (user, product) 조합으로 즐겨찾기 엔티티 조회 */
     Optional<Favorites> findByUser_IdAndProduct_Id(Integer userId, Integer productId);
+
+    /** 전체 리스트 조회: 사용자별 최신순 정렬 */
+    List<Favorites> findByUser_IdOrderByCreatedAtDesc(Integer userId);
 }
