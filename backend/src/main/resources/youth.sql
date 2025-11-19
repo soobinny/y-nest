@@ -10,20 +10,20 @@ CREATE TABLE IF NOT EXISTS users
 (
     role                 ENUM ('USER','ADMIN')        NOT NULL DEFAULT 'USER',
     id                   INT AUTO_INCREMENT PRIMARY KEY,
-    email                VARCHAR(255) NOT NULL UNIQUE,
-    password             VARCHAR(255) NOT NULL,
-    name                 VARCHAR(255) NOT NULL,
+    email                VARCHAR(255)                 NOT NULL UNIQUE,
+    password             VARCHAR(255)                 NOT NULL,
+    name                 VARCHAR(255)                 NOT NULL,
     age                  INT,
     income_band          VARCHAR(50),
     region               VARCHAR(50),
-    is_homeless          BOOLEAN               DEFAULT FALSE,
-    deleted              BOOLEAN      NOT NULL DEFAULT FALSE,
-    deleted_at           TIMESTAMP NULL     DEFAULT NULL,
-    created_at           TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at           TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    notification_enabled BOOLEAN      NOT NULL DEFAULT TRUE,
+    is_homeless          BOOLEAN                               DEFAULT FALSE,
+    deleted              BOOLEAN                      NOT NULL DEFAULT FALSE,
+    deleted_at           TIMESTAMP                    NULL     DEFAULT NULL,
+    created_at           TIMESTAMP                    NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at           TIMESTAMP                    NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    notification_enabled BOOLEAN                      NOT NULL DEFAULT TRUE,
     notification_channel ENUM ('EMAIL','KAKAO','SMS') NOT NULL DEFAULT 'EMAIL',
-    birthdate            DATE         NOT NULL
+    birthdate            DATE                         NOT NULL
 );
 
 -- =========================
@@ -32,8 +32,8 @@ CREATE TABLE IF NOT EXISTS users
 CREATE TABLE IF NOT EXISTS products
 (
     id         INT AUTO_INCREMENT PRIMARY KEY,
-    type       ENUM('HOUSING', 'FINANCE', 'POLICY') NOT NULL,
-    name       VARCHAR(255) NOT NULL,
+    type       ENUM ('HOUSING', 'FINANCE', 'POLICY') NOT NULL,
+    name       VARCHAR(255)                          NOT NULL,
     provider   VARCHAR(100),
     detail_url VARCHAR(500)
 );
@@ -56,8 +56,8 @@ CREATE TABLE IF NOT EXISTS finance_companies
 CREATE TABLE IF NOT EXISTS finance_products
 (
     id             INT AUTO_INCREMENT PRIMARY KEY,
-    product_id     INT         NOT NULL,
-    fin_co_no      VARCHAR(20) NOT NULL,
+    product_id     INT                                                                           NOT NULL,
+    fin_co_no      VARCHAR(20)                                                                   NOT NULL,
     product_type   ENUM ('DEPOSIT', 'SAVING', 'MORTGAGE_LOAN', 'RENT_HOUSE_LOAN', 'CREDIT_LOAN') NOT NULL,
     join_condition TEXT,
     interest_rate  DECIMAL(5, 2),
@@ -72,7 +72,7 @@ CREATE TABLE IF NOT EXISTS finance_products
 CREATE TABLE IF NOT EXISTS finance_loan_options
 (
     id                     INT AUTO_INCREMENT PRIMARY KEY,
-    finance_product_id     INT       NOT NULL,
+    finance_product_id     INT           NOT NULL,
 
     -- 기본 금리 정보
     lend_rate_min          DECIMAL(5, 2) NULL,
@@ -85,13 +85,13 @@ CREATE TABLE IF NOT EXISTS finance_loan_options
     prev_lend_rate_avg     DECIMAL(5, 2) NULL COMMENT '이전 평균 금리',
 
     -- 대출 옵션 공통 필드
-    rpay_type_name         VARCHAR(100) NULL, -- 상환유형 이름 (예: 원리금균등, 만기일시)
-    lend_type_name         VARCHAR(100) NULL, -- 금리유형 이름 (예: 고정, 변동)
-    mrtg_type_name         VARCHAR(100) NULL, -- 담보유형 이름 (예: 아파트, 보증 등)
+    rpay_type_name         VARCHAR(100)  NULL, -- 상환유형 이름 (예: 원리금균등, 만기일시)
+    lend_type_name         VARCHAR(100)  NULL, -- 금리유형 이름 (예: 고정, 변동)
+    mrtg_type_name         VARCHAR(100)  NULL, -- 담보유형 이름 (예: 아파트, 보증 등)
 
 -- 신용등급별 금리 필드 추가
-    crdt_lend_rate_type    VARCHAR(10) NULL COMMENT '금리구분 코드',
-    crdt_lend_rate_type_nm VARCHAR(100) NULL COMMENT '금리구분명 (고정/변동)',
+    crdt_lend_rate_type    VARCHAR(10)   NULL COMMENT '금리구분 코드',
+    crdt_lend_rate_type_nm VARCHAR(100)  NULL COMMENT '금리구분명 (고정/변동)',
     crdt_grad_1            DECIMAL(5, 2) NULL COMMENT '900점 초과',
     crdt_grad_4            DECIMAL(5, 2) NULL COMMENT '801~900점',
     crdt_grad_5            DECIMAL(5, 2) NULL COMMENT '701~800점',
@@ -103,8 +103,8 @@ CREATE TABLE IF NOT EXISTS finance_loan_options
     crdt_grad_avg          DECIMAL(5, 2) NULL COMMENT '평균 금리',
 
     -- 생성/수정 시각
-    created_at             TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at             TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    created_at             TIMESTAMP     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at             TIMESTAMP     NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
 
     -- FK
     CONSTRAINT fk_flo_product
@@ -248,6 +248,17 @@ CREATE TABLE IF NOT EXISTS password_reset_tokens
     expires_at TIMESTAMP    NOT NULL,
     used       BOOLEAN      NOT NULL DEFAULT FALSE,
     created_at TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    INDEX      idx_prt_userid (user_id),
+    INDEX idx_prt_userid (user_id),
     CONSTRAINT fk_prt_user FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE
+);
+
+-- =========================
+-- chat_messages
+-- =========================
+CREATE TABLE IF NOT EXISTS chat_messages
+(
+    id         BIGINT AUTO_INCREMENT PRIMARY KEY,
+    content    TEXT        NOT NULL,
+    sender     VARCHAR(50) NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
