@@ -255,9 +255,6 @@ CREATE TABLE IF NOT EXISTS password_reset_tokens
 -- =========================
 -- chat_messages
 -- =========================
-<<<<<<< HEAD
-CREATE TABLE chat_messages
-=======
 CREATE TABLE IF NOT EXISTS chat_messages
 >>>>>>> 54c3909c9c457a6e602e3ad0362764a274d248c9
 (
