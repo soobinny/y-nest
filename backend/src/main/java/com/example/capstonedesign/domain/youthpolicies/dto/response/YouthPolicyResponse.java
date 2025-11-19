@@ -36,6 +36,44 @@ public class YouthPolicyResponse {
     /** 추천 근거 요약 */
     private String reason;
 
+    /** 정책 설명 레이아웃 통일 처리 */
+    private static String normalizeContent(String raw) {
+        if (raw == null || raw.isBlank()) return "";
+
+        String text = raw;
+
+        // 1) 모든 bullet 기호를 '-' 로 통일
+        text = text.replace("○", "-")
+                .replace("◦", "-")
+                .replace("·", "-")
+                .replace("●", "-")
+                .replace("◉", "-")
+                .replace("◎", "-")
+                .replace("◆", "-")
+                .replace("■", "-")
+                .replace("□", "-")
+                .replace("▪", "-")
+                .replace("▣", "-")
+                .replace("•", "-")
+                .replace("*", "-")
+                .replace("❍", "-")
+                .replace("ㅇ", "-");
+
+        // 2) '-일시' → '- 일시' 같은 잘못된 패턴 보정
+        text = text.replaceAll("-\\s*(일시|기간|장소|대상|목적|내용|주요내용)", "- $1");
+
+        // 3) ': ' 없이 붙은 경우 정리
+        text = text.replaceAll("\\s*:\\s*", " : ");
+
+        // 4) 여러 줄바꿈 → 하나로 정리
+        text = text.replaceAll("\n{2,}", "\n");
+
+        // 5) 앞뒤 공백 제거
+        text = text.trim();
+
+        return text;
+    }
+
     /** 엔티티 → DTO 변환 */
     public static YouthPolicyResponse fromEntity(YouthPolicy policy) {
         return YouthPolicyResponse.builder()
@@ -50,7 +88,7 @@ public class YouthPolicyResponse {
                 .regionCode(policy.getRegionCode())
                 .startDate(policy.getStartDate())
                 .endDate(policy.getEndDate())
-                .supportContent(policy.getSupportContent())
+                .supportContent(normalizeContent(policy.getSupportContent()))
                 .applyUrl(policy.getApplyUrl())
                 .build();
     }
@@ -71,7 +109,7 @@ public class YouthPolicyResponse {
                 .regionCode(policy.getRegionCode())
                 .startDate(policy.getStartDate())
                 .endDate(policy.getEndDate())
-                .supportContent(policy.getSupportContent())
+                .supportContent(normalizeContent(policy.getSupportContent()))
                 .applyUrl(policy.getApplyUrl())
                 .score(score)
                 .reason(reason)
