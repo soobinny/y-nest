@@ -412,11 +412,15 @@ export default function RecommendPage() {
                                   >
                                     대출
                                   </span>
-                                  {item.loanType && (
-                                    <span style={styles.subBadge}>
-                                      {item.loanType}
-                                    </span>
-                                  )}
+
+                                  <span style={styles.subBadge}>
+                                    {item.loanType ||
+                                      item.loanCategory ||
+                                      item.loanTypeNm ||
+                                      item.type ||
+                                      item.provider ||
+                                      "LOAN"}
+                                  </span>
                                 </div>
 
                                 <h3 style={styles.cardTitle}>
