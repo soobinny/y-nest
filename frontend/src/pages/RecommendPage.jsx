@@ -30,6 +30,8 @@ export default function RecommendPage() {
   const userIdRaw = localStorage.getItem("userId");
   const userId = userIdRaw ? parseInt(userIdRaw, 10) : null;
 
+  const VISIBLE_COUNT = 9;
+
   useEffect(() => {
     if (!token || !userId) {
       alert("로그인이 필요한 서비스입니다.");
@@ -184,7 +186,7 @@ export default function RecommendPage() {
                     <EmptyMessage />
                   ) : (
                     <div style={styles.cardList}>
-                      {lhList.map((item) => (
+                      {lhList.slice(0, VISIBLE_COUNT).map((item) => (
                         <div
                           key={`LH-${item.id}`}
                           style={
@@ -245,7 +247,7 @@ export default function RecommendPage() {
                     <EmptyMessage />
                   ) : (
                     <div style={styles.cardList}>
-                      {shList.map((item) => (
+                      {shList.slice(0, VISIBLE_COUNT).map((item) => (
                         <div
                           key={`SH-${item.id}`}
                           style={
@@ -335,7 +337,7 @@ export default function RecommendPage() {
                         <EmptyMessage />
                       ) : (
                         <div style={styles.cardList}>
-                          {depositList.map((item) => (
+                          {depositList.slice(0, VISIBLE_COUNT).map((item) => (
                             <FinanceProductCard
                               key={`DEP-${item.id}`}
                               item={item}
@@ -359,7 +361,7 @@ export default function RecommendPage() {
                         <EmptyMessage />
                       ) : (
                         <div style={styles.cardList}>
-                          {savingList.map((item) => (
+                          {savingList.slice(0, VISIBLE_COUNT).map((item) => (
                             <FinanceProductCard
                               key={`SAV-${item.id}`}
                               item={item}
@@ -383,7 +385,7 @@ export default function RecommendPage() {
                         <EmptyMessage />
                       ) : (
                         <div style={styles.cardList}>
-                          {loanList.map((item, index) => {
+                          {loanList.slice(0, VISIBLE_COUNT).map((item, index) => {
                             const key = `LOAN-${
                               item.id ??
                               item.fnncId ??
@@ -461,7 +463,7 @@ export default function RecommendPage() {
                     <EmptyMessage />
                   ) : (
                     <div style={styles.cardList}>
-                      {policyList.map((item, index) => {
+                      {policyList.slice(0, VISIBLE_COUNT).map((item, index) => {
                         // id가 undefined일 때 대비 → index로 fallback key 생성
                         const key = `POLICY-${item.id ?? index}`;
 
