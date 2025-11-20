@@ -1,7 +1,8 @@
-﻿import {useEffect, useState} from "react";
+﻿import { useEffect, useState } from "react";
 import AppLayout from "../components/AppLayout";
 import api from "../lib/axios";
 import FavoriteStar from "../components/FavoriteStar";
+import { useLocation } from "react-router-dom";
 
 // 페이지당 아이템 수 & 페이지 버튼 수
 const PAGE_SIZE = 10;
@@ -88,8 +89,8 @@ const buildPageNumbers = (currentPage, totalPages) => {
 const normalizeItem = (item, sourceType) => {
   if (sourceType === "LH") {
     return {
-      id: item.id,                     // 공고 PK
-      productId: item.productId,       // Products.
+      id: item.id, // 공고 PK
+      productId: item.productId, // Products.
       title: item.name,
       status: item.status,
       region: item.regionName,
@@ -115,7 +116,20 @@ const normalizeItem = (item, sourceType) => {
 };
 
 export default function HousingPage() {
-  const [sourceType, setSourceType] = useState("LH");
+  const location = useLocation();
+  const params = new URLSearchParams(location.search);
+  const typeParam = params.get("type");
+
+  const [sourceType, setSourceType] = useState(() => {
+    if (typeParam === "sh") return "SH";
+    return "LH";
+  });
+
+  useEffect(() => {
+    if (typeParam === "sh") setSourceType("SH");
+    else setSourceType("LH");
+  }, [typeParam]);
+
   const [category, setCategory] = useState("ALL");
   const [status, setStatus] = useState("ALL");
   const [sort, setSort] = useState("noticeDate,desc");

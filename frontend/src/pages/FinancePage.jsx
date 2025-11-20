@@ -1,8 +1,17 @@
-﻿import {useEffect, useMemo, useRef, useState} from "react";
+﻿import { useEffect, useMemo, useRef, useState } from "react";
 import api from "../lib/axios";
 import AppLayout from "../components/AppLayout";
-import {Bar, BarChart, Legend, ResponsiveContainer, Tooltip, XAxis, YAxis,} from "recharts";
+import {
+  Bar,
+  BarChart,
+  Legend,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from "recharts";
 import FavoriteStar from "../components/FavoriteStar";
+import { useLocation } from "react-router-dom";
 
 const LOAN_TYPE_CONFIG = [
   { type: "MORTGAGE_LOAN", title: "주택담보대출" },
@@ -143,14 +152,14 @@ const groupLoanItemsByProduct = (items = []) => {
       });
     }
 
-      const group = grouped.get(key);
+    const group = grouped.get(key);
 
-      // 혹시 첫 번째 옵션에는 productId가 없고 뒤에만 들어있을 수 있으니 보정
-      if (!group.productId && item.productId) {
-          group.productId = item.productId;
-      }
+    // 혹시 첫 번째 옵션에는 productId가 없고 뒤에만 들어있을 수 있으니 보정
+    if (!group.productId && item.productId) {
+      group.productId = item.productId;
+    }
 
-      group.variants.push(item);
+    group.variants.push(item);
   });
 
   return Array.from(grouped.values());
@@ -309,7 +318,22 @@ export default function FinancePage() {
     ...INITIAL_LOAN_PAGES,
   });
   const [loading, setLoading] = useState(true);
-  const [category, setCategory] = useState("DEPOSIT");
+  const location = useLocation();
+  const params = new URLSearchParams(location.search);
+  const typeParam = params.get("type");
+
+  const [category, setCategory] = useState(() => {
+    if (typeParam === "saving") return "SAVING";
+    if (typeParam === "loan") return "LOAN";
+    return "DEPOSIT"; // 기본값
+  });
+
+    useEffect(() => {
+    if (typeParam === "saving") setCategory("SAVING");
+    else if (typeParam === "loan") setCategory("LOAN");
+    else if (typeParam === "deposit") setCategory("DEPOSIT");
+  }, [typeParam]);
+
   const [keyword, setKeyword] = useState("");
   const [sortOption, setSortOption] = useState("id,desc");
   const latestCategoryRef = useRef(category);
@@ -668,7 +692,7 @@ export default function FinancePage() {
       setProductPage(safePage);
     } catch (err) {
       console.error("Failed to fetch finance products:", err);
-      if (category  === "LOAN") {
+      if (category === "LOAN") {
         setLoanResults({ ...INITIAL_LOAN_RESULTS });
       }
     } finally {
@@ -1144,7 +1168,9 @@ export default function FinancePage() {
                                           transform: "translateY(-1px)",
                                         }}
                                       >
-                                        <FavoriteStar productId={group.productId} />
+                                        <FavoriteStar
+                                          productId={group.productId}
+                                        />
                                       </div>
 
                                       <div>

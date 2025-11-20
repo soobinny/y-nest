@@ -61,10 +61,8 @@ export default function AppLayout({ children, narrow = false }) {
               {activeDropdown === "housing" && (
                 <div style={styles.dropdown}>
                   {[
-                    { name: "청약", link: "/housing?type=cheongyak" },
-                    { name: "임대", link: "/housing?type=rental" },
-                    { name: "매입임대", link: "/housing?type=maeip" },
-                    { name: "행복주택", link: "/housing?type=happy" },
+                    { name: "LH", link: "/housing?type=lh" },
+                    { name: "SH", link: "/housing?type=sh" },
                   ].map((item) => (
                     <a
                       key={item.name}
