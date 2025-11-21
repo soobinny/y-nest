@@ -197,7 +197,7 @@ const styles = {
   header: {
     padding: "10px 14px",
     borderBottom: "1px solid #f0f0f0",
-    backgroundColor: "#5bc085ff",
+    backgroundColor: "#91c7f5",
     backgroundImage: "none",
     boxShadow: "none",
     padding: "10px 14px",
@@ -268,7 +268,7 @@ const styles = {
     whiteSpace: "pre-wrap",
   },
   userBubble: {
-    backgroundColor: "#5bc085ff",
+    backgroundColor: "#91c7f5",
     color: "#ffffff",
     borderBottomRightRadius: "2px",
   },
@@ -301,7 +301,7 @@ const styles = {
     height: "36px",
     borderRadius: "8px",
     border: "none",
-    backgroundColor: "#5bc085ff",
+    backgroundColor: "#91c7f5",
     color: "#ffffff",
     fontSize: "13px",
     fontWeight: 600,
