@@ -22,6 +22,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
 /**
@@ -306,7 +307,13 @@ public class UsersController {
         if (principal instanceof String email) {
             return usersService.requireActiveByEmail(email);
         }
-        // UserDetails 등 다른 타입 대응
+        if (principal instanceof UserDetails details) {
+            String username = details.getUsername();
+            if (username.matches("\\d+")) {
+                return usersService.requireActiveById(Integer.valueOf(username));
+            }
+            return usersService.requireActiveByEmail(username);
+        }
         String username = principal.toString();
         if (username.matches("\\d+")) {
             Integer id = Integer.valueOf(username);
@@ -315,4 +322,3 @@ public class UsersController {
         return usersService.requireActiveByEmail(username);
     }
 }
-
