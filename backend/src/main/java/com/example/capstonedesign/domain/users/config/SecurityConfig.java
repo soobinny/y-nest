@@ -22,7 +22,7 @@ public class SecurityConfig {
         http
                 .csrf(AbstractHttpConfigurer::disable)
 
-                // ✅ CORS 설정 추가
+                // CORS 설정 추가
                 .cors(Customizer.withDefaults())
 
                 // 요청 경로별 권한 설정
