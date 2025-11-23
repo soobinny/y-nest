@@ -36,7 +36,7 @@ import org.springframework.web.bind.annotation.*;
  * ※ 모든 이메일 발송은 SMTP 기반으로 처리됨
  */
 @RestController
-@RequestMapping("/users")
+@RequestMapping("/api/users")
 @RequiredArgsConstructor
 @Tag(name = "Users", description = "회원 관련 API (회원 가입, 본인 확인, 아이디 찾기, 비밀번호 재설정)")
 public class UsersController {

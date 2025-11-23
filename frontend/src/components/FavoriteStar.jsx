@@ -18,16 +18,25 @@ export default function FavoriteStar({ productId }) {
   // 초기 즐겨찾기 여부 불러오기
         const fetchStatus = async () => {
             try {
-                const res = await api.get(`/api/favorites/exists/${productId}`);
+                const res = await api.get(`/favorites/exists/${productId}`);
                 setIsFav(res.data === true);
             } catch (err) {
-                console.warn(
-                    "FavoriteStar exists API 실패",
-                    productId,
-                    err?.response?.status,
-                    err?.response?.data
-                );
-                setIsFav(false);
+
+                const status = err?.response?.status;
+
+                if (status === 401) {
+                    // 로그인 안 한 상태: 조용히 off 상태로
+                    setIsFav(false);
+                } else {
+                    // 진짜 에러(500/404 등)만 경고
+                    console.warn(
+                        "FavoriteStar exists API 실패(기타 오류)",
+                        productId,
+                        status,
+                        err?.response?.data
+                    );
+                    setIsFav(false);
+                }
             } finally {
                 setLoading(false);
             }
@@ -43,7 +52,7 @@ export default function FavoriteStar({ productId }) {
         }
 
         try {
-            const res = await api.post(`/api/favorites/toggle/${productId}`);
+            const res = await api.post(`/favorites/toggle/${productId}`);
             const added = res.data === true;
             setIsFav(added);
 

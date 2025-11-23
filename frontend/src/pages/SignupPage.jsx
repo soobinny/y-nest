@@ -1,9 +1,12 @@
-import { useState } from "react";
+import {useState} from "react";
 import api from "../lib/axios";
 import RegionSelect from "../components/RegionSelect";
 import AppLayout from "../components/AppLayout";
+import {useNavigate} from "react-router-dom";
 
 export default function SignupPage() {
+  const navigate = useNavigate();
+
   const [form, setForm] = useState({
     name: "",
     email: "",
@@ -63,7 +66,7 @@ export default function SignupPage() {
       };
       await api.post("/users/signup", payload);
       alert("회원 가입이 완료되었습니다.");
-      window.location.href = "/login";
+      navigate("/login");
     } catch {
       setMessage("회원 가입 중 오류가 발생했습니다.");
     }

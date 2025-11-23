@@ -60,7 +60,7 @@ export default function ChatWidget({ variant = "embedded", onClose }) {
     setInput("");
 
     try {
-      const res = await api.post("/api/chat", { message: trimmed });
+      const res = await api.post("/chat", { message: trimmed });
       const botReply = res?.data?.reply ?? "응답을 받아오지 못했어요. 😢";
 
       const botMessage = { from: "bot", text: botReply };
@@ -200,11 +200,6 @@ const styles = {
     backgroundColor: "#91c7f5",
     backgroundImage: "none",
     boxShadow: "none",
-    padding: "10px 14px",
-    borderBottom: "1px solid #f0f0f0",
-    color: "#ffffff",
-    display: "flex",
-    alignItems: "center",
     color: "#ffffff",
     display: "flex",
     alignItems: "center",

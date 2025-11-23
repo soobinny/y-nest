@@ -169,13 +169,13 @@ export default function HousingPage() {
             ? trimmedKeyword.length > 0 ||
               category !== "ALL" ||
               status !== "ALL"
-              ? "/api/housings/search"
-              : "/api/housings"
+              ? "/housings/search"
+              : "/housings"
             : trimmedKeyword.length > 0 ||
               category !== "ALL" ||
               status !== "ALL"
-            ? "/api/sh/housings/search"
-            : "/api/sh/housings";
+            ? "/sh/housings/search"
+            : "/sh/housings";
 
         const res = await api.get(endpoint, { params });
         if (ignore) return;
@@ -209,18 +209,18 @@ export default function HousingPage() {
         const [res1, res2] =
           sourceType === "LH"
             ? await Promise.all([
-                api.get("/api/housings/closing-soon", {
+                api.get("/housings/closing-soon", {
                   params: { page: 0, size: 5 },
                 }),
-                api.get("/api/housings/recent", {
+                api.get("/housings/recent", {
                   params: { page: 0, size: 5 },
                 }),
               ])
             : await Promise.all([
-                api.get("/api/sh/housings/recommend", {
+                api.get("/sh/housings/recommend", {
                   params: { page: 0, size: 5 },
                 }),
-                api.get("/api/sh/housings/recent", {
+                api.get("/sh/housings/recent", {
                   params: { page: 0, size: 5 },
                 }),
               ]);

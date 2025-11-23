@@ -28,7 +28,7 @@ export default function FavoritesPage() {
   const [keywordInput, setKeywordInput] = useState("");
   const [page, setPage] = useState(1);
 
-  // ✅ 전체 즐겨찾기 (백엔드에서 한 번 가져옴)
+  // 전체 즐겨찾기 (백엔드에서 한 번 가져옴)
   const [allFavorites, setAllFavorites] = useState([]);
   const [loading, setLoading] = useState(false);
 
@@ -37,7 +37,7 @@ export default function FavoritesPage() {
     const fetchFavorites = async () => {
       try {
         setLoading(true);
-        const res = await api.get("/api/favorites", {
+        const res = await api.get("/favorites", {
           params: { page: 0, size: 100 }, // 넉넉하게
         });
         setAllFavorites(res.data.content || []);

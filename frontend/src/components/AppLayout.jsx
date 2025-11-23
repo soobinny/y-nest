@@ -1,7 +1,9 @@
 import {useEffect, useState} from "react";
 import FloatingChatbot from "./FloatingChatbot";
+import {useNavigate} from "react-router-dom";
 
 export default function AppLayout({ children, narrow = false }) {
+  const navigate = useNavigate();
   const [activeDropdown, setActiveDropdown] = useState(null);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
@@ -16,20 +18,21 @@ export default function AppLayout({ children, narrow = false }) {
       localStorage.removeItem("accessToken");
       setIsLoggedIn(false);
       alert("로그아웃되었습니다.");
-      window.location.href = "/home";
+        navigate("/home");
     } else {
-      window.location.href = "/login";
+        navigate("/login");
     }
   };
 
   const handleProtectedClick = (e, path) => {
     e.preventDefault();
     const token = localStorage.getItem("accessToken");
-    if (!token) {
-      window.location.href = "/login";
-      return;
-    }
-    window.location.href = path;
+      if (!token) {
+          navigate("/login");
+          return;
+      }
+
+      navigate(path);
   };
 
   return (
@@ -40,14 +43,12 @@ export default function AppLayout({ children, narrow = false }) {
 
           {/* 로고 */}
           <div style={styles.logo}>
-            <a href="/home" style={styles.logoText}>Y-Nest</a>
+              <span style={styles.logoText} onClick={() => navigate("/home")}>Y-Nest</span>
           </div>
 
           {/* 네비게이션 */}
           <nav style={styles.nav}>
-            <a href="/home" style={styles.link}>
-              홈
-            </a>
+              <span style={styles.link} onClick={() => navigate("/home")}>홈</span>
 
             {/* 주거공고 */}
             <div
@@ -55,79 +56,80 @@ export default function AppLayout({ children, narrow = false }) {
               onMouseEnter={() => setActiveDropdown("housing")}
               onMouseLeave={() => setActiveDropdown(null)}
             >
-              <a href="/housing" style={styles.link}>
-                주거공고
-              </a>
+                <span style={styles.link} onClick={() => navigate("/housing")}>주거공고</span>
               {activeDropdown === "housing" && (
                 <div style={styles.dropdown}>
-                  {[
-                    { name: "LH", link: "/housing?type=lh" },
-                    { name: "SH", link: "/housing?type=sh" },
-                  ].map((item) => (
-                    <a
-                      key={item.name}
-                      href={item.link}
-                      style={styles.dropdownItem}
-                      onMouseEnter={(e) =>
-                        Object.assign(
-                          e.currentTarget.style,
-                          styles.dropdownItemHover
-                        )
-                      }
-                      onMouseLeave={(e) =>
-                        (e.currentTarget.style.backgroundColor = "white")
-                      }
-                    >
-                      {item.name}
-                    </a>
-                  ))}
+                    {[
+                        { name: "LH", link: "/housing?type=lh" },
+                        { name: "SH", link: "/housing?type=sh" },
+                    ].map((item) => (
+                        <span
+                            key={item.name}
+                            style={styles.dropdownItem}
+                            onClick={() => navigate(item.link)}
+                            onMouseEnter={(e) =>
+                                Object.assign(
+                                    e.currentTarget.style,
+                                    styles.dropdownItemHover
+                                )
+                            }
+                            onMouseLeave={(e) =>
+                                (e.currentTarget.style.backgroundColor = "white")
+                            }
+                        >
+                            {item.name}
+                        </span>
+                    ))}
                 </div>
               )}
             </div>
 
             {/* 금융상품 */}
-            <div
-              style={styles.dropdownWrapper}
-              onMouseEnter={() => setActiveDropdown("finance")}
-              onMouseLeave={() => setActiveDropdown(null)}
-            >
-              <a href="/finance" style={styles.link}>
-                금융상품
-              </a>
-              {activeDropdown === "finance" && (
-                <div style={styles.dropdown}>
-                  {[
-                    { name: "예금", link: "/finance?type=deposit" },
-                    { name: "적금", link: "/finance?type=saving" },
-                    { name: "대출", link: "/finance?type=loan" },
-                  ].map((item) => (
-                    <a
-                      key={item.name}
-                      href={item.link}
-                      style={styles.dropdownItem}
-                      onMouseEnter={(e) =>
-                        Object.assign(
-                          e.currentTarget.style,
-                          styles.dropdownItemHover
-                        )
-                      }
-                      onMouseLeave={(e) =>
-                        (e.currentTarget.style.backgroundColor = "white")
-                      }
-                    >
-                      {item.name}
-                    </a>
-                  ))}
-                </div>
-              )}
-            </div>
+              <div
+                  style={styles.dropdownWrapper}
+                  onMouseEnter={() => setActiveDropdown("finance")}
+                  onMouseLeave={() => setActiveDropdown(null)}
+              >
+                  <span style={styles.link}
+                        onClick={() => navigate("/finance")}>
+                      금융상품
+                  </span>
+                  {activeDropdown === "finance" && (
+                      <div style={styles.dropdown}>
+                          {[
+                              { name: "예금", link: "/finance?type=deposit" },
+                              { name: "적금", link: "/finance?type=saving" },
+                              { name: "대출", link: "/finance?type=loan" },
+                          ].map((item) => (
+                              <span
+                                  key={item.name}
+                                  style={styles.dropdownItem}
+                                  onClick={() => navigate(item.link)}
+                                  onMouseEnter={(e) =>
+                                      Object.assign(
+                                          e.currentTarget.style,
+                                          styles.dropdownItemHover
+                                      )
+                                  }
+                                  onMouseLeave={(e) =>
+                                      (e.currentTarget.style.backgroundColor = "white")
+                                  }
+                              >
+                                  {item.name}
+                              </span>
+                          ))}
+                      </div>
+                  )}
+              </div>
 
-            {/* 정책 */}
-            <a href="/policy" style={styles.link}>
-              정책
-            </a>
+              {/* 정책 */}
+              <span
+                  style={styles.link}
+                  onClick={() => navigate("/policy")}>
+                  정책
+              </span>
 
-            {/* 관심목록 */}
+              {/* 관심목록 */}
             <div
               style={styles.dropdownWrapper}
               onMouseEnter={() => setActiveDropdown("favorites")}
