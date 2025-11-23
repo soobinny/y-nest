@@ -69,9 +69,20 @@ public class NotificationsService {
                 continue;
             }
 
-            String name = (user.getEmail() != null && user.getEmail().contains("@"))
-                    ? user.getEmail().split("@")[0]
-                    : "회원님";
+            String displayName;
+
+            // 1순위: 실제 이름 필드 (예: Users.name)
+            if (user.getName() != null && !user.getName().isBlank()) {
+                displayName = user.getName();
+            }
+            // 2순위: 이메일 앞부분
+            else if (user.getEmail() != null && user.getEmail().contains("@")) {
+                displayName = user.getEmail().split("@")[0];
+            }
+            // 3순위: 완전 폴백
+            else {
+                displayName = "회원님";
+            }
 
             String subject = "[Y-Nest] 오늘의 맞춤 알림 • " + today;
             String html = """
@@ -87,7 +98,7 @@ public class NotificationsService {
             %s
             %s
             <div style="margin-top:30px;text-align:center;">
-              <a href="http://localhost:5173/home" style="display:inline-block;background:#0055cc;color:#fff;
+              <a href="https://ynest.kro.kr" style="display:inline-block;background:#0055cc;color:#fff;
                 padding:10px 20px;border-radius:8px;text-decoration:none;font-weight:600;">
                 🔍 지금 바로 Y-Nest에서 더 알아보기
               </a>
@@ -98,7 +109,7 @@ public class NotificationsService {
             </p>
           </div>
         </div>
-        """.formatted(name, housingSection, loanSection, youthSection);
+        """.formatted(displayName, housingSection, loanSection, youthSection);
 
             String status = "SENT";
             try {
