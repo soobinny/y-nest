@@ -98,19 +98,29 @@ public class UsersService {
         String code = generate6DigitCode();
         verificationCodes.put(email, new VerificationCode(code, Instant.now().plus(VERIFICATION_TTL)));
 
-        String subject = "[Y-Nest] 아이디(이메일) 확인 인증 번호";
         String body = """
-                안녕하세요, Y-Nest 본인 확인 서비스입니다.
+        안녕하세요, Y-Nest 본인 확인 서비스입니다.
 
-                아이디(이메일) 찾기를 위한 인증번호는 아래와 같습니다.
+        아이디(이메일) 찾기를 위한 인증 번호는 아래와 같습니다.
 
-                인증 번호: %s
-                유효 시간: 5분
+        인증 번호: %s
+        유효 시간: 5분
 
-                본인이 요청하지 않았다면 이 메일을 무시해 주세요.
-                """.formatted(code);
+        [어떻게 사용하나요?]
+        1) Y-Nest 웹사이트에 접속합니다.
+            📩 https://ynest.kro.kr/find-id
+        2) 상단 메뉴에서 '아이디 찾기' 화면을 연 뒤,
+        3) 이름과 이메일을 다시 입력하고,
+        4) 화면에 나타나는 '인증 번호 입력' 칸에 위 인증 번호를 입력해 주세요.
 
-        emailSender.send(email, subject, body);
+        본인이 요청하지 않았다면 이 메일을 무시해 주세요.
+        """.formatted(code);
+
+        emailSender.send(
+                email,
+                "[Y-Nest] 아이디(이메일) 찾기 인증 번호 안내",
+                body
+        );
     }
 
     public String confirmIdVerification(String email, String code) {
@@ -142,7 +152,7 @@ public class UsersService {
             prt.setExpiresAt(Instant.now().plus(RESET_TOKEN_TTL));
             prtRepository.save(prt);
 
-            String resetUrl = "https://your-frontend.example.com/reset-password?token=" + token;
+            String resetUrl = "https://ynest.kro.kr/reset-password?token=" + token;
             emailSender.send(
                     user.getEmail(),
                     "[Y-Nest] 비밀번호 재설정 안내",

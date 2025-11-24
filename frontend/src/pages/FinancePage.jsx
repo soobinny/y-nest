@@ -1,17 +1,9 @@
-﻿import { useEffect, useMemo, useRef, useState } from "react";
+﻿import {useEffect, useMemo, useRef, useState} from "react";
 import api from "../lib/axios";
 import AppLayout from "../components/AppLayout";
-import {
-  Bar,
-  BarChart,
-  Legend,
-  ResponsiveContainer,
-  Tooltip,
-  XAxis,
-  YAxis,
-} from "recharts";
+import {Bar, BarChart, Legend, ResponsiveContainer, Tooltip, XAxis, YAxis,} from "recharts";
 import FavoriteStar from "../components/FavoriteStar";
-import { useLocation } from "react-router-dom";
+import {useLocation} from "react-router-dom";
 
 const LOAN_TYPE_CONFIG = [
   { type: "MORTGAGE_LOAN", title: "주택담보대출" },
@@ -567,7 +559,7 @@ export default function FinancePage() {
 
         const responses = await Promise.allSettled(
           LOAN_TYPE_CONFIG.map(({ type }) =>
-            api.get(`/api/finance/loans/options/type/${type}`)
+            api.get(`/finance/loans/options/type/${type}`)
           )
         );
 
@@ -675,7 +667,7 @@ export default function FinancePage() {
         params.excludeProviders = excludeProviders;
       }
 
-      const res = await api.get("/api/finance/products", {
+      const res = await api.get("/finance/products", {
         params,
         paramsSerializer: serializeParams,
       });

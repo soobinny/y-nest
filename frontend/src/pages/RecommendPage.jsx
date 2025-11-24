@@ -1,8 +1,10 @@
-import React, { useEffect, useState } from "react";
+import React, {useEffect, useState} from "react";
 import AppLayout from "../components/AppLayout";
 import api from "../lib/axios";
+import {useNavigate} from "react-router-dom";
 
 export default function RecommendPage() {
+  const navigate = useNavigate();
   const [activeMainTab, setActiveMainTab] = useState("HOUSING"); // HOUSING | FINANCE | POLICY
   const [activeFinanceTab, setActiveFinanceTab] = useState("DEPOSIT"); // DEPOSIT | SAVING | LOAN
 
@@ -35,9 +37,9 @@ export default function RecommendPage() {
   useEffect(() => {
     if (!token || !userId) {
       alert("로그인이 필요한 서비스입니다.");
-      window.location.href = "/login";
+      navigate("/login");
     }
-  }, [token, userId]);
+  }, [token, userId, navigate]);
 
   // 공통 로딩 핸들러
   const withLoading = async (key, fn) => {
@@ -60,10 +62,10 @@ export default function RecommendPage() {
   const loadHousingRecommend = () =>
     withLoading("housing", async () => {
       const [lhRes, shRes] = await Promise.all([
-        api.get(`/api/housings/recommend/${userId}`, {
+        api.get(`/housings/recommend/${userId}`, {
           params: { strictRegionMatch: false },
         }),
-        api.get(`/api/sh/housings/recommend/${userId}`, {
+        api.get(`/sh/housings/recommend/${userId}`, {
           params: { strictRegionMatch: false },
         }),
       ]);
@@ -75,7 +77,7 @@ export default function RecommendPage() {
   // 금융 - 예금 추천
   const loadDepositRecommend = () =>
     withLoading("deposit", async () => {
-      const res = await api.get(`/api/finance/products/recommend/${userId}`, {
+      const res = await api.get(`/finance/products/recommend/${userId}`, {
         params: { type: "DEPOSIT" },
       });
       setDepositList(res.data || []);
@@ -84,7 +86,7 @@ export default function RecommendPage() {
   // 금융 - 적금 추천
   const loadSavingRecommend = () =>
     withLoading("saving", async () => {
-      const res = await api.get(`/api/finance/products/recommend/${userId}`, {
+      const res = await api.get(`/finance/products/recommend/${userId}`, {
         params: { type: "SAVING" },
       });
       setSavingList(res.data || []);
@@ -94,7 +96,7 @@ export default function RecommendPage() {
   const loadLoanRecommend = () =>
     withLoading("loan", async () => {
       const res = await api.get(
-        `/api/finance/loans/options/recommend/${userId}`
+        `/finance/loans/options/recommend/${userId}`
       );
       setLoanList(res.data || []);
     });
@@ -102,7 +104,7 @@ export default function RecommendPage() {
   // 정책 추천
   const loadPolicyRecommend = () =>
     withLoading("policy", async () => {
-      const res = await api.get(`/api/youth-policies/recommend/${userId}`, {
+      const res = await api.get(`/youth-policies/recommend/${userId}`, {
         params: { strictRegionMatch: false },
       });
       setPolicyList(res.data || []);

@@ -1,8 +1,10 @@
-import React, { useEffect, useState } from "react";
+import React, {useEffect, useState} from "react";
 import AppLayout from "../components/AppLayout";
 import api from "../lib/axios";
+import {useNavigate} from "react-router-dom";
 
 export default function HomePage() {
+  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState("전체");
   const [hoveredNotice, setHoveredNotice] = useState(null);
   const [hoveredCard, setHoveredCard] = useState(null);
@@ -23,7 +25,7 @@ export default function HomePage() {
     const fetchRecentNotices = async () => {
       try {
         setLoading(true);
-        const res = await api.get("/api/notices/recent");
+        const res = await api.get("/notices/recent");
         setNoticeList(res.data || { all: [], housing: [], policy: [] });
       } catch (err) {
         console.error("❌ 최근 게시물 불러오기 실패:", err);
@@ -105,7 +107,7 @@ export default function HomePage() {
                 }
                 onMouseEnter={() => setHoveredCard(card.title)}
                 onMouseLeave={() => setHoveredCard(null)}
-                onClick={() => (window.location.href = card.path)}
+                onClick={() => (navigate(card.path))}
               >
                 <h2 style={styles.cardTitle}>{card.title}</h2>
                 <p style={styles.cardDesc}>{card.desc}</p>
@@ -152,9 +154,15 @@ export default function HomePage() {
                             cursor: "pointer",
                             textDecoration: "underline",
                           }}
-                          onClick={() =>
-                            (window.location.href = recentPost.link)
-                          }
+                          onClick={() => {
+                              if (recentPost?.link?.startsWith("http")) {
+                                  // 외부 URL → 새 탭으로 열기
+                                  window.open(recentPost.link, "_blank", "noopener,noreferrer");
+                              } else {
+                                  // 내부 라우트 → SPA 네비게이션
+                                  navigate(recentPost.link);
+                              }
+                          }}
                         >
                           {recentPost.title.length > 25
                             ? recentPost.title.slice(0, 25) + "..."
@@ -190,7 +198,7 @@ export default function HomePage() {
                         style={styles.loginItem}
                         onMouseEnter={() => setHoveredItem(item.text)}
                         onMouseLeave={() => setHoveredItem(null)}
-                        onClick={() => (window.location.href = item.path)}
+                        onClick={() => navigate(item.path)}
                       >
                         <span
                           style={
@@ -218,7 +226,7 @@ export default function HomePage() {
                     }
                     onMouseEnter={() => setHoveredButton(true)}
                     onMouseLeave={() => setHoveredButton(false)}
-                    onClick={() => (window.location.href = "/login")}
+                    onClick={() => navigate("/login")}
                   >
                     로그인
                   </button>
@@ -241,9 +249,9 @@ export default function HomePage() {
                           const token = localStorage.getItem("accessToken");
                           if (!token) {
                             alert("로그인이 필요한 서비스입니다.");
-                            window.location.href = "/login";
+                            navigate("/login");
                           } else {
-                            window.location.href = item.path;
+                            navigate(item.path);
                           }
                         }}
                       >
@@ -273,7 +281,7 @@ export default function HomePage() {
                               ? { ...styles.link, ...styles.linkHover }
                               : styles.link
                           }
-                          onClick={() => (window.location.href = item.path)}
+                          onClick={() => navigate(item.path)}
                           onMouseEnter={() => setHoveredLink(item.text)}
                           onMouseLeave={() => setHoveredLink(null)}
                         >
@@ -300,7 +308,7 @@ export default function HomePage() {
               }
               onMouseEnter={() => setHoveredCard("MATCHING")}
               onMouseLeave={() => setHoveredCard(null)}
-              onClick={() => (window.location.href = "/recommend")}
+              onClick={() => navigate("/recommend")}
             >
               <h2 style={styles.cardTitle}>🎯 맞춤 공고</h2>
               <p style={styles.cardDesc}>내 정보 기반 맞춤형 공고 추천</p>
@@ -341,11 +349,19 @@ export default function HomePage() {
                 onMouseEnter={() => setHoveredNotice(item.title)}
                 onMouseLeave={() => setHoveredNotice(null)}
                 onClick={() => {
-                  localStorage.setItem(
-                    "recentPost",
-                    JSON.stringify({ title: item.title, link: item.link })
-                  );
-                  window.location.href = item.link;
+                    localStorage.setItem(
+                        "recentPost",
+                        JSON.stringify({ title: item.title, link: item.link })
+                    );
+
+                    // 외부 URL은 새 창 열기
+                    if (item.link.startsWith("http")) {
+                        window.open(item.link, "_blank", "noopener,noreferrer");
+                        return;
+                    }
+
+                    // 내부 라우트만 navigate로 이동
+                    navigate(item.link);
                 }}
               >
                 <span style={{ ...styles.tag, ...styles[`tag${item.type}`] }}>

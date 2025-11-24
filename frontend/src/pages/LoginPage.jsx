@@ -1,8 +1,10 @@
-import { useState } from "react";
+import {useState} from "react";
 import api from "../lib/axios";
 import AppLayout from "../components/AppLayout";
+import {useNavigate} from "react-router-dom";
 
 export default function LoginPage() {
+  const navigate = useNavigate();
   const [form, setForm] = useState({ email: "", password: "" });
   const [message, setMessage] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -34,7 +36,7 @@ export default function LoginPage() {
             localStorage.setItem("userName", userRes.data.name);
 
             // (5) 홈으로 이동
-            window.location.href = "/home"; // 홈으로 이동
+            navigate("/home"); // 홈으로 이동
         } catch (err) {
             console.error("로그인 실패:", err);
             setMessage("이메일 또는 비밀번호가 올바르지 않습니다.");
@@ -99,21 +101,21 @@ export default function LoginPage() {
       <div style={styles.linkContainer}>
   <span
     style={styles.link}
-    onClick={() => (window.location.href = "/find-id")}
+    onClick={() => navigate("/find-id")}
   >
     아이디 찾기
   </span>
   <span style={styles.divider}>|</span>
   <span
     style={styles.link}
-    onClick={() => (window.location.href = "/find-password")}
+    onClick={() => navigate("/find-password")}
   >
     비밀번호 찾기
   </span>
   <span style={styles.divider}>|</span>
   <span
     style={styles.link}
-    onClick={() => (window.location.href = "/signup")}
+    onClick={() => navigate("/signup")}
   >
     회원 가입
   </span>

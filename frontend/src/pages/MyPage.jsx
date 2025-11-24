@@ -1,17 +1,19 @@
-import { useEffect, useState } from "react";
+import {useEffect, useState} from "react";
 import api from "../lib/axios";
 import AppLayout from "../components/AppLayout";
+import {useNavigate} from "react-router-dom";
 
 export default function MyPage() {
   const [user, setUser] = useState(null);
   const [message, setMessage] = useState("");
+  const navigate = useNavigate();
 
   useEffect(() => {
     const token = localStorage.getItem("accessToken");
-    if (!token) {
-      window.location.href = "/login";
-      return;
-    }
+      if (!token) {
+          navigate("/login");
+          return;
+      }
 
     const fetchUser = async () => {
       try {
@@ -20,7 +22,7 @@ export default function MyPage() {
         });
         setUser(res.data);
       } catch {
-        window.location.href = "/login";
+        navigate("/login");
       }
     };
 
@@ -30,7 +32,7 @@ export default function MyPage() {
   const handleLogout = () => {
     if (window.confirm("로그아웃하시겠습니까?")) {
       localStorage.removeItem("accessToken");
-      window.location.href = "/login";
+      navigate("/login");
     }
   };
 
@@ -46,7 +48,7 @@ export default function MyPage() {
       });
       alert(res.data || "탈퇴가 완료되었습니다.");
       localStorage.removeItem("accessToken");
-      window.location.href = "/signup";
+      navigate("/signup");
     } catch {
       alert("탈퇴 처리 중 오류가 발생했습니다.");
     }
@@ -135,7 +137,7 @@ export default function MyPage() {
           {/* 버튼 */}
           <button
             style={styles.editBtn}
-            onClick={() => (window.location.href = "/mypage/edit")}
+            onClick={() => navigate("/mypage/edit")}
             onMouseEnter={(e) => (e.target.style.transform = "scale(1.03)")}
             onMouseLeave={(e) => (e.target.style.transform = "scale(1)")}
             onMouseDown={(e) => (e.target.style.transform = "scale(0.96)")}

@@ -223,7 +223,7 @@ export default function PolicyPage() {
           params.sort = sort;
         }
 
-        const res = await api.get("/api/youth-policies", { params });
+        const res = await api.get("/youth-policies", { params });
         if (ignore) return;
 
         const pageData = normalizePagePayload(res.data);
@@ -263,10 +263,10 @@ export default function PolicyPage() {
       setHighlightLoading(true);
       try {
         const [closingRes, recentRes] = await Promise.all([
-          api.get("/api/youth-policies/closing-soon", {
+          api.get("/youth-policies/closing-soon", {
             params: { page: 0, size: 4 },
           }),
-          api.get("/api/youth-policies/recent", {
+          api.get("/youth-policies/recent", {
             params: { page: 0, size: 4 },
           }),
         ]);

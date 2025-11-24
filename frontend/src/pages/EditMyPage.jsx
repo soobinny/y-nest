@@ -1,9 +1,11 @@
-import { useEffect, useState } from "react";
+import {useEffect, useState} from "react";
 import api from "../lib/axios";
 import AppLayout from "../components/AppLayout";
 import RegionSelect from "../components/RegionSelect";
+import {useNavigate} from "react-router-dom";
 
 export default function EditMyPage() {
+  const navigate = useNavigate();
   const [form, setForm] = useState({
     name: "",
     email: "",
@@ -173,7 +175,7 @@ export default function EditMyPage() {
           }
         );
         alert("정보가 성공적으로 수정되었습니다.");
-        window.location.href = "/mypage";
+        navigate("/mypage");
         return;
       } catch {
         setPasswordError("현재 비밀번호가 일치하지 않습니다.");
@@ -183,7 +185,7 @@ export default function EditMyPage() {
 
     // 비밀번호 변경 없이 정보만 수정 시
     alert("정보가 성공적으로 수정되었습니다.");
-    window.location.href = "/mypage";
+    navigate("/mypage");
   };
 
   if (!form) return <p style={styles.loading}>로그인 완료 후 접속해 주세요.</p>;
