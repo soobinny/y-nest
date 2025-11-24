@@ -323,5 +323,7 @@ const styles = {
     color: "#91c7f5",
     textDecoration: "none",
     letterSpacing: "0.5px",
+    cursor: "pointer",
+    userSelect: "none",
   },
 };
