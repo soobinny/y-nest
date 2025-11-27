@@ -14,7 +14,7 @@ export default function FindIdPage() {
     const handleChange = (e) =>
         setForm({ ...form, [e.target.name]: e.target.value });
 
-    // 1단계: 인증번호 보내기
+    // 1단계: 인증 번호 보내기
     const handleRequest = async (e) => {
         e.preventDefault();
         setError("");
@@ -32,7 +32,7 @@ export default function FindIdPage() {
             setEmailForVerify(res.data.email);
 
             setInfoMessage(
-                `가입된 이메일(${res.data.maskedEmail})로\n인증 번호를 발송했습니다.\n5분 이내로 인증번호를 입력해 주세요.`);
+                `가입된 이메일(${res.data.maskedEmail})로\n인증 번호를 발송했습니다.\n5분 이내로 인증 번호를 입력해 주세요.`);
             setStep("verify");
         } catch (err) {
             console.error(err);
@@ -40,7 +40,7 @@ export default function FindIdPage() {
         }
     };
 
-    // 2단계: 인증번호 확인 + 아이디 보여주기
+    // 2단계: 인증 번호 확인 + 아이디 보여주기
     const handleVerify = async (e) => {
         e.preventDefault();
         setError("");
@@ -104,7 +104,7 @@ export default function FindIdPage() {
                         required
                     />
                     <button type="submit" style={styles.button}>
-                        인증번호 보내기
+                        인증 번호 보내기
                     </button>
                 </form>
 
@@ -112,12 +112,12 @@ export default function FindIdPage() {
                 {infoMessage && <p style={styles.info}>{infoMessage}</p>}
                 {error && <p style={styles.error}>{error}</p>}
 
-                {/* 2단계 : 인증번호 입력 (step === "verify" 일 때만 표시) */}
+                {/* 2단계 : 인증 번호 입력 (step === "verify" 일 때만 표시) */}
                 {step === "verify" && (
                     <form onSubmit={handleVerify} style={{ ...styles.form, marginTop: 20 }}>
                         <input
                             type="text"
-                            placeholder="이메일로 받은 6자리 인증번호"
+                            placeholder="이메일로 받은 6자리 인증 번호"
                             value={code}
                             onChange={(e) => setCode(e.target.value)}
                             style={styles.input}
