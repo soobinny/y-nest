@@ -236,19 +236,23 @@ public class YouthPolicyQueryService {
         if (userRegion == null || userRegion.isBlank()) return true;
         if (policyRegionCode == null || policyRegionCode.isBlank()) return false;
 
-        String[] codes = policyRegionCode.split(",");
-        boolean containsUserRegion = false;
+        // 사용자 지역 prefix (앞 5자리: 시/군/구 단위)
+        String userPrefix = prefix.length() >= 5 ? prefix.substring(0, 5) : prefix;
 
+        String[] codes = policyRegionCode.split(",");
+
+        boolean exactMatch = false;
         for (String code : codes) {
             code = code.trim();
-            if (code.startsWith(prefix)) {
-                containsUserRegion = true;
+            if (code.startsWith(userPrefix)) { // 시/군/구 단위까지 정확히 비교
+                exactMatch = true;
                 break;
             }
         }
 
-        if (!containsUserRegion) return false;
+        if (!exactMatch) return false;
 
+        // strict 모드일 경우 광역단위가 섞여 있는 정책 제외
         if (strictRegionMatch) {
             long distinctPrefixes = java.util.Arrays.stream(codes)
                     .map(c -> c.trim().substring(0, 2))
@@ -257,8 +261,7 @@ public class YouthPolicyQueryService {
             if (distinctPrefixes > 1) return false;
         }
 
-        String regionName = getRegionNameFromCode(policyRegionCode);
-        return !regionName.isEmpty() && userRegion.contains(regionName);
+        return true;
     }
 
     /** 소득 관련 키워드 매칭 */

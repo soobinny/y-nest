@@ -105,7 +105,7 @@ export default function RecommendPage() {
   const loadPolicyRecommend = () =>
     withLoading("policy", async () => {
       const res = await api.get(`/youth-policies/recommend/${userId}`, {
-        params: { strictRegionMatch: false },
+        params: { strictRegionMatch: true },
       });
       setPolicyList(res.data || []);
     });
@@ -156,7 +156,7 @@ export default function RecommendPage() {
                     ? { ...styles.mainTab, ...styles.mainTabActive }
                     : styles.mainTab
                 }
-                onClick={(e) => {
+                onClick={() => {
                   setActiveMainTab(tab.key);
                 }}
               >
@@ -319,7 +319,7 @@ export default function RecommendPage() {
                             ? { ...styles.subTab, ...styles.subTabActive }
                             : styles.subTab
                         }
-                        onClick={(e) => {
+                        onClick={() => {
                           setActiveFinanceTab(tab.key);
                         }}
                       >
