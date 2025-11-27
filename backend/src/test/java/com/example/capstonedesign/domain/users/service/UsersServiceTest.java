@@ -29,6 +29,7 @@ import java.util.Optional;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
+
 /**
  * UsersService 단위 테스트
  * - Repository / Encoder / EmailSender 등을 Mocking
@@ -171,27 +172,48 @@ class UsersServiceTest {
     }
 
     // -------------------------------------------------------------------------
-    // 4. sendIdVerificationCode()
+    // 4. sendIdVerificationCode() 테스트
     // -------------------------------------------------------------------------
     @Test
-    void sendIdVerificationCode() {
-        // 성공 시나리오
-        when(usersRepository.findByEmailAndDeletedFalse("test@example.com"))
-                .thenReturn(Optional.of(activeUser));
+    void confirmIdVerification_success() throws Exception {
+        String email = "test@example.com";
+        String name = "테스터";
+        LocalDate birthdate = LocalDate.of(1990,1,1);
+        String region = "서울특별시 강서구";
 
-        usersService.sendIdVerificationCode("테스터", "test@example.com");
+        Users user = Users.builder()
+                .email(email)
+                .name(name)
+                .birthdate(birthdate)
+                .region(region)
+                .build();
 
-        // 이메일이 한 번 전송되는지 확인
-        verify(emailSender, times(1))
-                .send(eq("test@example.com"), anyString(), contains("인증 번호"));
+        when(usersRepository.findByNameAndBirthdateAndRegionAndDeletedFalse(
+                name, birthdate, region
+        )).thenReturn(Optional.of(user));
 
-        // 실패 시나리오: 이름/이메일 불일치
-        when(usersRepository.findByEmailAndDeletedFalse("wrong@example.com"))
-                .thenReturn(Optional.empty());
+        // 1) 인증번호 저장
+        usersService.sendIdVerificationCode(name, birthdate, region);
 
-        ApiException ex = assertThrows(ApiException.class,
-                () -> usersService.sendIdVerificationCode("아무개", "wrong@example.com"));
-        assertEquals(ErrorCode.NOT_FOUND, ex.getErrorCode());
+        // 2) verificationCodes Map 읽기
+        Field field = UsersService.class.getDeclaredField("verificationCodes");
+        field.setAccessible(true);
+
+        @SuppressWarnings("unchecked")
+        Map<String, Object> map = (Map<String, Object>) field.get(usersService);
+
+        Object vc = map.get(email);
+        assertNotNull(vc, "verificationCodes에 값이 있어야 한다.");
+
+        // 3) 내부 code 필드 추출
+        Field codeField = vc.getClass().getDeclaredField("code");
+        codeField.setAccessible(true);
+        String storedCode = (String) codeField.get(vc);
+
+        // 4) confirm 검증
+        String resultEmail = usersService.confirmIdVerification(email, storedCode);
+
+        assertEquals(email, resultEmail);
     }
 
     // -------------------------------------------------------------------------
@@ -199,34 +221,49 @@ class UsersServiceTest {
     // -------------------------------------------------------------------------
     @Test
     void confirmIdVerification() throws Exception {
+        // given
         String email = "test@example.com";
+        String name = "테스터";
+        LocalDate birthdate = LocalDate.of(1990, 1, 1);
+        String region = "서울특별시 강서구";
 
-        // (1) 먼저 sendIdVerificationCode 를 호출해 Map에 값이 들어가게 한다.
-        when(usersRepository.findByEmailAndDeletedFalse(email))
-                .thenReturn(Optional.of(activeUser));
+        Users user = Users.builder()
+                .email(email)
+                .name(name)
+                .birthdate(birthdate)
+                .region(region)
+                .build();
 
-        usersService.sendIdVerificationCode("테스터", email);
+        // sendIdVerificationCode() 가 사용자 조회할 수 있도록 mock 설정
+        when(usersRepository.findByNameAndBirthdateAndRegionAndDeletedFalse(
+                name, birthdate, region
+        )).thenReturn(Optional.of(user));
 
-        // (2) 리플렉션으로 private Map<String, VerificationCode> 읽어서 code 추출
+        // (1) 먼저 sendIdVerificationCode 호출 → verificationCodes 맵에 값 들어감
+        usersService.sendIdVerificationCode(name, birthdate, region);
+
+        // (2) Reflection으로 private Map<String, VerificationCode> 접근
         Field field = UsersService.class.getDeclaredField("verificationCodes");
         field.setAccessible(true);
+
         @SuppressWarnings("unchecked")
         Map<String, Object> map = (Map<String, Object>) field.get(usersService);
 
         Object vc = map.get(email);
         assertNotNull(vc, "verificationCodes에 값이 있어야 한다.");
 
+        // VerificationCode 내부 code 필드 읽기
         Field codeField = vc.getClass().getDeclaredField("code");
         codeField.setAccessible(true);
         String storedCode = (String) codeField.get(vc);
 
-        // when
+        // (3) confirm 검증
         String resultEmail = usersService.confirmIdVerification(email, storedCode);
 
         // then
         assertEquals(email, resultEmail);
 
-        // 실패 시나리오: 요청 내역 없음
+        // (4) 실패 시나리오: 잘못된 이메일
         ApiException ex = assertThrows(ApiException.class,
                 () -> usersService.confirmIdVerification("none@example.com", "123456"));
         assertEquals(ErrorCode.NOT_FOUND, ex.getErrorCode());

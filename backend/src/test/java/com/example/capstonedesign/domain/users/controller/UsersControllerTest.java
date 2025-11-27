@@ -23,6 +23,7 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.time.LocalDate;
+import java.util.Map;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
@@ -353,20 +354,39 @@ class UsersControllerTest {
     @WithMockUser
     @DisplayName("아이디 찾기 - 인증번호 발송 성공")
     void requestIdVerification_success() throws Exception {
+
+        Map<String, String> mockResponse = Map.of(
+                "email", "user@example.com",
+                "maskedEmail", "u***r@example.com"
+        );
+
+        when(usersService.sendIdVerificationCode(
+                eq("홍길동"),
+                eq(LocalDate.parse("1990-01-01")),
+                eq("서울특별시 강서구")
+        )).thenReturn(mockResponse);
+
         mvc.perform(post("/api/users/find-id/request")
                         .with(csrf())
                         .param("name", "홍길동")
-                        .param("email", "user@example.com"))
+                        .param("birthdate", "1990-01-01")
+                        .param("region", "서울특별시 강서구"))
                 .andExpect(status().isOk())
-                .andExpect(content().string("인증 번호가 이메일로 발송되었습니다."));
+                .andExpect(jsonPath("$.email").value("user@example.com"))
+                .andExpect(jsonPath("$.maskedEmail").value("u***r@example.com"));
 
-        verify(usersService).sendIdVerificationCode("홍길동", "user@example.com");
+        verify(usersService).sendIdVerificationCode(
+                "홍길동",
+                LocalDate.parse("1990-01-01"),
+                "서울특별시 강서구"
+        );
     }
 
     @Test
     @WithMockUser
     @DisplayName("아이디 찾기 - 인증번호 확인 성공")
     void confirmIdVerification_success() throws Exception {
+
         when(usersService.confirmIdVerification("user@example.com", "123456"))
                 .thenReturn("user@example.com");
 

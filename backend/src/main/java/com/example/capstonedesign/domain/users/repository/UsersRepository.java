@@ -3,6 +3,7 @@ package com.example.capstonedesign.domain.users.repository;
 import com.example.capstonedesign.domain.users.entity.Users;
 import org.springframework.data.jpa.repository.JpaRepository;
 
+import java.time.LocalDate;
 import java.util.Optional;
 
 /**
@@ -31,6 +32,8 @@ public interface UsersRepository extends JpaRepository<Users, Integer> {
      * @return 이메일이 이미 존재하면 true, 그렇지 않으면 false
      */
     boolean existsByEmail(String email);
+
+    Optional<Users> findByNameAndBirthdateAndRegionAndDeletedFalse(String name, LocalDate birthdate, String region);
 
 //    /**
 //     * 이름과 지역으로 활성 사용자 조회
