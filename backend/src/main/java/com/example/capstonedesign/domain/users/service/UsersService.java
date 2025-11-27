@@ -23,6 +23,7 @@ import java.time.Instant;
 import java.time.LocalDate;
 import java.util.Base64;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
@@ -51,10 +52,47 @@ public class UsersService {
     // --------------------------------------------------------------------------
     @Transactional
     public UsersResponse signup(SignupRequest req) {
-        if (usersRepository.existsByEmail(req.email())) {
+
+        Optional<Users> existingOpt = usersRepository.findByEmail(req.email());
+
+        if (existingOpt.isPresent()) {
+            Users existing = existingOpt.get();
+
+            // Case 1: 탈퇴한 계정이면
+            if (Boolean.TRUE.equals(existing.getDeleted())) {
+
+                long daysPassed = Duration.between(existing.getDeleted_at(), Instant.now()).toDays();
+
+                // 30일 미만 → 재가입 불가
+                if (daysPassed < 30) {
+                    throw new ApiException(
+                            ErrorCode.CONFLICT,
+                            "탈퇴한 이메일입니다. " + (30 - daysPassed) + "일 후 재가입할 수 있습니다."
+                    );
+                }
+
+                // 30일 지난 경우 → 계정 재활성화
+                existing.setDeleted(false);
+                existing.setDeleted_at(null);
+                existing.setPassword(passwordEncoder.encode(req.password()));
+                existing.setName(req.name());
+                existing.setAge(req.age());
+                existing.setIncome_band(req.income_band());
+                existing.setRegion(req.region());
+                existing.setIs_homeless(req.is_homeless());
+                existing.setNotificationEnabled(req.notificationEnabled());
+                existing.setRole(req.role());
+                existing.setBirthdate(req.birthdate());
+
+                Users reactivated = usersRepository.save(existing);
+                return toResponse(reactivated);
+            }
+
+            // Case 2: 활성 사용자라면 중복
             throw new ApiException(ErrorCode.CONFLICT, "이미 가입된 이메일입니다.");
         }
 
+        // Case 3: 기존 계정 없음 → 신규 가입
         Users u = new Users();
         u.setEmail(req.email());
         u.setPassword(passwordEncoder.encode(req.password()));

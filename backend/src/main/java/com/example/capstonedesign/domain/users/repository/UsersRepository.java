@@ -33,22 +33,8 @@ public interface UsersRepository extends JpaRepository<Users, Integer> {
      */
     boolean existsByEmail(String email);
 
-    Optional<Users> findByNameAndBirthdateAndRegionAndDeletedFalse(String name, LocalDate birthdate, String region);
+    // 모든 사용자 조회 (탈퇴 여부 상관 없이)
+    Optional<Users> findByEmail(String email);
 
-//    /**
-//     * 이름과 지역으로 활성 사용자 조회
-//     * - 논리 삭제되지 않은 사용자만 반환
-//     * - 대소문자를 구분하지 않도록 LOWER() 함수로 비교
-//     *
-//     * @param name   사용자 이름
-//     * @param region 사용자 지역
-//     * @return 이름과 지역이 일치하는 활성 사용자 목록
-//     */
-//    @Query("""
-//   SELECT u FROM Users u
-//   WHERE u.deleted = false
-//     AND LOWER(u.name) = LOWER(:name)
-//     AND LOWER(u.region) = LOWER(:region)
-//""")
-//    List<Users> findActiveByNameAndRegion(@Param("name") String name, @Param("region") String region);
+    Optional<Users> findByNameAndBirthdateAndRegionAndDeletedFalse(String name, LocalDate birthdate, String region);
 }
