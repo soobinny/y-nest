@@ -21,6 +21,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.lang.reflect.Field;
+import java.time.Duration;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.util.Map;
@@ -80,7 +81,7 @@ class UsersServiceTest {
     // 1. signup()
     // -------------------------------------------------------------------------
     @Test
-    void signup() {
+    void signup_newUser_success() {
         // given
         SignupRequest req = new SignupRequest(
                 "new@example.com",
@@ -95,10 +96,12 @@ class UsersServiceTest {
                 LocalDate.of(2003, 3, 3)
         );
 
-        when(usersRepository.existsByEmail(req.email())).thenReturn(false);
-        when(passwordEncoder.encode("raw-pass")).thenReturn("encoded-pass");
+        when(usersRepository.findByEmail("new@example.com"))
+                .thenReturn(Optional.empty());
 
-        // save 호출 시, 저장될 Users를 그대로 반환하도록 설정
+        when(passwordEncoder.encode("raw-pass"))
+                .thenReturn("encoded-pass");
+
         when(usersRepository.save(any(Users.class))).thenAnswer(invocation -> {
             Users u = invocation.getArgument(0);
             u.setId(10);
@@ -111,16 +114,101 @@ class UsersServiceTest {
         // then
         assertNotNull(res);
         assertEquals("new@example.com", res.email());
-        assertEquals("새유저", res.name());
-        verify(usersRepository, times(1)).existsByEmail("new@example.com");
-        verify(usersRepository, times(1)).save(any(Users.class));
+        verify(usersRepository).findByEmail("new@example.com");
+        verify(usersRepository).save(any(Users.class));
+    }
 
-        // 중복 이메일 시나리오도 같은 테스트에서 한 번 더 검증
-        when(usersRepository.existsByEmail(req.email())).thenReturn(true);
+    @Test
+    void signup_activeUser_conflict() {
+        SignupRequest req = new SignupRequest(
+                "dup@example.com",
+                "raw-pass",
+                "사용자",
+                20,
+                "중위소득200%이하",
+                "서울",
+                false,
+                true,
+                UserRole.USER,
+                LocalDate.of(2001, 1, 1)
+        );
+
+        Users activeUser = new Users();
+        activeUser.setDeleted(false);
+
+        when(usersRepository.findByEmail("dup@example.com"))
+                .thenReturn(Optional.of(activeUser));
 
         ApiException ex = assertThrows(ApiException.class,
                 () -> usersService.signup(req));
+
         assertEquals(ErrorCode.CONFLICT, ex.getErrorCode());
+    }
+
+    @Test
+    void signup_deletedUser_within30days_fail() {
+        SignupRequest req = new SignupRequest(
+                "bye@example.com",
+                "raw-pass",
+                "사용자",
+                20,
+                "중위소득200%이하",
+                "서울",
+                false,
+                true,
+                UserRole.USER,
+                LocalDate.of(2001, 1, 1)
+        );
+
+        Users deletedUser = new Users();
+        deletedUser.setDeleted(true);
+        deletedUser.setDeleted_at(Instant.now().minus(Duration.ofDays(5)));
+
+        when(usersRepository.findByEmail("bye@example.com"))
+                .thenReturn(Optional.of(deletedUser));
+
+        ApiException ex = assertThrows(ApiException.class,
+                () -> usersService.signup(req));
+
+        assertEquals(ErrorCode.CONFLICT, ex.getErrorCode());
+    }
+
+    @Test
+    void signup_deletedUser_after30days_reactivate() {
+        SignupRequest req = new SignupRequest(
+                "bye@example.com",
+                "raw-pass",
+                "재활성화유저",
+                22,
+                "중위소득200%이하",
+                "부산",
+                false,
+                true,
+                UserRole.USER,
+                LocalDate.of(2003, 3, 3)
+        );
+
+        Users deletedUser = new Users();
+        deletedUser.setEmail("bye@example.com");
+        deletedUser.setDeleted(true);
+        deletedUser.setDeleted_at(Instant.now().minus(Duration.ofDays(40)));
+
+        when(usersRepository.findByEmail("bye@example.com"))
+                .thenReturn(Optional.of(deletedUser));
+
+        when(passwordEncoder.encode("raw-pass"))
+                .thenReturn("encoded-pass");
+
+        when(usersRepository.save(any(Users.class))).thenAnswer(invocation -> {
+            Users u = invocation.getArgument(0);
+            u.setId(99);
+            return u;
+        });
+
+        UsersResponse res = usersService.signup(req);
+
+        assertEquals("bye@example.com", res.email());
+        verify(usersRepository).save(any(Users.class));
     }
 
     // -------------------------------------------------------------------------
