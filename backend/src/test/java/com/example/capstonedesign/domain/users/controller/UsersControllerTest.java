@@ -88,7 +88,7 @@ class UsersControllerTest {
 
         when(usersService.signup(any(SignupRequest.class))).thenReturn(res);
 
-        mvc.perform(post("/users/signup")
+        mvc.perform(post("/api/users/signup")
                         .with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(om.writeValueAsString(req)))
@@ -112,7 +112,7 @@ class UsersControllerTest {
         when(usersService.signup(any(SignupRequest.class)))
                 .thenThrow(new ApiException(ErrorCode.CONFLICT, "이미 가입된 이메일입니다."));
 
-        mvc.perform(post("/users/signup")
+        mvc.perform(post("/api//users/signup")
                         .with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(om.writeValueAsString(req)))
@@ -142,7 +142,7 @@ class UsersControllerTest {
                 .thenReturn("jwt-token");
         when(jwtTokenProvider.getExpirySeconds()).thenReturn(3600L);
 
-        mvc.perform(post("/users/login")
+        mvc.perform(post("/api/users/login")
                         .with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(om.writeValueAsString(req)))
@@ -165,7 +165,7 @@ class UsersControllerTest {
                 .thenReturn(mockUser);
         when(passwordEncoder.matches("wrong", "encoded")).thenReturn(false);
 
-        mvc.perform(post("/users/login")
+        mvc.perform(post("/api/users/login")
                         .with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(om.writeValueAsString(req)))
@@ -178,7 +178,7 @@ class UsersControllerTest {
     @Test
     @DisplayName("내 정보 조회 실패 - 인증 없음(401)")
     void me_unauthorized() throws Exception {
-        mvc.perform(get("/users/me"))
+        mvc.perform(get("/api/users/me"))
                 .andExpect(status().isUnauthorized());
     }
 
@@ -202,7 +202,7 @@ class UsersControllerTest {
         when(usersService.requireActiveById(1)).thenReturn(mockUser);
         when(usersService.toResponse(mockUser)).thenReturn(res);
 
-        mvc.perform(get("/users/me")
+        mvc.perform(get("/api/users/me")
                         .accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON))
@@ -229,7 +229,7 @@ class UsersControllerTest {
         when(usersService.requireActiveByEmail("user@example.com")).thenReturn(mockUser);
         when(usersService.toResponse(mockUser)).thenReturn(res);
 
-        mvc.perform(get("/users/me")
+        mvc.perform(get("/api/users/me")
                         .accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.email").value("user@example.com"));
@@ -277,7 +277,7 @@ class UsersControllerTest {
             }
             """;
 
-        mvc.perform(put("/users/me")
+        mvc.perform(put("/api/users/me")
                         .with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(body))
@@ -294,7 +294,7 @@ class UsersControllerTest {
     @WithMockUser
     @DisplayName("알림 수신 설정 변경 - enabled=true")
     void updateNotificationPreference_enabled() throws Exception {
-        mvc.perform(patch("/users/{id}/notification", 1)
+        mvc.perform(patch("/api/users/{id}/notification", 1)
                         .with(csrf())
                         .param("enabled", "true"))
                 .andExpect(status().isOk())
@@ -315,7 +315,7 @@ class UsersControllerTest {
 
         when(usersService.requireActiveById(1)).thenReturn(me);
 
-        mvc.perform(put("/users/notification-channel")
+        mvc.perform(put("/api/users/notification-channel")
                         .with(csrf())
                         .param("channel", NotificationChannel.EMAIL.name()))
                 .andExpect(status().isOk())
@@ -337,7 +337,7 @@ class UsersControllerTest {
         // resolveUserFromPrincipal → UserDetails.username = "user@example.com"
         when(usersService.requireActiveByEmail("user@example.com")).thenReturn(me);
 
-        mvc.perform(put("/users/notification-channel")
+        mvc.perform(put("/api/users/notification-channel")
                         .with(csrf())
                         .param("channel", NotificationChannel.KAKAO.name()))
                 .andExpect(status().isOk())
@@ -353,7 +353,7 @@ class UsersControllerTest {
     @WithMockUser
     @DisplayName("아이디 찾기 - 인증번호 발송 성공")
     void requestIdVerification_success() throws Exception {
-        mvc.perform(post("/users/find-id/request")
+        mvc.perform(post("/api/users/find-id/request")
                         .with(csrf())
                         .param("name", "홍길동")
                         .param("email", "user@example.com"))
@@ -370,7 +370,7 @@ class UsersControllerTest {
         when(usersService.confirmIdVerification("user@example.com", "123456"))
                 .thenReturn("user@example.com");
 
-        mvc.perform(post("/users/find-id/confirm")
+        mvc.perform(post("/api/users/find-id/confirm")
                         .with(csrf())
                         .param("email", "user@example.com")
                         .param("code", "123456"))
@@ -391,7 +391,7 @@ class UsersControllerTest {
             { "email": "user@example.com" }
             """;
 
-        mvc.perform(post("/users/password-reset/request")
+        mvc.perform(post("/api/users/password-reset/request")
                         .with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(body))
@@ -412,7 +412,7 @@ class UsersControllerTest {
             }
             """;
 
-        mvc.perform(post("/users/password-reset/confirm")
+        mvc.perform(post("/api/users/password-reset/confirm")
                         .with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(body))
@@ -443,7 +443,7 @@ class UsersControllerTest {
             { "password": "Pw1234!" }
             """;
 
-        mvc.perform(delete("/users/delete")
+        mvc.perform(delete("/api/users/delete")
                         .with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(body))
