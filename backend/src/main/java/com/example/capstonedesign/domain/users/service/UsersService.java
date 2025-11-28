@@ -20,6 +20,7 @@ import org.springframework.stereotype.Service;
 import java.security.SecureRandom;
 import java.time.Duration;
 import java.time.Instant;
+import java.time.LocalDate;
 import java.util.Base64;
 import java.util.Map;
 import java.util.Optional;
@@ -51,10 +52,47 @@ public class UsersService {
     // --------------------------------------------------------------------------
     @Transactional
     public UsersResponse signup(SignupRequest req) {
-        if (usersRepository.existsByEmail(req.email())) {
+
+        Optional<Users> existingOpt = usersRepository.findByEmail(req.email());
+
+        if (existingOpt.isPresent()) {
+            Users existing = existingOpt.get();
+
+            // Case 1: 탈퇴한 계정이면
+            if (Boolean.TRUE.equals(existing.getDeleted())) {
+
+                long daysPassed = Duration.between(existing.getDeleted_at(), Instant.now()).toDays();
+
+                // 30일 미만 → 재가입 불가
+                if (daysPassed < 30) {
+                    throw new ApiException(
+                            ErrorCode.CONFLICT,
+                            "탈퇴한 이메일입니다. " + (30 - daysPassed) + "일 후 재가입할 수 있습니다."
+                    );
+                }
+
+                // 30일 지난 경우 → 계정 재활성화
+                existing.setDeleted(false);
+                existing.setDeleted_at(null);
+                existing.setPassword(passwordEncoder.encode(req.password()));
+                existing.setName(req.name());
+                existing.setAge(req.age());
+                existing.setIncome_band(req.income_band());
+                existing.setRegion(req.region());
+                existing.setIs_homeless(req.is_homeless());
+                existing.setNotificationEnabled(req.notificationEnabled());
+                existing.setRole(req.role());
+                existing.setBirthdate(req.birthdate());
+
+                Users reactivated = usersRepository.save(existing);
+                return toResponse(reactivated);
+            }
+
+            // Case 2: 활성 사용자라면 중복
             throw new ApiException(ErrorCode.CONFLICT, "이미 가입된 이메일입니다.");
         }
 
+        // Case 3: 기존 계정 없음 → 신규 가입
         Users u = new Users();
         u.setEmail(req.email());
         u.setPassword(passwordEncoder.encode(req.password()));
@@ -86,17 +124,23 @@ public class UsersService {
     }
 
     // --------------------------------------------------------------------------
-    // 3. 아이디(이메일) 찾기 - 인증 코드 전송 및 검증
+    // 3. 아이디(이메일) 찾기 - 인증 코드 전송 및 검증 (이름 + 생년월일 + region 사용)
     // ---------------------------------------------------------------------------
     @Transactional
-    public void sendIdVerificationCode(String name, String email) {
-        Optional<Users> userOpt = usersRepository.findByEmailAndDeletedFalse(email);
-        if (userOpt.isEmpty() || !userOpt.get().getName().equals(name)) {
-            throw new ApiException(ErrorCode.NOT_FOUND, "입력하신 이름과 이메일이 일치하는 사용자가 없습니다.");
-        }
+    public Map<String, String> sendIdVerificationCode(String name, LocalDate birthdate, String region) {
 
+        Users user = usersRepository
+                .findByNameAndBirthdateAndRegionAndDeletedFalse(name, birthdate, region)
+                .orElseThrow(() -> new ApiException(ErrorCode.NOT_FOUND,
+                        "입력하신 정보와 일치하는 사용자를 찾을 수 없습니다."));
+
+        String email = user.getEmail();
+        String maskedEmail = maskEmail(email);
+
+        // 인증번호 발송
         String code = generate6DigitCode();
-        verificationCodes.put(email, new VerificationCode(code, Instant.now().plus(VERIFICATION_TTL)));
+        verificationCodes.put(email,
+                new VerificationCode(code, Instant.now().plus(VERIFICATION_TTL)));
 
         String body = """
         안녕하세요, Y-Nest 본인 확인 서비스입니다.
@@ -106,12 +150,7 @@ public class UsersService {
         인증 번호: %s
         유효 시간: 5분
 
-        [어떻게 사용하나요?]
-        1) Y-Nest 웹사이트에 접속합니다.
-            📩 https://ynest.kro.kr/find-id
-        2) 상단 메뉴에서 '아이디 찾기' 화면을 연 뒤,
-        3) 이름과 이메일을 다시 입력하고,
-        4) 화면에 나타나는 '인증 번호 입력' 칸에 위 인증 번호를 입력해 주세요.
+        📩 '아이디 찾기' 화면에서 인증 번호를 입력해 주세요.
 
         본인이 요청하지 않았다면 이 메일을 무시해 주세요.
         """.formatted(code);
@@ -121,21 +160,45 @@ public class UsersService {
                 "[Y-Nest] 아이디(이메일) 찾기 인증 번호 안내",
                 body
         );
+
+        return Map.of(
+                "email", email,
+                "maskedEmail", maskedEmail
+        );
     }
 
+    private String maskEmail(String email) {
+        int idx = email.indexOf("@");
+        if (idx <= 1) return "***" + email.substring(idx);
+
+        String id = email.substring(0, idx);
+        String domain = email.substring(idx);
+
+        String maskedId = id.charAt(0) + "***" + id.charAt(id.length() - 1);
+
+        return maskedId + domain;
+    }
+
+    // --------------------------------------------------------------------------
+    // 4. 인증 번호 검증
+    // --------------------------------------------------------------------------
     public String confirmIdVerification(String email, String code) {
         VerificationCode stored = verificationCodes.get(email);
-        if (stored == null) throw new ApiException(ErrorCode.NOT_FOUND, "인증 요청 내역이 없습니다.");
+
+        if (stored == null)
+            throw new ApiException(ErrorCode.NOT_FOUND, "인증 요청 내역이 없습니다.");
+
         if (stored.expiresAt().isBefore(Instant.now())) {
             verificationCodes.remove(email);
             throw new ApiException(ErrorCode.UNAUTHORIZED, "인증 번호가 만료되었습니다.");
         }
+
         if (!stored.code().equals(code)) {
             throw new ApiException(ErrorCode.UNAUTHORIZED, "인증 번호가 일치하지 않습니다.");
         }
 
         verificationCodes.remove(email);
-        return email; // 인증 성공 시 이메일(아이디) 반환
+        return email; // 인증 성공 시 이메일 반환
     }
 
     // --------------------------------------------------------------------------

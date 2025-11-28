@@ -1,44 +1,46 @@
-import { useState } from "react";
+import {useState} from "react";
 import api from "../lib/axios";
 import AppLayout from "../components/AppLayout";
 
 export default function FindIdPage() {
-    const [form, setForm] = useState({ name: "", email: "" });
+    const [form, setForm] = useState({ name: "", birthdate: "", region: "" });
     const [code, setCode] = useState("");
     const [step, setStep] = useState("request"); // "request" | "verify"
     const [resultMessage, setResultMessage] = useState("");
     const [infoMessage, setInfoMessage] = useState("");
     const [error, setError] = useState("");
+    const [emailForVerify, setEmailForVerify] = useState("");
 
     const handleChange = (e) =>
         setForm({ ...form, [e.target.name]: e.target.value });
 
-    // 1단계: 인증번호 보내기
+    // 1단계: 인증 번호 보내기
     const handleRequest = async (e) => {
         e.preventDefault();
         setError("");
         setResultMessage("");
-        setInfoMessage("");
 
         try {
             const res = await api.post("/users/find-id/request", null, {
                 params: {
                     name: form.name,
-                    email: form.email,
+                    birthdate: form.birthdate,
+                    region: form.region,
                 },
             });
-            // 서버 문자열: "인증 번호가 이메일로 발송되었습니다."
+
+            setEmailForVerify(res.data.email);
+
             setInfoMessage(
-                res.data || "입력하신 이메일로 인증 번호를 발송했습니다. 5분 이내에 아래에 인증 번호를 입력해 주세요."
-            );
-            setStep("verify"); // 인증번호 입력 단계로 전환
+                `가입된 이메일(${res.data.maskedEmail})로\n인증 번호를 발송했습니다.\n5분 이내로 인증 번호를 입력해 주세요.`);
+            setStep("verify");
         } catch (err) {
             console.error(err);
-            setError("입력하신 이름/이메일에 해당하는 계정을 찾을 수 없습니다.");
+            setError("입력하신 정보와 일치하는 계정을 찾을 수 없습니다.");
         }
     };
 
-    // 2단계: 인증번호 확인 + 아이디 보여주기
+    // 2단계: 인증 번호 확인 + 아이디 보여주기
     const handleVerify = async (e) => {
         e.preventDefault();
         setError("");
@@ -47,15 +49,14 @@ export default function FindIdPage() {
         try {
             const res = await api.post("/users/find-id/confirm", null, {
                 params: {
-                    email: form.email,
+                    email: emailForVerify,
                     code: code,
                 },
             });
-            // 서버 문자열: "회원님의 아이디(이메일)는 xxx 입니다."
             setResultMessage(res.data);
         } catch (err) {
             console.error(err);
-            setError("인증 번호가 올바르지 않거나 만료되었습니다. 다시 시도해 주세요.");
+            setError("인증 번호가 올바르지 않거나 만료되었습니다.\n다시 시도해 주세요.");
         }
     };
 
@@ -83,17 +84,27 @@ export default function FindIdPage() {
                         style={styles.input}
                         required
                     />
+
                     <input
-                        type="email"
-                        name="email"
-                        placeholder="가입한 이메일 주소"
-                        value={form.email}
+                        type="date"
+                        name="birthdate"
+                        value={form.birthdate}
+                        onChange={handleChange}
+                        style={styles.input}
+                        required
+                    />
+
+                    <input
+                        type="text"
+                        name="region"
+                        placeholder="거주 지역 (예: 서울특별시 강서구)"
+                        value={form.region}
                         onChange={handleChange}
                         style={styles.input}
                         required
                     />
                     <button type="submit" style={styles.button}>
-                        인증번호 보내기
+                        인증 번호 보내기
                     </button>
                 </form>
 
@@ -101,12 +112,12 @@ export default function FindIdPage() {
                 {infoMessage && <p style={styles.info}>{infoMessage}</p>}
                 {error && <p style={styles.error}>{error}</p>}
 
-                {/* 2단계 : 인증번호 입력 (step === "verify" 일 때만 표시) */}
+                {/* 2단계 : 인증 번호 입력 (step === "verify" 일 때만 표시) */}
                 {step === "verify" && (
                     <form onSubmit={handleVerify} style={{ ...styles.form, marginTop: 20 }}>
                         <input
                             type="text"
-                            placeholder="이메일로 받은 6자리 인증번호"
+                            placeholder="이메일로 받은 6자리 인증 번호"
                             value={code}
                             onChange={(e) => setCode(e.target.value)}
                             style={styles.input}
@@ -157,11 +168,13 @@ const styles = {
         textAlign: "center",
         marginTop: "12px",
         fontSize: "14px",
+        whiteSpace: "pre-line",
     },
     error: {
         color: "#ff0400ac",
         textAlign: "center",
         marginTop: "14px",
+        whiteSpace: "pre-line",
     },
     result: {
         color: "#333",

@@ -19,11 +19,15 @@ import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
+
+import java.time.LocalDate;
+import java.util.Map;
 
 /**
  * UsersController
@@ -201,19 +205,20 @@ public class UsersController {
     // 5. 아이디(이메일) 찾기 - 인증 번호 발송
     // ---------------------------------------------------------
     @Operation(summary = "아이디(이메일) 찾기 - 인증 번호 발송",
-            description = "이름과 이메일이 일치하는 사용자가 존재하면 인증 번호를 이메일로 발송합니다.")
+            description = "이름과 생일, 그리고 지역이 일치하는 사용자가 존재하면 인증 번호를 이메일로 발송합니다.")
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "인증 번호 발송 성공"),
             @ApiResponse(responseCode = "404", description = "일치하는 사용자 없음",
                     content = @Content(schema = @Schema(implementation = ApiError.class)))
     })
     @PostMapping("/find-id/request")
-    public ResponseEntity<String> requestIdVerification(
+    public ResponseEntity<Map<String, String>> requestIdVerification(
             @RequestParam String name,
-            @RequestParam String email
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate birthdate,
+            @RequestParam String region
     ) {
-        usersService.sendIdVerificationCode(name, email);
-        return ResponseEntity.ok("인증 번호가 이메일로 발송되었습니다.");
+        Map<String, String> result = usersService.sendIdVerificationCode(name, birthdate, region);
+        return ResponseEntity.ok(result);
     }
 
     // ---------------------------------------------------------

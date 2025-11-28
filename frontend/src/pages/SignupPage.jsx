@@ -40,7 +40,7 @@ export default function SignupPage() {
     });
   };
 
-  // 🔹 비밀번호 유효성 검사 함수 추가
+  // 비밀번호 유효성 검사 함수 추가
   const isPasswordValid = (password) => {
     const hasLength = password.length >= 8; // 8자 이상
     const hasNumber = /\d/.test(password); // 숫자 포함
@@ -64,11 +64,17 @@ export default function SignupPage() {
         role: "USER",
         birthdate: form.birthdate,
       };
+
       await api.post("/users/signup", payload);
       alert("회원 가입이 완료되었습니다.");
       navigate("/login");
-    } catch {
-      setMessage("회원 가입 중 오류가 발생했습니다.");
+
+    } catch (error) {
+        if (error.response?.data?.message) {
+            setMessage(error.response.data.message);
+        } else {
+            setMessage("회원 가입 중 오류가 발생했습니다.");
+        }
     }
   };
 
