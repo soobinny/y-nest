@@ -22,13 +22,6 @@ public class LhScheduler {
     /** 실제 운영 시: 06시 / 18시 실행
      *  cron 예시 → "0 0 6,18 * * *"
      */
-//    // 웹 사이트 크롤링
-//    @Scheduled(cron = "0 0 6,18 * * *", zone = "Asia/Seoul")
-//    public void run() {
-//        log.info("🏠 LH 공고 스케줄러 실행");
-//        lhService.ingest();
-//    }
-
     // API 크롤링
     @Scheduled(cron = "0 0 6,18 * * *", zone = "Asia/Seoul")
     public void fetchLeaseNotices() {

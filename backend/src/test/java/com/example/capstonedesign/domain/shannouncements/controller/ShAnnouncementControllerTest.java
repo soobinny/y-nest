@@ -177,4 +177,28 @@ class ShAnnouncementControllerTest {
                 .andExpect(jsonPath("$[0].title").value("청년안심주택 A단지 모집공고"))
                 .andExpect(jsonPath("$[0].score").value(10.5));
     }
+
+    @Test
+    @DisplayName("GET /api/sh/housings/recommend - 지역 파라미터 없이 호출 시 전체 추천 API를 사용한다")
+    void recommendWithoutRegion() throws Exception {
+        // given
+        Pageable pageable = PageRequest.of(0, 10);
+        List<ShAnnouncementResponse> content = List.of(sampleResponse());
+        Page<ShAnnouncementResponse> page = new PageImpl<>(content, pageable, content.size());
+
+        // region이 비어 있을 때 호출되는 오버로드 버전
+        given(shAnnouncementService.getYouthRecommendations(any(Pageable.class)))
+                .willReturn(page);
+
+        // when & then
+        mockMvc.perform(get("/api/sh/housings/recommend")
+                        // ★ region 파라미터를 일부러 안 보냄
+                        .param("page", "0")
+                        .param("size", "10")
+                        .accept(MediaType.APPLICATION_JSON))
+                .andDo(print())
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.content[0].title").value("청년안심주택 A단지 모집공고"))
+                .andExpect(jsonPath("$.content[0].supplyType").value("청년안심주택"));
+    }
 }

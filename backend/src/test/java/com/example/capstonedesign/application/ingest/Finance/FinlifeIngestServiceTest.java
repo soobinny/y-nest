@@ -35,7 +35,8 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
-class FinlifeIngestServiceTest {
+class
+FinlifeIngestServiceTest {
 
     @Mock
     private FinlifeClient client;
