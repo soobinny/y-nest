@@ -69,7 +69,7 @@ public class SmtpEmailSender implements EmailSender {
             var helper = new MimeMessageHelper(mime, "UTF-8");
             helper.setTo(to);
             helper.setSubject(subject);
-            helper.setText(htmlBody, true); // ✅ HTML
+            helper.setText(htmlBody, true);
             mailSender.send(mime);
         } catch (Exception e) {
             log.error("❌ HTML 메일 발송 실패 → {}: {}", to, e.getMessage(), e);

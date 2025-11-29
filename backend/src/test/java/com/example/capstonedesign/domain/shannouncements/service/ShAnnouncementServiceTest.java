@@ -26,6 +26,7 @@ import java.util.List;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
 
@@ -283,5 +284,181 @@ class ShAnnouncementServiceTest {
         ShAnnouncementResponse first = result.get(0);
         assertThat(first.getScore()).isNotNull();
         assertThat(first.getReason()).isNotBlank();
+    }
+
+    // ----------------------------------------------------
+
+    @Test
+    @DisplayName("getYouthRecommendations(Pageable) - 전체 청년형 공고 추천")
+    void getYouthRecommendations_withoutRegion_shouldReturnYouthTypeOnly() {
+        // given
+        Pageable pageable = PageRequest.of(0, 10);
+
+        ShAnnouncement a1 = createAnnouncement(
+                1L,
+                "청년안심주택 A단지",
+                "서울 강남구",
+                "청년안심주택",
+                RecruitStatus.now,
+                LocalDate.now()
+        );
+
+        Page<ShAnnouncement> page = new PageImpl<>(List.of(a1), pageable, 1);
+
+        // Specification + Pageable
+        given(repo.findAll(any(Specification.class), any(Pageable.class)))
+                .willReturn(page);
+
+        // when
+        Page<ShAnnouncementResponse> result = service.getYouthRecommendations(pageable);
+
+        // then
+        assertThat(result.getTotalElements()).isEqualTo(1);
+        ShAnnouncementResponse dto = result.getContent().get(0);
+        assertThat(dto.getSupplyType()).isEqualTo("청년안심주택");
+        assertThat(dto.getRecruitStatus()).isEqualTo("now");
+    }
+
+    @Test
+    @DisplayName("search - 카테고리와 상태가 있는 조건 검색도 정상 동작한다")
+    void search_withCategoryAndStatus_shouldBuildPredicates() {
+        // given
+        Pageable pageable = PageRequest.of(0, 10);
+        ShAnnouncement a1 = createAnnouncement(
+                1L,
+                "임대주택 모집공고",
+                "서울 강북구",
+                "청년안심주택",
+                RecruitStatus.now,
+                LocalDate.now()
+        );
+
+        Page<ShAnnouncement> page = new PageImpl<>(List.of(a1), pageable, 1);
+
+        given(repo.findAll(any(Specification.class), any(Pageable.class)))
+                .willReturn(page);
+
+        // when
+        Page<ShAnnouncementResponse> result = service.search(
+                SHHousingCategory.주택임대,    // category != null
+                RecruitStatus.now,           // status != null
+                "",                          // keyword blank
+                pageable
+        );
+
+        // then
+        assertThat(result.getTotalElements()).isEqualTo(1);
+        ShAnnouncementResponse dto = result.getContent().get(0);
+
+        assertThat(dto.getTitle()).isEqualTo("임대주택 모집공고");
+        assertThat(dto.getSupplyType()).isEqualTo("청년안심주택");
+        assertThat(dto.getRecruitStatus()).isEqualTo("now");
+
+    }
+
+    @Test
+    @DisplayName("matchByIncomeAndAge - 소득대역/연령대 조합별 모든 분기가 실행된다")
+    void matchByIncomeAndAge_allBranches() throws Exception {
+        ShAnnouncement youthRent = createAnnouncement(
+                1L,
+                "청년안심주택 A단지",
+                "서울 강남구",
+                "청년안심주택",
+                RecruitStatus.now,
+                LocalDate.now()
+        );
+
+        ShAnnouncement sale = createAnnouncement(
+                2L,
+                "분양주택 B단지",
+                "서울 송파구",
+                "분양주택",
+                RecruitStatus.now,
+                LocalDate.now()
+        );
+
+        var m = ShAnnouncementService.class
+                .getDeclaredMethod("matchByIncomeAndAge", ShAnnouncement.class, String.class, int.class);
+        m.setAccessible(true);
+
+        // (1) 청년 + 저소득 (<=35 & incomeBand contains 150)
+        boolean r1 = (boolean) m.invoke(service, youthRent, "중위소득150%이하", 28);
+        assertThat(r1).isTrue(); // "청년안심주택" 안에 "청년" 포함
+
+        // (2) 청년 + 비저소득 (<=35 & incomeBand doesn't contain 100/150)
+        boolean r2 = (boolean) m.invoke(service, youthRent, "중위소득250%이상", 30);
+        // supplyType "청년안심주택" 이라 containsAny("행복","공공")는 false → 전체 false 기대
+        assertThat(r2).isFalse();
+
+        // (3) 비청년 + 300%이하 (age > 35, incomeBand contains 300)
+        boolean r3 = (boolean) m.invoke(service, sale, "중위소득300%이하", 40);
+        // "분양주택" 안에 "분양" 포함 → true
+        assertThat(r3).isTrue();
+
+        // (4) 나머지 경우 (조건 전부 미해당 → 기본 true)
+        boolean r4 = (boolean) m.invoke(service, youthRent, null, 50);
+        assertThat(r4).isTrue();
+    }
+
+    @Test
+    @DisplayName("recommendForUser - 다양한 소득/연령 조합도 예외 없이 처리된다")
+    void recommendForUser_scoreBranches() {
+        // 공고 1개만 있어도 score 로직은 돌 수 있음
+        ShAnnouncement youthRent = createAnnouncement(
+                1L,
+                "서울 청년안심주택 A단지",
+                "서울 강남구",
+                "청년안심주택",
+                RecruitStatus.now,
+                LocalDate.now().minusDays(1)
+        );
+
+        // 모든 recommendForUser 호출에서 동일한 공고 리스트 사용
+        given(repo.findAll()).willReturn(List.of(youthRent));
+
+        // 다양한 사용자 프로필 준비
+        Users u100 = Users.builder()
+                .id(100)
+                .age(25)                          // < 30
+                .income_band("중위소득100%이하")   // 가장 강한 감점
+                .region("서울")                   // 지역 매칭
+                .is_homeless(true)
+                .build();
+
+        Users u150 = Users.builder()
+                .id(150)
+                .age(35)                          // 30 ~ 60
+                .income_band("중위소득150%이하")
+                .region("서울")
+                .is_homeless(true)
+                .build();
+
+        Users u300 = Users.builder()
+                .id(300)
+                .age(65)                          // > 60
+                .income_band("중위소득300%이하")
+                .region("서울")
+                .is_homeless(true)
+                .build();
+
+        Users uDefault = Users.builder()
+                .id(999)
+                .age(40)
+                .income_band("기타")
+                .region("서울")
+                .is_homeless(true)
+                .build();
+
+        // id별로 다른 User 반환하도록 스텁
+        given(usersRepository.findById(100)).willReturn(Optional.of(u100));
+        given(usersRepository.findById(150)).willReturn(Optional.of(u150));
+        given(usersRepository.findById(300)).willReturn(Optional.of(u300));
+        given(usersRepository.findById(999)).willReturn(Optional.of(uDefault));
+
+        // when & then: 각 케이스에서 예외 없이 실행되기만 하면 OK
+        assertDoesNotThrow(() -> service.recommendForUser(100, false));
+        assertDoesNotThrow(() -> service.recommendForUser(150, false));
+        assertDoesNotThrow(() -> service.recommendForUser(300, false));
+        assertDoesNotThrow(() -> service.recommendForUser(999, false));
     }
 }

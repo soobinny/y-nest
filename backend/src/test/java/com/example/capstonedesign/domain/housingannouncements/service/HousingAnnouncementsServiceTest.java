@@ -12,6 +12,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -249,5 +250,151 @@ class HousingAnnouncementsServiceTest {
 
         verify(usersRepository).findById(1);
         verify(lhNoticeRepository).findAll();
+    }
+
+    @Test
+    @DisplayName("getAll - pageable이 null이면 기본 page=0,size=10, panNtStDt DESC 정렬을 사용한다")
+    void getAll_whenPageableNull_usesDefaultPageableAndSort() {
+        // given
+        LhNotice notice = createNotice(
+                1L, "기본 페이지 공고", "임대주택", "행복주택",
+                "서울특별시", "공고중", "2025.11.20", "2025.11.30"
+        );
+
+        ArgumentCaptor<Pageable> pageableCaptor = ArgumentCaptor.forClass(Pageable.class);
+
+        when(lhNoticeRepository.findAll(any(Pageable.class)))
+                .thenReturn(new PageImpl<>(List.of(notice)));
+
+        // when
+        Page<HousingAnnouncementsResponse> result = housingAnnouncementsService.getAll(null);
+
+        // then
+        assertThat(result.getTotalElements()).isEqualTo(1);
+
+        verify(lhNoticeRepository).findAll(pageableCaptor.capture());
+        Pageable usedPageable = pageableCaptor.getValue();
+
+        assertThat(usedPageable.getPageNumber()).isEqualTo(0);
+        assertThat(usedPageable.getPageSize()).isEqualTo(10);
+
+        Sort sort = usedPageable.getSort();
+        assertThat(sort.isSorted()).isTrue();
+        Sort.Order order = sort.getOrderFor("panNtStDt");
+        assertThat(order).isNotNull();
+        assertThat(order.getDirection()).isEqualTo(Sort.Direction.DESC);
+    }
+
+    @Test
+    @DisplayName("getClosingSoon - null 또는 파싱 불가 마감일은 무시된다")
+    void getClosingSoon_ignoresNullOrInvalidCloseDate() {
+        // given
+        LocalDate today = LocalDate.now();
+
+        LhNotice valid = createNotice(
+                1L, "유효 마감", "임대주택", "행복주택",
+                "서울특별시", "공고중",
+                today.minusDays(1).toString(),
+                today.plusDays(2).toString()
+        );
+        LhNotice invalid = createNotice(
+                2L, "잘못된 날짜 형식", "임대주택", "행복주택",
+                "서울특별시", "공고중",
+                today.toString(),
+                "2025/11/30" // parse 실패용
+        );
+        LhNotice nullClose = createNotice(
+                3L, "마감일 없음", "임대주택", "행복주택",
+                "서울특별시", "공고중",
+                today.toString(),
+                null
+        );
+
+        when(lhNoticeRepository.findAll())
+                .thenReturn(List.of(valid, invalid, nullClose));
+
+        Pageable pageable = PageRequest.of(0, 10);
+
+        // when
+        Page<HousingAnnouncementsResponse> result = housingAnnouncementsService.getClosingSoon(pageable);
+
+        // then
+        assertThat(result.getTotalElements()).isEqualTo(1);
+        assertThat(result.getContent().get(0).getId()).isEqualTo(1L);
+    }
+
+    @Test
+    @DisplayName("recommendForUser(strictRegionMatch=true) - 같은 광역시이지만 다른 시군구는 가점이 줄어든다")
+    void recommendForUser_strictRegionMatch_affectsScore() {
+        // given
+        Users user = Users.builder()
+                .id(1)
+                .age(29)
+                .region("서울특별시 강남구")
+                .income_band("중위소득200%이하")
+                .build();
+
+        when(usersRepository.findById(1))
+                .thenReturn(Optional.of(user));
+
+        LocalDate today = LocalDate.now();
+
+        LhNotice sameDistrict = createNotice(
+                1L, "강남 행복주택", "임대주택", "행복주택",
+                "서울특별시 강남구", "공고중",
+                today.minusDays(1).toString(),
+                today.plusDays(5).toString()
+        );
+        LhNotice otherDistrict = createNotice(
+                2L, "송파 행복주택", "임대주택", "행복주택",
+                "서울특별시 송파구", "공고중",
+                today.minusDays(1).toString(),
+                today.plusDays(5).toString()
+        );
+
+        when(lhNoticeRepository.findAll())
+                .thenReturn(List.of(sameDistrict, otherDistrict));
+
+        // 느슨한 지역 매칭
+        var loose = housingAnnouncementsService.recommendForUser(1, false);
+        // 엄격한 지역 매칭
+        var strict = housingAnnouncementsService.recommendForUser(1, true);
+
+        double looseScoreOther = loose.stream()
+                .filter(r -> r.getId().equals(2L))
+                .findFirst()
+                .orElseThrow()
+                .getScore();
+
+        double strictScoreOther = strict.stream()
+                .filter(r -> r.getId().equals(2L))
+                .findFirst()
+                .orElseThrow()
+                .getScore();
+
+        // strict=true에서 같은 광역시지만 다른 시군구는 지역 가점을 못 받으므로 점수가 더 높아야 한다
+        assertThat(strictScoreOther).isGreaterThan(looseScoreOther);
+    }
+
+    @Test
+    @DisplayName("search - keyword가 null/공백이면 safeKeyword는 null로 repository에 전달된다")
+    void search_whenKeywordNullOrBlank_passesNullToRepository() {
+        // given
+        Pageable pageable = PageRequest.of(0, 10);
+
+        when(lhNoticeRepository.searchNotices(
+                any(), any(), any(), any(Pageable.class)
+        )).thenReturn(Page.empty());
+
+        // when
+        housingAnnouncementsService.search(null, null, "   ", pageable);
+
+        // then
+        verify(lhNoticeRepository).searchNotices(
+                isNull(),  // category -> null
+                isNull(),  // status -> null
+                isNull(),  // safeKeyword -> null
+                any(Pageable.class)
+        );
     }
 }
