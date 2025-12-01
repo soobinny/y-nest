@@ -1,0 +1,449 @@
+package com.example.capstonedesign.domain.youthpolicies.service;
+
+import com.example.capstonedesign.domain.users.entity.Users;
+import com.example.capstonedesign.domain.users.repository.UsersRepository;
+import com.example.capstonedesign.domain.youthpolicies.dto.response.YouthPolicyResponse;
+import com.example.capstonedesign.domain.youthpolicies.entity.YouthPolicy;
+import com.example.capstonedesign.domain.youthpolicies.repository.YouthPolicyRepository;
+import jakarta.persistence.EntityNotFoundException;
+import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.*;
+import org.springframework.stereotype.Service;
+
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.List;
+import java.util.stream.Collectors;
+
+/**
+ * YouthPolicyQueryService
+ * -------------------------------------------------
+ * 청년정책 조회 서비스
+ * - 키워드/지역 검색, 최근/마감 임박 공고 조회
+ * - 사용자 맞춤 추천(나이·지역·소득) 기능
+ * - 단일 정책 상세 조회
+ */
+@Service
+@RequiredArgsConstructor
+public class YouthPolicyQueryService {
+
+    private final YouthPolicyRepository repository;
+    private final UsersRepository usersRepository;
+    private static final DateTimeFormatter FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+
+    /** 기본 정책 목록 조회 (검색 + 페이징) */
+    public Page<YouthPolicyResponse> getPaged(String keyword, String regionCode, Pageable pageable, Sort sort) {
+        // 정렬 기준 생성(상시 공고 후순위 + 요청 정렬조건 반영)
+        Comparator<YouthPolicy> comparator = buildComparator(sort == null ? Sort.unsorted() : sort);
+
+        // 전체 정책 조회 후 키워드/지역 필터링 + 정렬
+        List<YouthPolicy> list = repository.findAll().stream()
+                .filter(p -> (keyword == null || p.getPolicyName().contains(keyword) ||
+                        (p.getAgency() != null && p.getAgency().contains(keyword))))
+                .filter(p -> (regionCode == null || p.getRegionCode().equals(regionCode)))
+                .sorted(comparator)
+                .collect(Collectors.toList());
+
+        Pageable safePageable = (pageable == null) ? PageRequest.of(0, 10) : pageable;
+        int start = (int) safePageable.getOffset();
+
+        // 페이징 안전 처리: 시작 인덱스가 범위 밖이면 빈 페이지 반환
+        if (start >= list.size()) {
+            return new PageImpl<YouthPolicy>(
+                    Collections.emptyList(),
+                    safePageable,
+                    list.size()
+            ).map(YouthPolicyResponse::fromEntity);
+        }
+
+        int end = Math.min(start + safePageable.getPageSize(), list.size());
+        Page<YouthPolicy> page = new PageImpl<>(list.subList(start, end), safePageable, list.size());
+        return page.map(YouthPolicyResponse::fromEntity);
+
+    }
+
+    /** 최근 공고 (시작일 기준 30일 이내) */
+    public Page<YouthPolicyResponse> getRecentPolicies(Pageable pageable) {
+        LocalDate today = LocalDate.now();
+        LocalDate sevenDaysAgo = today.minusDays(30);
+
+        // 시작일(없으면 createdAt) 기준 최근 30일 내 공고만 필터링
+        List<YouthPolicy> recent = repository.findAll().stream()
+                .filter(p -> {
+                    try {
+                        LocalDate start = parseDate(p.getStartDate());
+                        if (start == null && p.getCreatedAt() != null) {
+                            start = p.getCreatedAt().toLocalDate();
+                        }
+                        if (start == null) return false;
+                        return !start.isBefore(sevenDaysAgo) && !start.isAfter(today);
+                    } catch (Exception e) {
+                        return false;
+                    }
+                })
+                // 시작일 기준 최신순 정렬
+                .sorted(Comparator.comparing(
+                        p -> {
+                            LocalDate start = parseDate(p.getStartDate());
+                            if (start == null && p.getCreatedAt() != null) {
+                                start = p.getCreatedAt().toLocalDate();
+                            }
+                            return start != null ? start : LocalDate.MIN;
+                        },
+                        Comparator.reverseOrder()))
+                .toList();
+
+        int start = (int) pageable.getOffset();
+
+        // 페이징 안전 처리
+        if (start >= recent.size()) {
+            return new PageImpl<YouthPolicy>(
+                    Collections.emptyList(), // 타입: List<YouthPolicy>
+                    pageable,
+                    recent.size()
+            ).map(YouthPolicyResponse::fromEntity);
+        }
+
+        int end = Math.min(start + pageable.getPageSize(), recent.size());
+        return new PageImpl<>(recent.subList(start, end), pageable, recent.size())
+                .map(YouthPolicyResponse::fromEntity);
+    }
+
+    /** 마감 임박 공고 (7일 내 종료 예정) */
+    public Page<YouthPolicyResponse> getClosingSoonPolicies(Pageable pageable) {
+        LocalDate today = LocalDate.now();
+        LocalDate threeDaysLater = today.plusDays(7);
+
+        // 상시 공고 제외 + 7일 내 마감 공고만 필터링
+        List<YouthPolicy> closingSoon = repository.findAll().stream()
+                .filter(p -> p.getEndDate() != null && !isOngoing(p.getEndDate()))
+                .filter(p -> {
+                    try {
+                        LocalDate end = parseDate(p.getEndDate());
+                        if (end == null) return false;
+                        return (end.isAfter(today.minusDays(1)) && !end.isAfter(threeDaysLater));
+                    } catch (Exception e) {
+                        return false;
+                    }
+                })
+                // 마감일 오름차순 정렬(더 빨리 마감되는 공고가 위로)
+                .sorted(Comparator.comparing(
+                        p -> {
+                            LocalDate end = parseDate(p.getEndDate());
+                            return end != null ? end : LocalDate.MAX;
+                        }))
+                .toList();
+
+        int start = (int) pageable.getOffset();
+
+        // 페이징 안전 처리
+        if (start >= closingSoon.size()) {
+            return new PageImpl<YouthPolicy>(
+                    Collections.emptyList(),
+                    pageable,
+                    closingSoon.size()
+            ).map(YouthPolicyResponse::fromEntity);
+        }
+
+        int end = Math.min(start + pageable.getPageSize(), closingSoon.size());
+        return new PageImpl<>(closingSoon.subList(start, end), pageable, closingSoon.size())
+                .map(YouthPolicyResponse::fromEntity);
+
+    }
+
+    /** 사용자 맞춤 추천 (지역·나이·소득 기반 + 추천 점수·사유 포함) */
+    public List<YouthPolicyResponse> recommendForUser(Integer userId, boolean strictRegionMatch) {
+        Users user = usersRepository.findById(userId)
+                .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다."));
+
+        int age = user.getAge();
+        String region = user.getRegion();
+        String incomeBand = user.getIncome_band().replace(" ", "");
+        String regionPrefix = convertRegionToCode(region);
+
+        // 사용자 조건(지역/나이/소득)에 맞는 정책 필터링 후 점수 계산 및 상위 10개 추천
+        return repository.findAll().stream()
+                .filter(p -> matchRegion(region, regionPrefix, p.getRegionCode(), strictRegionMatch))
+                .filter(p -> matchAgeFlexible(p.getTargetAge(), age))
+                .filter(p -> matchIncomeKeyword(p.getKeyword(), incomeBand))
+                .map(policy -> {
+                    double score = calculateRecommendationScore(age, incomeBand, region, policy);
+                    String reason = getRecommendationReason(age, incomeBand, region, policy);
+                    return YouthPolicyResponse.fromEntityWithRecommendation(policy, score, reason);
+                })
+                .sorted(Comparator.comparingDouble(YouthPolicyResponse::getScore))
+                .limit(10)
+                .toList();
+    }
+
+    /** 추천 점수 계산 (낮을수록 우선순위 ↑)
+     * -------------------------------------------------
+     * - 연령 적합도 × 소득 구간 × 지역 일치도 가중치 반영
+     */
+    private double calculateRecommendationScore(int age, String incomeBand, String region, YouthPolicy policy) {
+        double baseScore = 1.0;
+
+        // 나이 적합도 (범위에 가까울수록 우대)
+        double ageFactor = matchAgeFlexible(policy.getTargetAge(), age) ? 0.8 : 1.2;
+
+        // 소득 가중치 (낮은 소득일수록 우대)
+        double incomeFactor = switch (incomeBand) {
+            case "중위소득100%이하" -> 0.7;
+            case "중위소득150%이하" -> 0.85;
+            case "중위소득200%이하" -> 1.0;
+            case "중위소득300%이하" -> 1.15;
+            default -> 1.0;
+        };
+
+        // 지역 일치도 (정확히 일치할수록 점수 낮음)
+        double regionFactor = (policy.getRegionCode() != null && policy.getRegionCode().contains(convertRegionToCode(region))) ? 0.8 : 1.1;
+
+        return baseScore * ageFactor * incomeFactor * regionFactor;
+    }
+
+    /** 추천 사유 생성 */
+    private String getRecommendationReason(int age, String incomeBand, String region, YouthPolicy policy) {
+        StringBuilder sb = new StringBuilder();
+
+        // 연령 관련 설명
+        if (policy.getTargetAge() != null && matchAgeFlexible(policy.getTargetAge(), age))
+            sb.append("나이 조건에 적합, ");
+        else
+            sb.append("연령 외 조건 우대, ");
+
+        // 소득 관련 설명
+        switch (incomeBand) {
+            case "중위소득100%이하" -> sb.append("저소득층 맞춤 정책, ");
+            case "중위소득150%이하" -> sb.append("중저소득층 혜택 정책, ");
+            case "중위소득200%이하" -> sb.append("보통 소득층 적합, ");
+            case "중위소득300%이하" -> sb.append("고소득층 일반 지원 대상, ");
+        }
+
+        // 지역 관련 설명
+        if (policy.getRegionCode() != null && policy.getRegionCode().contains(convertRegionToCode(region)))
+            sb.append(region).append(" 지역 거주자 우대");
+        else
+            sb.append("전국 대상 정책 가능");
+
+        return sb.toString().replaceAll(", $", "");
+    }
+
+    /** 지역코드 매칭 로직 */
+    private boolean matchRegion(String userRegion, String prefix, String policyRegionCode, boolean strictRegionMatch) {
+        if (userRegion == null || userRegion.isBlank()) return true;
+        if (policyRegionCode == null || policyRegionCode.isBlank()) return false;
+
+        // 사용자 지역 prefix (앞 5자리: 시/군/구 단위)
+        String userPrefix = prefix.length() >= 5 ? prefix.substring(0, 5) : prefix;
+
+        String[] codes = policyRegionCode.split(",");
+
+        boolean exactMatch = false;
+        for (String code : codes) {
+            code = code.trim();
+            if (code.startsWith(userPrefix)) { // 시/군/구 단위까지 정확히 비교
+                exactMatch = true;
+                break;
+            }
+        }
+
+        if (!exactMatch) return false;
+
+        // strict 모드일 경우 광역단위가 섞여 있는 정책 제외
+        if (strictRegionMatch) {
+            long distinctPrefixes = java.util.Arrays.stream(codes)
+                    .map(c -> c.trim().substring(0, 2))
+                    .distinct()
+                    .count();
+            if (distinctPrefixes > 1) return false;
+        }
+
+        return true;
+    }
+
+    /** 소득 관련 키워드 매칭 */
+    private boolean matchIncomeKeyword(String keyword, String incomeBand) {
+        if (incomeBand == null || incomeBand.isBlank()) return true;
+        if (keyword == null || keyword.isBlank()) return false;
+        return keyword.contains("소득") || keyword.contains("보조금")
+                || keyword.contains("지원") || keyword.contains("장려금")
+                || keyword.contains("대출");
+    }
+
+    /** 지역명 → 법정동 코드 변환 */
+    private String convertRegionToCode(String region) {
+        if (region == null) return "";
+        return switch (region.substring(0, 2)) {
+            case "서울" -> "11"; case "부산" -> "26"; case "대구" -> "27";
+            case "인천" -> "28"; case "광주" -> "29"; case "대전" -> "30";
+            case "울산" -> "31"; case "경기" -> "41"; case "강원" -> "42";
+            case "충북" -> "43"; case "충남" -> "44"; case "전북" -> "45";
+            case "전남" -> "46"; case "경북" -> "47"; case "경남" -> "48";
+            case "제주" -> "50"; default -> "";
+        };
+    }
+
+    /** 지역코드 → 대표 지역명 변환 */
+    private String getRegionNameFromCode(String code) {
+        if (code == null || code.isBlank()) return "";
+        return switch (code.substring(0, 2)) {
+            case "11" -> "서울"; case "26" -> "부산"; case "27" -> "대구";
+            case "28" -> "인천"; case "29" -> "광주"; case "30" -> "대전";
+            case "31" -> "울산"; case "41" -> "경기"; case "42" -> "강원";
+            case "43" -> "충북"; case "44" -> "충남"; case "45" -> "전북";
+            case "46" -> "전남"; case "47" -> "경북"; case "48" -> "경남";
+            case "50" -> "제주"; default -> "";
+        };
+    }
+
+    /** 유연한 나이 매칭 (범위, 이상/이하 포함) */
+    private boolean matchAgeFlexible(String range, int age) {
+        if (range == null || range.isBlank()) return true;
+        try {
+            String digits = range.replaceAll("[^0-9~]", "");
+            if (digits.isBlank()) return true;
+            if (!digits.contains("~")) {
+                int value = Integer.parseInt(digits);
+                if (range.contains("이상")) return age >= value;
+                if (range.contains("이하")) return age <= value;
+                return true;
+            }
+            String[] parts = digits.split("~");
+            int min = Integer.parseInt(parts[0]);
+            int max = Integer.parseInt(parts[1]);
+            return age >= min && age <= max;
+        } catch (Exception e) {
+            return true;
+        }
+    }
+
+    /** 단일 정책 상세 조회 */
+    public YouthPolicyResponse getById(Long id) {
+        YouthPolicy entity = repository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("해당 정책을 찾을 수 없습니다. ID=" + id));
+        return YouthPolicyResponse.fromEntity(entity);
+    }
+
+    /** 상시 공고를 항상 뒤로 보내는 정렬 + 기본 정렬 구성 */
+    private Comparator<YouthPolicy> buildComparator(Sort sort) {
+        // 상시 여부 우선 정렬: isOngoing == false(일반 공고) 먼저, true(상시 공고) 나중
+        Comparator<YouthPolicy> ongoingLast = Comparator.comparing(
+                (YouthPolicy p) -> isOngoing(p.getEndDate())
+        );
+
+        // 기본 정렬: 시작일(파싱) 내림차순 → createdAt 내림차순
+        Comparator<YouthPolicy> defaultComparator = Comparator
+                .comparing(this::resolveStartDate, Comparator.nullsLast(Comparator.reverseOrder()))
+                .thenComparing(YouthPolicy::getCreatedAt, Comparator.nullsLast(Comparator.reverseOrder()));
+
+        if (sort == null || sort.isUnsorted()) {
+            return ongoingLast.thenComparing(defaultComparator);
+        }
+
+        // 요청된 Sort 조건들을 체인으로 묶기
+        Comparator<YouthPolicy> chained = null;
+        for (Sort.Order order : sort) {
+            Comparator<YouthPolicy> orderComparator = createComparatorForOrder(order);
+            if (orderComparator == null) continue;
+            chained = (chained == null) ? orderComparator : chained.thenComparing(orderComparator);
+        }
+
+        if (chained == null) {
+            chained = defaultComparator;
+        }
+
+        // 어떤 정렬 기준이든 항상 먼저 "상시 공고는 맨 뒤" 규칙 실행
+        return ongoingLast.thenComparing(chained);
+    }
+
+    /** Sort.Order별 개별 Comparator 생성 */
+    private Comparator<YouthPolicy> createComparatorForOrder(Sort.Order order) {
+        return switch (order.getProperty()) {
+            case "startDate" ->
+                    (p1, p2) -> compareDates(resolveStartDate(p1), resolveStartDate(p2), order.isDescending());
+            case "endDate" ->
+                    (p1, p2) -> compareEndDates(p1.getEndDate(), p2.getEndDate(), order.isDescending());
+            case "createdAt" ->
+                    (p1, p2) -> compareDateTimes(p1.getCreatedAt(), p2.getCreatedAt(), order.isDescending());
+            default -> null;
+        };
+    }
+
+    /** LocalDateTime 비교 (null-safe) */
+    private static int compareDateTimes(LocalDateTime first, LocalDateTime second, boolean descending) {
+        if (first == null && second == null) {
+            return 0;
+        }
+        if (first == null) {
+            return 1; // null always last
+        }
+        if (second == null) {
+            return -1;
+        }
+        return descending ? second.compareTo(first) : first.compareTo(second);
+    }
+
+    /** LocalDate 비교 (null-safe) */
+    private static int compareDates(LocalDate first, LocalDate second, boolean descending) {
+        if (first == null && second == null) {
+            return 0;
+        }
+        if (first == null) {
+            return 1; // null always last
+        }
+        if (second == null) {
+            return -1;
+        }
+        return descending ? second.compareTo(first) : first.compareTo(second);
+    }
+
+    /** 마감일 비교 시 상시 여부 먼저 고려 */
+    private int compareEndDates(String first, String second, boolean descending) {
+        boolean firstOngoing = isOngoing(first);
+        boolean secondOngoing = isOngoing(second);
+
+        if (firstOngoing && !secondOngoing) return 1;
+        if (!firstOngoing && secondOngoing) return -1;
+
+        LocalDate firstDate = parseDate(first);
+        LocalDate secondDate = parseDate(second);
+        return compareDates(firstDate, secondDate, descending);
+    }
+
+    /** 상시 공고 판별: null/빈값/00000000/'상시' 포함 시 상시로 판단 */
+    private static boolean isOngoing(String value) {
+        if (value == null) return true;
+        String trimmed = value.trim();
+        if (trimmed.isEmpty()) return true;
+        if ("00000000".equals(trimmed)) return true;
+        return trimmed.contains("상시");
+    }
+
+    /** 정책의 정렬용 시작일 계산 (startDate → createdAt 순으로 fallback) */
+    private LocalDate resolveStartDate(YouthPolicy policy) {
+        LocalDate parsed = parseDate(policy.getStartDate());
+        if (parsed != null) {
+            return parsed;
+        }
+        LocalDateTime createdAt = policy.getCreatedAt();
+        return createdAt != null ? createdAt.toLocalDate() : null;
+    }
+
+    /** 다양한 포맷의 날짜 문자열을 LocalDate로 파싱 */
+    private static LocalDate parseDate(String value) {
+        if (value == null || value.isBlank()) return null;
+        String normalized = value.trim();
+        normalized = normalized.replace('.', '-').replace('/', '-');
+        if (normalized.matches("\\d{8}")) {
+            normalized = normalized.replaceAll("(\\d{4})(\\d{2})(\\d{2})", "$1-$2-$3");
+        }
+        try {
+            return LocalDate.parse(normalized, FORMATTER);
+        } catch (Exception e) {
+            return null;
+        }
+    }
+}
