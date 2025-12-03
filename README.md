@@ -20,19 +20,19 @@
 <details>
 <summary><strong>📝 주제 선정 이유</strong></summary>
 
-- 필요한 정보를 확인하기 위해 여러 사이트를 이동해야 하는 불편함  
-- 주거·금융·정책 정보가 분산되어 있어 한눈에 파악하기 힘듦  
-- 사용자 맞춤형 정보 제공이 부족하여 필요한 내용을 모아보기 어려움  
-- 최신·신뢰할 수 있는 정보를 한 곳에서 확인할 수 있는 플랫폼의 필요성을 느낌  
+- 청년 관련 정보가 **여러 기관·웹사이트에 분산**되어 있어 확인 과정이 복잡함
+- 주거·금융·정책 정보를 **한눈에 비교하거나 탐색하기 어려움**
+- 개인 조건에 따라 필요한 정보를 자동으로 찾아주는 **맞춤형 서비스 부재**
+- 정보 최신성·정확성을 유지하는 **통합 플랫폼의 필요성 증가**
 
 </details>
 <details>
 <summary><strong>🎯 목표</strong></summary>
 
-- 청년 관련 정보를 한 곳에서 통합적으로 제공할 수 있는 환경 구축  
-- 주거·금융·정책 정보를 효율적으로 탐색할 수 있는 구조 마련  
-- 조건 검색 및 필터링을 통해 사용자가 원하는 정보를 신속하게 찾을 수 있도록 지원  
-- 최신·신뢰성 있는 정보를 안정적으로 제공할 수 있는 시스템 구현  
+- 청년 관련 정보를 **한 플랫폼에서 통합 조회**할 수 있는 환경 구축
+- 주거·금융·정책 정보를 카테고리별로 **빠르게 탐색·비교**할 수 있는 UI 제공
+- 조건 기반 필터링과 추천 기능을 통해 **사용자가 필요한 정보를 즉시 찾을 수 있도록** 지원
+- 자동 수집·동기화 시스템을 통해 **최신·신뢰성 있는 정보 제공 구조 확립**
 
 </details>
 
@@ -48,6 +48,14 @@
 |--------|-----------|
 | **이연우**  | 백엔드 |
 | **이수빈** | 프론트엔드 |
+
+---
+
+## 📚 Team Notion  
+
+- 프로젝트 진행 과정과 모든 문서를 기록·정리한 협업 워크스페이스입니다.
+
+[👉 노션 페이지로 이동하기](https://www.notion.so/WINGS-Y-Nest-278411fa8b7480f28550d9fc304d0a94)
 
 ---
 
@@ -138,6 +146,10 @@
 <details>
 <summary><strong>1️⃣ 맞춤 공고 추천</strong></summary>
 
+<img width="269" height="345" alt="Image" src="https://github.com/user-attachments/assets/278c940c-2ac7-4cc7-9347-a3e9cdbd6630" />
+
+<img width="326" height="345" alt="Image" src="https://github.com/user-attachments/assets/7b0e82fe-3dcf-4b65-949b-6978e1b74056" />
+
 - 사용자 **연령·지역·소득 구간·무주택 여부** 기반 개인 맞춤 공고 제공  
 - LH·SH·청년정책 각각에 대해 **조건 적합도 점수 산출 → 상위 9건 추천**  
 - 추천 사유 자동 생성 (지역 적합도, 소득 구간, 연령 가중치, 마감 임박도 등)  
@@ -147,6 +159,10 @@
 
 <details>
 <summary><strong>2️⃣ 챗봇 서비스 (네스티)</strong></summary>
+
+<img width="235" height="362" alt="Image" src="https://github.com/user-attachments/assets/5234a28a-2825-4517-b456-d6603b2cf712" />
+
+<img width="236" height="362" alt="Image" src="https://github.com/user-attachments/assets/ef52835e-46bc-47c3-96aa-f65546a39433" />
 
 - 사용자가 입력한 문장을 분석하여 **주거 / 금융 / 정책** 의도를 자동 분류  
 - DB 검색 서비스 호출 → 관련 공고/상품/정책 **최대 5건 자동 추천**  
@@ -162,6 +178,10 @@
 
 <details>
 <summary><strong>3️⃣ 데일리 이메일 알림</strong></summary>
+
+<img width="223" height="362" alt="Image" src="https://github.com/user-attachments/assets/ba2a9397-7ccd-434b-bf69-4370bac50234" />
+
+<img width="299" height="371" alt="Image" src="https://github.com/user-attachments/assets/cd50b153-bc58-4e3d-a5aa-b1f75e1a303e" />
 
 - 매일 **아침 9시**, Scheduler 기반 자동 이메일 발송  
 - 하루 동안 변동된 공고·상품·정책 정보를 HTML 이메일 형태로 제공  
@@ -179,51 +199,53 @@
 
 ---
 
-## 🎥 시연 영상
+## 🎥 전체 시연 영상
+
+[👉 Y-Nest 프로젝트 시연영상 보러가기](https://youtu.be/HuJOAm1_Xuw?si=-cmRm89dpVdYjnze)
 
 ---
 
-## 📏 Team Code Convention
+## 🧪 테스트 코드 및 커버리지
 
-### 기본 브랜치
-- **main** : 배포용 브랜치  
-- **dev** : 통합 개발 브랜치  
+본 프로젝트는 기능 안정성과 유지보수성을 위해 테스트 코드를 기반으로 개발되었습니다.
 
-### 기능별 브랜치
-## 🟣 Backend Feature Branches
-- `feature/backend-auth` — 로그인/회원 기능
-- `feature/backend-test` — 테스트 코드 및 테스트 환경
-- `feature/backend-openapi` — Swagger / OpenAPI 문서화
-- `feature/backend-chatbot` — 챗봇 기능 개발
-- `feature/backend-favorites` — 즐겨찾기 기능
-- `feature/backend-notification` — 알림 기능
-- `feature/distribution` — 배포 관련 설정 및 인프라 구성
+- **전체 테스트 커버리지:** 81%  
+<img width="431" height="147" alt="Image" src="https://github.com/user-attachments/assets/792dd158-1e3d-4885-98c1-2df0fefe71af" />
 
-## 🟡 Frontend Feature Branches
-- `feature/frontend-auth` — 로그인/회원가입 UI
-- `feature/frontend-home` — 홈 화면 UI
-- `feature/frontend-recommend` — 맞춤 공고 추천 페이지
-- `feature/frontend-favorites` — 즐겨찾기 페이지
-- `feature/frontend-policy` — 정책 조회 페이지
-- `feature/frontend-housing` — 주거 공고 페이지
-- `feature/frontend-finance` — 금융 상품 페이지
+테스트 중심 개발을 통해  
+서비스 안정성, 데이터 처리 신뢰도, 추천 엔진 정확도를 강화했습니다.
 
 ---
 
-### Commit Convention
-- ✨ feat: 새로운 기능 추가
-- 🎉 add: 신규 파일 생성 / 초기 세팅
-- 🐛 fix: 버그 수정
-- ♻️ refactor: 코드 리팩토링
-- 🚚 move: 파일 이동/정리
-- 🔥 delete: 기능/파일 삭제
-- ✅ test: 테스트 코드 작성
-- 🙈 gitfix: .gitignore 수정
-- 🔨 script: build.gradle, docker compose 변경
-- 📝 chore: 주석/변수명/클래스명 수정
-- ⚡️ improve: 기능 개선
-- 🔖 merge: 구현 기능 병합
-- 💄 style: UI/스타일 파일 추가/수정
+## 🏗️ 배포 구조
+
+<details>
+<summary><strong>🔧 배포 상세 구조 보기</strong></summary>
+
+### ☁️ AWS 인프라 구성
+- **EC2** – Spring Boot 백엔드 서버 운영
+- **RDS(MySQL)** – 데이터베이스
+- **S3 + CloudFront** – React 정적 웹 호스팅 & CDN
+- **도메인 연결:** https://ynest.kro.kr
+- **IAM 정책** – 리소스 권한 관리
+
+---
+
+### 🔐 보안 및 운영
+- HTTPS 적용 (SSL 인증서)
+- EC2 / RDS 보안그룹 설정
+- CORS 정책 정교화
+- CloudFront 캐시 무효화로 최신 배포 반영
+
+---
+
+### 🌀 배포 프로세스
+1. GitHub `main` / `dev` 브랜치 기반 협업
+2. EC2에서 `git pull` → 빌드 → 애플리케이션 재시작
+3. 프론트엔드는 빌드 후 S3 업로드
+4. CloudFront Invalidation으로 즉시 배포 반영
+
+</details>
 
 ---
 
@@ -285,5 +307,49 @@ capstone-design/
 │           ├── ResetPasswordPage.jsx
 │           └── SignupPage.jsx
 ```
+
+---
+
+## 📏 Team Code Convention
+
+### 기본 브랜치
+- **main** : 배포용 브랜치  
+- **dev** : 통합 개발 브랜치  
+
+### 기능별 브랜치
+### 🟣 Backend Feature Branches
+- `feature/backend-auth` — 로그인/회원 기능
+- `feature/backend-test` — 테스트 코드 및 테스트 환경
+- `feature/backend-openapi` — Swagger / OpenAPI 문서화
+- `feature/backend-chatbot` — 챗봇 기능 개발
+- `feature/backend-favorites` — 즐겨찾기 기능
+- `feature/backend-notification` — 알림 기능
+- `feature/distribution` — 배포 관련 설정 및 인프라 구성
+
+### 🟡 Frontend Feature Branches
+- `feature/frontend-auth` — 로그인/회원가입 UI
+- `feature/frontend-home` — 홈 화면 UI
+- `feature/frontend-recommend` — 맞춤 공고 추천 페이지
+- `feature/frontend-favorites` — 즐겨찾기 페이지
+- `feature/frontend-policy` — 정책 조회 페이지
+- `feature/frontend-housing` — 주거 공고 페이지
+- `feature/frontend-finance` — 금융 상품 페이지
+
+---
+
+### Commit Convention
+- ✨ feat: 새로운 기능 추가
+- 🎉 add: 신규 파일 생성 / 초기 세팅
+- 🐛 fix: 버그 수정
+- ♻️ refactor: 코드 리팩토링
+- 🚚 move: 파일 이동/정리
+- 🔥 delete: 기능/파일 삭제
+- ✅ test: 테스트 코드 작성
+- 🙈 gitfix: .gitignore 수정
+- 🔨 script: build.gradle, docker compose 변경
+- 📝 chore: 주석/변수명/클래스명 수정
+- ⚡️ improve: 기능 개선
+- 🔖 merge: 구현 기능 병합
+- 💄 style: UI/스타일 파일 추가/수정
 
 ---
