@@ -44,17 +44,19 @@
 ---
 
 ## 👥 팀 구성
-| 이름      | 구현 담당 기능 |
-|--------|-----------|
-| **이연우**  | 백엔드 |
-| **이수빈** | 프론트엔드 |
+| 이름 | 역할 |
+|------|------|
+| **이연우** | Backend — 전체 서버 로직 |
+| **이수빈** | Frontend — 전체 UI/UX |
+
+- 담당 기능 및 상세 작업 내역은 **Team Notion**에서 확인할 수 있습니다.
 
 ---
 
 ## 📚 Team Notion  
 
 - 프로젝트 진행 과정과 모든 문서를 기록·정리한 협업 워크스페이스입니다.
-
+  
 [👉 노션 페이지로 이동하기](https://www.notion.so/WINGS-Y-Nest-278411fa8b7480f28550d9fc304d0a94)
 
 ---
@@ -146,9 +148,8 @@
 <details>
 <summary><strong>1️⃣ 맞춤 공고 추천</strong></summary>
 
-<img width="269" height="345" alt="Image" src="https://github.com/user-attachments/assets/278c940c-2ac7-4cc7-9347-a3e9cdbd6630" />
-
-<img width="326" height="345" alt="Image" src="https://github.com/user-attachments/assets/7b0e82fe-3dcf-4b65-949b-6978e1b74056" />
+<img width="542" height="410" alt="Image" src="https://github.com/user-attachments/assets/f70f3201-c603-4736-a32d-f407349ca5d5" />
+<img width="542" height="456" alt="Image" src="https://github.com/user-attachments/assets/299a08b6-ceaf-4726-9bfb-ee9225c50fbf" />
 
 - 사용자 **연령·지역·소득 구간·무주택 여부** 기반 개인 맞춤 공고 제공  
 - LH·SH·청년정책 각각에 대해 **조건 적합도 점수 산출 → 상위 9건 추천**  
@@ -160,9 +161,9 @@
 <details>
 <summary><strong>2️⃣ 챗봇 서비스 (네스티)</strong></summary>
 
-<img width="235" height="362" alt="Image" src="https://github.com/user-attachments/assets/5234a28a-2825-4517-b456-d6603b2cf712" />
+<img width="394" height="484" alt="Image" src="https://github.com/user-attachments/assets/4f4661ad-2c5e-44cc-9d04-c514aeb58c2c" />
 
-<img width="236" height="362" alt="Image" src="https://github.com/user-attachments/assets/ef52835e-46bc-47c3-96aa-f65546a39433" />
+<img width="394" height="480" alt="Image" src="https://github.com/user-attachments/assets/242f4fa9-80c1-4b9b-a6ca-61e4cda1e326" />
 
 - 사용자가 입력한 문장을 분석하여 **주거 / 금융 / 정책** 의도를 자동 분류  
 - DB 검색 서비스 호출 → 관련 공고/상품/정책 **최대 5건 자동 추천**  
@@ -179,9 +180,9 @@
 <details>
 <summary><strong>3️⃣ 데일리 이메일 알림</strong></summary>
 
-<img width="223" height="362" alt="Image" src="https://github.com/user-attachments/assets/ba2a9397-7ccd-434b-bf69-4370bac50234" />
-
-<img width="299" height="371" alt="Image" src="https://github.com/user-attachments/assets/cd50b153-bc58-4e3d-a5aa-b1f75e1a303e" />
+<img width="400" height="492" alt="Image" src="https://github.com/user-attachments/assets/c60f93ae-c8a9-45b6-9b52-40e0f63b70f6" />
+<img width="700" height="618" alt="Image" src="https://github.com/user-attachments/assets/d1508afa-1df7-459a-b241-b284c28f4fd7" />
+<img width="600" height="502" alt="Image" src="https://github.com/user-attachments/assets/facec170-6edd-4ed5-aae3-c4deb7e38ba9" />
 
 - 매일 **아침 9시**, Scheduler 기반 자동 이메일 발송  
 - 하루 동안 변동된 공고·상품·정책 정보를 HTML 이메일 형태로 제공  
