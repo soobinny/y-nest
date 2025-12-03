@@ -135,6 +135,48 @@
 
 ## ✨ 주요 기능
 
+<details>
+<summary><strong>1️⃣ 맞춤 공고 추천</strong></summary>
+
+- 사용자 **연령·지역·소득 구간·무주택 여부** 기반 개인 맞춤 공고 제공  
+- LH·SH·청년정책 각각에 대해 **조건 적합도 점수 산출 → 상위 9건 추천**  
+- 추천 사유 자동 생성 (지역 적합도, 소득 구간, 연령 가중치, 마감 임박도 등)  
+- 지역 strict/non-strict 매칭, 주거 유형 가중치 등 정교한 추천 알고리즘 적용  
+
+</details>
+
+<details>
+<summary><strong>2️⃣ 챗봇 서비스 (네스티)</strong></summary>
+
+- 사용자가 입력한 문장을 분석하여 **주거 / 금융 / 정책** 의도를 자동 분류  
+- DB 검색 서비스 호출 → 관련 공고/상품/정책 **최대 5건 자동 추천**  
+- 결과 없음 → 지역 변경/다른 조건 제안 등 대체 답변 제공  
+- 지원 기능  
+  - 주거: 지역·기관 기반 공고 검색  
+  - 금융: 예금/적금/대출 구분 후 상품 자동 추천  
+  - 정책: 키워드 기반 검색 + fallback 로직  
+- HELP / UNKNOWN 인식 → 질문 예시 안내 및 오류 방지  
+- 질문/응답 로그 저장 → 서비스 개선·모니터링 활용  
+
+</details>
+
+<details>
+<summary><strong>3️⃣ 데일리 이메일 알림</strong></summary>
+
+- 매일 **아침 9시**, Scheduler 기반 자동 이메일 발송  
+- 하루 동안 변동된 공고·상품·정책 정보를 HTML 이메일 형태로 제공  
+- 필터링 규칙  
+  - LH/SH: 마감 3일 이내 공고  
+  - 금융: 최근 3일 금리 변동  
+  - 정책: 마감 D-Day 계산  
+- 사용자 맞춤형 이메일 구성  
+  - 신규 공고 · 마감 임박 공고  
+  - 금리 변동  
+  - 정책 업데이트  
+- 발송 결과 DB 저장 → 성공/실패 모니터링 가능  
+
+</details>
+
 ---
 
 ## 🎥 시연 영상
@@ -186,5 +228,62 @@
 ---
 
 ## 📂 프로젝트 구조
+
+```
+capstone-design/
+├── backend/
+│   └── src/
+│       ├── main/
+│       │   ├── java/com/example/capstonedesign/
+│       │   │   ├── application/
+│       │   │   │   └── ingest/
+│       │   │   │       ├── Finance
+│       │   │   │       ├── LH
+│       │   │   │       ├── SH
+│       │   │   │       └── Youth
+│       │   │   ├── common/
+│       │   │   │   ├── config
+│       │   │   │   └── exception
+│       │   │   ├── domain/
+│       │   │   │   ├── chatbot/
+│       │   │   │   ├── favorites/
+│       │   │   │   ├── finance/
+│       │   │   │   │   ├── financecompanies
+│       │   │   │   │   └── financeproducts
+│       │   │   │   ├── housingannouncements/
+│       │   │   │   ├── notifications
+│       │   │   │   ├── products
+│       │   │   │   ├── shannouncements
+│       │   │   │   ├── users
+│       │   │   │   └── youthpolicies
+│       │   │   └── infra/
+│       │   │       ├── email
+│       │   │       ├── finlife/dto
+│       │   │       └── youth
+│       │   └── resources/
+│       │       ├── youth.sql
+│       │       └── application.properties
+│       └── test
+
+├── frontend/
+│   └── src/
+│       ├── assets/
+│       ├── components/
+│       ├── lib/
+│       └── pages/
+│           ├── EditMyPage.jsx
+│           ├── FavoritesPage.jsx
+│           ├── FinancePage.jsx
+│           ├── FindIdPage.jsx
+│           ├── FindPasswordPage.jsx
+│           ├── HomePage.jsx
+│           ├── HousingPage.jsx
+│           ├── LoginPage.jsx
+│           ├── MyPage.jsx
+│           ├── PolicyPage.jsx
+│           ├── RecommendPage.jsx
+│           ├── ResetPasswordPage.jsx
+│           └── SignupPage.jsx
+```
 
 ---
